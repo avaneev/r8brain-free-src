@@ -1,0 +1,62 @@
+//$ nobt
+//$ nocpp
+
+/**
+ * \file r8bconf.h
+ * \brief The "configuration" inclusion file you can modify.
+ *
+ * This is the "configuration" inclusion file for the "r8brain-free-src"
+ * sample rate converter. You may redefine the macros here as you see fit.
+ *
+ * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * See the "License.txt" file for license.
+ */
+
+#ifndef R8BCONF_INCLUDED
+#define R8BCONF_INCLUDED
+
+#if defined( _WIN32 ) || defined( _WIN64 )
+	#define R8B_WIN 1
+#elif defined( __APPLE__ )
+	#define R8B_MAC 1
+#elif defined( __linux__ )
+	#define R8B_LNX 1
+#else
+	#error r8brain-free-src: unknown platform
+#endif
+
+#if !defined( R8BASSERT )
+	/**
+	 * Assertion macro used to check for certain run-time conditions. By
+	 * default no action is taken if assertion fails.
+	 *
+	 * @param e Expression to check.
+	 */
+
+	#define R8BASSERT( e )
+#endif // !defined( R8BASSERT )
+
+#if !defined( R8B_BASECLASS )
+	/**
+	 * Macro defines the name of the class from which all classes that are
+	 * designed to be created on heap are derived. The default
+	 * r8b::CStdClassAllocator class uses "stdlib" memory allocation
+	 * functions.
+	 *
+	 * The classes that are best placed on stack or as class members are not
+	 * derived from any class.
+	 */
+
+	#define R8B_BASECLASS :: r8b :: CStdClassAllocator
+#endif // !defined( R8B_BASECLASS )
+
+#if !defined( R8B_MEMALLOCCLASS )
+	/**
+	 * Macro defines the name of the class that implements raw memory
+	 * allocation functions, see the r8b::CStdMemAllocator class for details.
+	 */
+
+	#define R8B_MEMALLOCCLASS :: r8b :: CStdMemAllocator
+#endif // !defined( R8B_MEMALLOCCLASS )
+
+#endif // R8BCONF_INCLUDED
