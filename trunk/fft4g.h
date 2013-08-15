@@ -1,12 +1,17 @@
 //$ nobt
 //$ nocpp
 
-// Functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
-// http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
-//
-// Modified and used with permission granted by the license.
-//
-// Here, the original "fft4g.c" file was wrapped into the "ooura_fft" class.
+/**
+ * \file fft4g.h
+ * \brief Wrapper class for Takuya OOURA's FFT functions.
+ *
+ * Functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
+ * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
+ *
+ * Modified and used with permission granted by the license.
+ *
+ * Here, the original "fft4g.c" file was wrapped into the "ooura_fft" class.
+ */
 
 #ifndef R8B_FFT4G_INCLUDED
 #define R8B_FFT4G_INCLUDED
@@ -289,9 +294,18 @@ Appendix :
 
 namespace r8b {
 
+/**
+ * \brief A wrapper class around Takuya OOURA's FFT functions.
+ *
+ * A wrapper class around fft4g.c file's FFT functions by Takuya OOURA.
+ * Provides static private functions for use by the CDSPRealFFT class.
+ */
+
 class ooura_fft
 {
-public:
+friend class CDSPRealFFT;
+
+private:
 template< class FPType >
 static void cdft(int n, int isgn, FPType *a, int *ip, FPType *w)
 {
