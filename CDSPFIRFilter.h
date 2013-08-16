@@ -29,6 +29,8 @@ namespace r8b {
 
 class CDSPFIRFilter : public R8B_BASECLASS
 {
+	R8BNOCTOR( CDSPFIRFilter );
+
 	friend class CDSPBlockConvolver;
 	friend class CDSPFIRFilterCache;
 
@@ -73,19 +75,44 @@ public:
 		return( 220.0 );
 	}
 
-private:
+	/**
+	 * This function should be called when the filter obtained via the
+	 * cache is no longer needed.
+	 */
+
+	void unref();
+
+//private:
 	double ReqTransBand; ///< Required transition band in percent, as passed
-		/// by the user.
+		///< by the user.
+		///<
 	double ReqAtten; ///< Required stop-band attenuation in decibel, as passed
-		/// by the user (positive value).
+		///< by the user (positive value).
+		///<
 	double ReqNormFreq; ///< Required normalized frequency, 0 to 1 inclusive.
+	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
+	int RefCount; ///< The number of references made to *this FIR filter.
 	int Latency; ///< Filter's latency in samples.
 	int BlockSizeBits; ///< Block size used to store filter response,
-		/// expressed as Nth power of 2. This value is used directly by the
-		/// convolver.
+		///< expressed as Nth power of 2. This value is used directly by the
+		///< convolver.
+		///<
 	CFixedBuffer< double > KernelBlock; ///< Filter response buffer, size
-		/// equals to 1 << ( BlockSizeBits + 1 ). Second part of the buffer
-		/// contains zero-padding to allow alias-free convolution.
+		///< equals to 1 << ( BlockSizeBits + 1 ). Second part of the buffer
+		///< contains zero-padding to allow alias-free convolution.
+		///<
+
+	CDSPFIRFilter()
+		: RefCount( 1 )
+	{
+	}
+
+	~CDSPFIRFilter()
+	{
+		R8BASSERT( RefCount == 0 );
+
+		delete Next;
+	}
 
 	/**
 	 * Function builds filter kernel based on the ReqTransBand, ReqAtten and
@@ -97,7 +124,7 @@ private:
 		const double tb = ReqTransBand * 0.01;
 		double atten = -ReqAtten;
 
-		// Apply correction.
+		// Apply 3-part correction to the "attenuation" for higher precision.
 
 		if( atten >= -74.035088 )
 		{
@@ -118,33 +145,39 @@ private:
 		}
 		else
 		{
-			atten -= 0.71361770778327 * sin( 0.080859249933107 * atten ) *
-				atan2( 0.186753898792276, 8.55050852098357 +
-				0.080859249933107 * atten ) - 0.40224810474143 -
-				0.72626322840629 * sin( -0.12386247667656 * atten );
+			atten -= 0.538238440603965 * sin( -0.1233515698667 * atten ) *
+				atan2( 0.0143246704986262 * atten, cos( 0.0935923685623112 *
+				atten )) + 0.696034798186251 * sin( 6.00222816844784 +
+				0.0790029450006683 * atten ) * atan2( 0.257260396929507,
+				8.32685945641861 + 0.0790029450006683 * atten ) -
+				0.30920824764881;
 		}
 
-		const double hl = ( -10.2934576604145 - 0.285144433965609 * atten ) /
-			tb + -211.072141982443 / ( tb * atten - 12.3281863268897 * tb -
-			0.350469717177663 * tb * atten * atan( sin( 4.22528055809605 -
-			0.0953582696744781 * atten )));
+		// A set of "magic formulas" that calculate "half-band filter kernel
+		// length" (hl), windowing function's power factor (pwr) and
+		// "-3 dB frequency offset" (fo).
+
+		const double hl = ( -10.3864830460583 - 0.28561497095004 * atten ) /
+			tb + -215.422486627309 / ( tb * atten - 12.2962925122936 * tanh(
+			tanh( tb )) - 0.340884649462501 * tb * atten * atan( sin(
+			4.22129490874673 - 0.0953516921538414 * atten )));
 
 		const double hltb = hl * tb;
-		const double pwr = 0.1716055279404 + 0.116379153860107 * hltb +
-			0.0183229986637533 * sin( 0.128970625216538 * hltb ) -
-			0.756472509630929 * gauss( gauss( sin( 6.1588739570383 +
-			0.128970625216538 * hltb ) - 0.137337051614019 * hltb ) -
-			0.326334088682917 );
+		const double pwr = 0.185341477676462 + 0.116234005923982 * hltb +
+			0.0183525684531612 * sin( 0.132513576412821 * hltb + gauss(
+			0.132513576412821 * hltb )) - 0.768004731482082 * gauss( gauss(
+			sin( 6.10653526213251 + 0.132513576412821 * hltb ) -
+			0.137241895475179 * hltb ) - 0.329587582364288 );
 
-		const double fo = atan2( 1.37248462316218 * asinh( 0.676453431881951 +
-			pwr ), hl ) + gauss( cos( 2.38417547027863 * pwr ) /
-			( 0.532351950498439 * hl + 6.94666497679782 * exp( sqr( pwr )))) -
-			0.976759641634279 * tb;
+		const double fo = atan2( 1.36778230157297 * asinh( 0.680688824721814 +
+			pwr ), hl ) + gauss( cos( 2.37736468090842 * pwr ) /
+			( 0.527409384163176 * hl + 6.42102056930156 * exp( sqr( pwr )))) -
+			0.976478203607702 * tb;
 
 		CDSPSincFilterGen sinc;
-		sinc.Len2 = 0.25 * hl / NormFreq;
+		sinc.Len2 = 0.25 * hl / ReqNormFreq;
 		sinc.Freq1 = 0.0;
-		sinc.Freq2 = M_PI * fo * NormFreq;
+		sinc.Freq2 = M_PI * fo * ReqNormFreq;
 		sinc.initBand();
 
 		Latency = sinc.fl2;
@@ -175,16 +208,30 @@ normalizeFIRFilter( &KernelBlock[ 0 ], sinc.KernelLen, 1.0 );
 
 class CDSPFIRFilterCache : public R8B_BASECLASS
 {
+	friend class CDSPFIRFilter;
+
 public:
 	/**
+	 * @return The number of filters present in the cache now. This value can
+	 * be monitored for debugging "forgotten" filters.
+	 */
+
+	static int getFilterCount()
+	{
+		R8BSYNC( StateSync );
+
+		return( FilterCount );
+	}
+
+	/**
 	 * @param ReqTransBand Required transition band, in percent of the full
-	 * bandwidth, in the range CDSPFIRFilter.getLPMinTransBand() to
-	 * CDSPFIRFilter.getLPMaxTransBand(), inclusive. The transition band
+	 * bandwidth, in the range CDSPFIRFilter::getLPMinTransBand() to
+	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive. The transition band
 	 * specifies part of the spectrum between the -3 dB and Nyquist points.
 	 * The resulting -3 dB point varies in the range from -2.98 and -3.08 dB,
 	 * but is generally very close to -3 dB.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
-	 * CDSPFIRFilter.getLPMinAtten() to CDSPFIRFilter.getLPMaxAtten(),
+	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive. Note that the stop-band attenuation of the resulting filter
 	 * may vary in the range +/- 1 decibel in comparison to the required
 	 * value.
@@ -193,14 +240,111 @@ public:
 	 * @return A reference to a new or a previously calculated low-pass FIR
 	 * filter object with the required characteristics. A reference count is
 	 * incremented in the returned filter object which should be released
-	 * after use.
+	 * after use via the CDSPFIRFilter::unref() function.
 	 */
 
 	static CDSPFIRFilter& getLPFilter( const double ReqTransBand,
 		const double ReqAtten, const double ReqNormFreq )
 	{
+		R8BSYNC( StateSync );
+
+		CDSPFIRFilter* PrevFilter = NULL;
+		CDSPFIRFilter* CurFilter = Filters;
+
+		while( CurFilter != NULL )
+		{
+			if( CurFilter -> ReqTransBand == ReqTransBand &&
+				CurFilter -> ReqAtten == ReqAtten &&
+				CurFilter -> ReqNormFreq == ReqNormFreq )
+			{
+				break;
+			}
+
+			if( CurFilter -> Next == NULL &&
+				FilterCount >= R8B_FILTER_CACHE_MAX )
+			{
+				if( CurFilter -> RefCount == 0 )
+				{
+					// Delete the last filter which is not used.
+
+					PrevFilter -> Next = NULL;
+					delete CurFilter;
+					FilterCount--;
+				}
+				else
+				{
+					// Move the last filter to the top of the list since it
+					// seems to be in use for a long time.
+
+					PrevFilter -> Next = NULL;
+					CurFilter -> Next = Filters.unkeep();
+					Filters = CurFilter;
+				}
+
+				CurFilter = NULL;
+				break;
+			}
+
+			PrevFilter = CurFilter;
+			CurFilter = CurFilter -> Next;
+		}
+
+		if( CurFilter != NULL )
+		{
+			CurFilter -> RefCount++;
+
+			if( PrevFilter == NULL )
+			{
+				return( *CurFilter );
+			}
+
+			// Remove the filter from the list temporarily.
+
+			PrevFilter -> Next = CurFilter -> Next;
+		}
+		else
+		{
+			// Create a new filter object (with RefCount == 1) and build
+			// filter kernel.
+
+			CurFilter = new CDSPFIRFilter();
+			CurFilter -> ReqTransBand = ReqTransBand;
+			CurFilter -> ReqAtten = ReqAtten;
+			CurFilter -> ReqNormFreq = ReqNormFreq;
+			CurFilter -> buildLPFilter();
+			FilterCount++;
+		}
+
+		// Insert the filter at the start of the list.
+
+		CurFilter -> Next = Filters.unkeep();
+		Filters = CurFilter;
+
+		return( *CurFilter );
 	}
+
+private:
+	static CSyncObject StateSync; ///< Cache state synchronizer.
+	static CPtrKeeper< CDSPFIRFilter* > Filters; ///< The chain of cached
+		///< filters.
+		///<
+	static int FilterCount; ///< The number of filters currently preset in the
+		///< cache.
+		///<
 };
+
+// ---------------------------------------------------------------------------
+// CDSPFIRFilter PUBLIC
+// ---------------------------------------------------------------------------
+
+inline void CDSPFIRFilter :: unref()
+{
+	R8BSYNC( CDSPFIRFilterCache :: StateSync );
+
+	RefCount--;
+}
+
+// ---------------------------------------------------------------------------
 
 } // namespace r8b
 

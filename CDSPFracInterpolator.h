@@ -71,16 +71,20 @@ public:
 protected:
 	static const int FuncLen = N; ///< Fractional delay function length in
 		///< samples (taps).
+		///<
 	static const int FuncLen2 = FuncLen << 1; ///< = FuncLen * 2.
 	static const int FuncLenD2 = FuncLen >> 1; ///< = FuncLen / 2.
 	static const int FuncLenD2Minus1 = FuncLenD2 - 1; ///< = FuncLenD2 - 1.
-		///< This value also equals to filter's latency in
+		///< This value also equals to filter's latency in samples (taps).
+		///<
 	static const int FuncLenD2Plus1 = FuncLenD2 + 1; ///< = FuncLenD2 + 1.
 	static const int FuncFrac = Fracs; ///< The number of fractional sample
 		///< positions to use.
+		///<
 	double FuncTable[ FuncLen2 * ( FuncFrac + 1 )]; ///< Table of fractional
 		///< delay functions for all discrete fractional x = 0..1 sample
 		///< positions, and deltas between adjacent functions.
+		///<
 };
 
 /**
@@ -252,24 +256,30 @@ public:
 
 private:
 	static const int BufLenBits = 9; ///< The length of the ring buffer,
-		/// expressed as Nth power of 2.
+		///< expressed as Nth power of 2.
+		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
-		/// buffer. The actual size is twice as large to allow "beyond max"
-		/// positioning.
+		///< buffer. The actual size is twice as large to allow "beyond max"
+		///< positioning.
+		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
-		/// position wrapping.
+		///< position wrapping.
+		///<
 	static const int BufLeftMax = BufLen - FuncLenD2Minus1; ///< The number of
-		/// new samples that the ring buffer can hold at most. The remaining
-		/// FuncLenD2Minus1 samples hold "previous" input samples for the
-		/// filter.
+		///< new samples that the ring buffer can hold at most. The remaining
+		///< FuncLenD2Minus1 samples hold "previous" input samples for the
+		///< filter.
+		///<
 	double Buf[ BufLen * 2 ]; ///< The ring buffer.
 	double SrcSampleRate; ///< Source sample rate.
 	double DstSampleRate; ///< Destination sample rate.
 	int BufLeft; ///< The number of samples left in the buffer to process.
-		/// When this value is below FuncLenD2Plus1, the interpolation cycle
-		/// ends.
+		///< When this value is below FuncLenD2Plus1, the interpolation cycle
+		///< ends.
+		///<
 	int WritePos; ///< The current buffer write position. Incremented together
-		/// with the BufLeft variable.
+		///< with the BufLeft variable.
+		///<
 	int ReadPos; ///< The current buffer read position.
 	int InCounter; ///< Interpolation position counter.
 	int InPosInt; ///< Interpolation position (integer part).

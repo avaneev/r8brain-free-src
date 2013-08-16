@@ -1,5 +1,5 @@
 /**
- * \file r8b.cpp
+ * \file r8bbase.cpp
  * \brief C++ file that should be compiled and included into your application.
  *
  * This is a single library file that should be compiled and included into the
@@ -10,11 +10,14 @@
  * See the "License.txt" file for license.
  */
 
-#include "CDSPRealFFT.h"
+#include "CDSPFIRFilter.h"
 
 namespace r8b {
 
-CSyncSpinLock CDSPRealFFTKeeper :: StateSync;
+CSyncObject CDSPRealFFTKeeper :: StateSync;
 CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
+CSyncObject CDSPFIRFilterCache :: StateSync;
+CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
+int CDSPFIRFilterCache :: FilterCount = 0;
 
 } // namespace r8b
