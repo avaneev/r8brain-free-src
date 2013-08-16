@@ -21,4 +21,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Please credit the creator of this library in your documentation in the
-following way: "Sample rate converter designed by Aleksey Vaneev"
+following way: "Sample rate converter designed by Aleksey Vaneev of Voxengo"

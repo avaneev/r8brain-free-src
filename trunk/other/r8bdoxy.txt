@@ -12,4 +12,5 @@ SHOW_USED_FILES        = NO
 SHOW_NAMESPACES        = NO
 WARN_NO_PARAMDOC       = YES
 INPUT                  = ./
+HTML_OUTPUT            = Documentation
 GENERATE_LATEX         = NO
