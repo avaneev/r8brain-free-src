@@ -59,4 +59,14 @@
 	#define R8B_MEMALLOCCLASS :: r8b :: CStdMemAllocator
 #endif // !defined( R8B_MEMALLOCCLASS )
 
+#if !defined( R8B_FILTER_CACHE_MAX )
+	/**
+	 * This macro specifies the number of filters kept in the cache at most.
+	 * The actual number can be higher if many different filters are in use at
+	 * the same time.
+	 */
+
+	#define R8B_FILTER_CACHE_MAX 64
+#endif // !defined( R8B_FILTER_CACHE_MAX )
+
 #endif // R8BCONF_INCLUDED

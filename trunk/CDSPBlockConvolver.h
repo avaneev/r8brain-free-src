@@ -59,6 +59,7 @@ public:
 
 	~CDSPBlockConvolver()
 	{
+		Filter -> unref();
 	}
 
 	/**
@@ -138,13 +139,16 @@ private:
 	int BlockSize; ///< Block size in samples.
 	int Latency; ///< Processing and kernel's latency.
 	CFixedBuffer< double > PrevInput; ///< Previous input data,
-		/// size = BlockSize.
+		///< size = BlockSize.
+		///<
 	CFixedBuffer< double > WorkBlocks[ 2 ]; ///< Input and output blocks,
-		/// size = BlockSize * 2 each. Used in flip-flop manner.
+		///< size = BlockSize * 2 each. Used in flip-flop manner.
+		///<
 	double* CurInput; ///< Input data buffer.
 	double* CurOutput; ///< Output data buffer.
 	int InDataLeft; ///< Samples left before processing input and output FFT
-		/// blocks.
+		///< blocks.
+		///<
 	int LatencyLeft; ///< Latency in samples left to skip.
 
 	CDSPBlockConvolver()

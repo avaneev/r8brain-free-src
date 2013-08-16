@@ -1,4 +1,3 @@
-//$ nobt
 //$ nocpp
 
 /**
@@ -31,26 +30,33 @@ class CDSPSincFilterGen
 {
 public:
 	double Len2; ///< Required half kernel length in samples (can be a
-		/// fractional value). Final physical kernel length will be provided
-		/// in the KernelLen variable. Len2 should be >= 2.
+		///< fractional value). Final physical kernel length will be provided
+		///< in the KernelLen variable. Len2 should be >= 2.
+		///<
 	double Freq1; ///< Required corner circular frequency 1 [0; pi]. Used only
-		/// in the generateBand() function.
+		///< in the generateBand() function.
+		///<
 	double Freq2; ///< Required corner circular frequency 2 [0; pi]. Used only
-		/// in the generateBand() function. The range [Freq1; Freq2] defines
-		/// a pass band for the generateBand() function.
+		///< in the generateBand() function. The range [Freq1; Freq2] defines
+		///< a pass band for the generateBand() function.
+		///<
 	double FracDelay; ///< Fractional delay in the range [0; 1], used only
-		/// by the generateFrac() function. Note that the FracDelay parameter
-		/// is actually inversed. At 0.0 value it produces 1 sample delay
-		/// (with latency equal to fl2), at 1.0 value it produces 0 sample
-		/// delay (with latency equal to fl2 - 1).
+		///< by the generateFrac() function. Note that the FracDelay parameter
+		///< is actually inversed. At 0.0 value it produces 1 sample delay
+		///< (with latency equal to fl2), at 1.0 value it produces 0 sample
+		///< delay (with latency equal to fl2 - 1).
+		///<
 	int KernelLen; ///< Resulting length of the filter kernel, this variable
-		/// is set after the call to one of the "init" functions.
+		///< is set after the call to one of the "init" functions.
+		///<
 	int fl2; ///< Internal "half kernel size" value. This value can be used
-		/// as filter's latency in samples (taps), this variable is set after
-		/// the call to one of the init functions.
+		///< as filter's latency in samples (taps), this variable is set after
+		///< the call to one of the init functions.
+		///<
 
 	typedef double( CDSPSincFilterGen :: *CWindowFunc )(); ///< Windowing
-		/// function pointer type.
+		///< function pointer type.
+		///<
 
 	/**
 	 * Function initializes *this structure for generation of band-limited

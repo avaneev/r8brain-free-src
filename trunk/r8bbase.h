@@ -1,5 +1,4 @@
 //$ nobt
-//$ nocpp
 
 /**
  * \file r8bbase.h
@@ -60,7 +59,8 @@
  * DEALINGS IN THE SOFTWARE.
  * 
  * Please credit the creator of this library in your documentation in the
- * following way: "Sample rate converter designed by Aleksey Vaneev"
+ * following way: "Sample rate converter designed by Aleksey Vaneev of
+ * Voxengo"
  *
  * @version 0.1
  */
@@ -234,7 +234,7 @@ public:
 };
 
 /**
- * \brief Templated memory buffer class for element buffers of fixed size.
+ * \brief Templated memory buffer class for element buffers of fixed capacity.
  *
  * Fixed memory buffer object. Supports allocation of a fixed amount of
  * memory. Does not store buffer's capacity - the user should know the actual
@@ -331,114 +331,217 @@ private:
 };
 
 /**
- * \brief Spin lock-based thread synchonization class.
+ * \brief Pointer-to-object "keeper" class with automatic deletion.
  *
- * Object for spin-lock multi-threaded synchronization. This object is
- * non-reentrant, it is invalid to enter it in the same thread twice: but the
- * effect will be evident: a dead-lock.
+ * An auxiliary class that can be used for keeping a pointer to object that
+ * should be deleted together with the "keeper" by calling object's "delete"
+ * operator.
  *
- * This object is non-relocatable, it should not be copied nor moved after its
- * construction.
- *
- * Windows spin-lock implementation uses critical section since it's usually
- * only 2 times less efficient than a "manually coded" spin-lock while works
- * stably on both single and multi-processor systems.
+ * @param T Pointer type to operate with, must include asterisk (e.g.
+ * "CDSPFIRFilter*").
  */
 
-struct CSyncSpinLock
+template< class T >
+class CPtrKeeper
 {
-	R8BNOCTOR( CSyncSpinLock );
+	R8BNOCTOR( CPtrKeeper );
 
 public:
-	CSyncSpinLock()
+	CPtrKeeper()
+		: Object( NULL )
 	{
-	#if defined( R8B_WIN )
-		InitializeCriticalSectionAndSpinCount( &CritSec, 4000 );
-	#elif defined( R8B_MAC )
-		SpinLock = OS_SPINLOCK_INIT;
-	#elif defined( R8B_LNX )
-		pthread_spin_init( &SpinLock, PTHREAD_PROCESS_PRIVATE );
-	#endif
-	}
-
-	~CSyncSpinLock()
-	{
-	#if defined( R8B_WIN )
-		DeleteCriticalSection( &CritSec );
-	#elif defined( R8B_LNX )
-		pthread_spin_destroy( &SpinLock );
-	#endif
 	}
 
 	/**
-	 * Function acquires *this spin lock. Function does not return until the
-	 * lock is obtained.
+	 * Constructor assigns a pointer to object to *this keeper.
+	 *
+	 * @param aObject Pointer to object to keep,
 	 */
 
-	void enter()
+	template< class T2 >
+	CPtrKeeper( T2 const aObject )
+		: Object( aObject )
 	{
-	#if defined( R8B_WIN )
-		EnterCriticalSection( &CritSec );
-	#elif defined( R8B_MAC )
-		OSSpinLockLock( &SpinLock );
-	#elif defined( R8B_LNX )
-		pthread_spin_lock( &SpinLock );
-	#endif
+	}
+
+	~CPtrKeeper()
+	{
+		delete Object;
 	}
 
 	/**
-	 * Function releases *this spin lock.
+	 * Function assigns a pointer to object to *this keeper. A previously
+	 * keeped pointer will be reset and object deleted.
+	 *
+	 * @param aObject Pointer to object to keep,
 	 */
 
-	void leave()
+	template< class T2 >
+	void operator = ( T2 const aObject )
 	{
-	#if defined( R8B_WIN )
-		LeaveCriticalSection( &CritSec );
-	#elif defined( R8B_MAC )
-		OSSpinLockUnlock( &SpinLock );
-	#elif defined( R8B_LNX )
-		pthread_spin_unlock( &SpinLock );
-	#endif
+		reset();
+		Object = aObject;
+	}
+
+	/**
+	 * @return Pointer to keeped object, NULL if no object is being kept.
+	 */
+
+	T operator -> () const
+	{
+		return( Object );
+	}
+
+	/**
+	 * @return Pointer to keeped object, NULL if no object is being kept.
+	 */
+
+	operator T () const
+	{
+		return( Object );
+	}
+
+	/**
+	 * Function resets the keeped pointer and deletes the keeped object.
+	 */
+
+	void reset()
+	{
+		T DelObj = Object;
+		Object = NULL;
+		delete DelObj;
+	}
+
+	/**
+	 * @return Function returns the keeped pointer and resets it in *this
+	 * keeper without object deletion.
+	 */
+
+	T unkeep()
+	{
+		T ResObject = Object;
+		Object = NULL;
+		return( ResObject );
 	}
 
 private:
-	#if defined( R8B_WIN )
+	T Object; ///< Pointer to keeped object.
+};
+
+/**
+ * \brief Multi-threaded synchronization object class.
+ *
+ * This class uses standard OS thread-locking (mutex) mechanism which is
+ * fairly efficient in most cases.
+ *
+ * The acquire() function can be called recursively, in the same thread, for
+ * this kind of thread-locking mechanism. This will not produce a dead-lock.
+ */
+
+struct CSyncObject
+{
+	R8BNOCTOR( CSyncObject );
+
+public:
+	CSyncObject()
+	{
+		#if defined( VOX_WIN )
+			InitializeCriticalSectionAndSpinCount( &CritSec, 4000 );
+		#elif defined( VOX_MAC )
+			MPCreateCriticalRegion( &CritRegion );
+		#elif defined( VOX_LNX )
+			pthread_mutexattr_t MutexAttrs;
+			pthread_mutexattr_init( &MutexAttrs );
+			pthread_mutexattr_settype( &MutexAttrs, PTHREAD_MUTEX_RECURSIVE );
+			pthread_mutex_init( &Mutex, &MutexAttrs );
+			pthread_mutexattr_destroy( &MutexAttrs );
+		#endif
+	}
+
+	~CSyncObject()
+	{
+		#if defined( VOX_WIN )
+			DeleteCriticalSection( &CritSec );
+		#elif defined( VOX_MAC )
+			MPDeleteCriticalRegion( CritRegion );
+		#elif defined( VOX_LNX )
+			pthread_mutex_destroy( &Mutex );
+		#endif
+	}
+
+	/**
+	 * Function "acquires" *this thread synchronizer object immediately or
+	 * waits until another thread releases it.
+	 */
+
+	void acquire()
+	{
+		#if defined( VOX_WIN )
+			EnterCriticalSection( &CritSec );
+		#elif defined( VOX_MAC )
+			MPEnterCriticalRegion( CritRegion, kDurationForever );
+		#elif defined( VOX_LNX )
+			pthread_mutex_lock( &Mutex );
+		#endif
+	}
+
+	/**
+	 * Function "releases" *this previously acquired thread synchronizer
+	 * object.
+	 */
+
+	void release()
+	{
+		#if defined( VOX_WIN )
+			LeaveCriticalSection( &CritSec );
+		#elif defined( VOX_MAC )
+			MPExitCriticalRegion( CritRegion );
+		#elif defined( VOX_LNX )
+			pthread_mutex_unlock( &Mutex );
+		#endif
+	}
+
+private:
+	#if defined( VOX_WIN )
 		CRITICAL_SECTION CritSec; ///< Standard Windows critical section
 			/// structure.
-	#elif defined( R8B_MAC )
-		volatile OSSpinLock SpinLock; ///< Spin-lock variable.
-	#elif defined( R8B_LNX )
-		pthread_spinlock_t SpinLock; ///< Spin-lock variable.
+	#elif defined( VOX_MAC )
+		MPCriticalRegionID CritRegion; ///< Mac OS X critical region object.
+	#elif defined( VOX_LNX )
+		pthread_mutex_t Mutex; ///< pthread.h mutex object.
 	#endif
 };
 
 /**
- * \brief A "keeper" class for spin lock-based synchronization.
+ * \brief A "keeper" class for CSyncObject-based synchronization.
  *
- * Sync keeper object for CSyncSpinLock objects.
+ * Sync keeper object. This object can be used as auto-init and auto-deinit
+ * object to call the acquire() and release() functions of the object of the
+ * CSyncObject class. This "keeper" object is best used in functions as an
+ * "automatic" object allocated on the stack.
  */
 
-struct CSyncKeeperSpin
+struct CSyncKeeper
 {
-	R8BNOCTOR( CSyncKeeperSpin );
+	R8BNOCTOR( CSyncKeeper );
 
 public:
-	CSyncKeeperSpin()
+	CSyncKeeper()
 		: SyncObj( NULL )
 	{
 	}
 
 	/**
 	 * @param aSyncObj Pointer to the sync object which should be used for
-	 * sync'ing. Can be equal to NULL.
+	 * sync'ing, can be NULL.
 	 */
 
-	CSyncKeeperSpin( CSyncSpinLock* const aSyncObj )
+	CSyncKeeper( CSyncObject* const aSyncObj )
 		: SyncObj( aSyncObj )
 	{
 		if( SyncObj != NULL )
 		{
-			SyncObj -> enter();
+			SyncObj -> acquire();
 		}
 	}
 
@@ -447,43 +550,40 @@ public:
 	 * sync'ing.
 	 */
 
-	CSyncKeeperSpin( CSyncSpinLock& aSyncObj )
+	CSyncKeeper( CSyncObject& aSyncObj )
 		: SyncObj( &aSyncObj )
 	{
-		SyncObj -> enter();
+		SyncObj -> acquire();
 	}
 
-	~CSyncKeeperSpin()
+	~CSyncKeeper()
 	{
 		if( SyncObj != NULL )
 		{
-			SyncObj -> leave();
+			SyncObj -> release();
 		}
 	}
 
-private:
-	CSyncSpinLock* SyncObj; ///< Sync object which should be used (can be
-		/// NULL).
+protected:
+	CSyncObject* SyncObj; ///< Sync object in use (can be NULL).
 };
 
 /**
- * The synchronization macro. The R8BSYNCSPIN( obj ) macro should be put
- * before sections of the code that may be potentially changed asynchronously
- * by several threads simultaneously. The R8BSYNCSPIN( obj ) macro "enters"
- * the synchronization section that will block execution of other threads that
- * use same R8BSYNCSPIN( obj ) macro. The section begins with the
- * R8BSYNCSPIN( obj ) macro and finishes at the end of the current block. When
- * used, also works as the "memory barrier" instruction forcing caches of
- * processor cores to be synchronized.
+ * The synchronization macro. The R8BSYNC( obj ) macro should be put before
+ * sections of the code that may potentially change data asynchronously with
+ * other threads at the same time. The R8BSYNC( obj ) macro "acquires" the
+ * synchronization object thus blocking execution of other threads that also
+ * use the same R8BSYNC( obj ) macro. The blocked section begins with the
+ * R8BSYNC( obj ) macro and finishes at the end of the current C++ code block.
+ * Multiple R8BSYNC() macros may be defined from within the same code block.
  *
- * @param SyncObject An object of the CSyncSpinLock type that is used for
+ * @param SyncObject An object of the CSyncObject type that is used for
  * synchronization.
  */
 
-#define R8BSYNCSPIN( SyncObject ) R8BSYNCSPIN_( SyncObject, __LINE__ )
-#define R8BSYNCSPIN_( SyncObject, id ) R8BSYNCSPIN__( SyncObject, id )
-#define R8BSYNCSPIN__( SyncObject, id ) \
-	CSyncKeeperSpin SyncKeeper##id( SyncObject )
+#define R8BSYNC( SyncObject ) R8BSYNC_( SyncObject, __LINE__ )
+#define R8BSYNC_( SyncObject, id ) R8BSYNC__( SyncObject, id )
+#define R8BSYNC__( SyncObject, id ) CSyncKeeper SyncKeeper##id( SyncObject )
 
 /**
  * \brief Sine signal generator class.

@@ -41,7 +41,9 @@ namespace r8b {
  * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
  *
  * Also uses Intel IPP library functions if available (the R8B_IPP macro was
- * defined).
+ * defined). Note that IPP library's FFT functions are 2-3 times more
+ * efficient on the modern Intel i7-3770K processor than Ooura's functions.
+ * It may be worthwhile investing in IPP.
  */
 
 class CDSPRealFFT : public R8B_BASECLASS
@@ -273,7 +275,8 @@ private:
 
 	#if defined( VOX_IPP )
 		IppsFFTSpec_R_64f* SPtr; ///< Pointer to initialized data buffer
-			/// to be passed to IPP's FFT functions.
+			///< to be passed to IPP's FFT functions.
+			///<
 		CFixedBuffer< uint8_t > SpecBuffer; ///< Working buffer.
 		CFixedBuffer< uint8_t > WorkBuffer; ///< Working buffer.
 	#else // VOX_IPP
@@ -456,9 +459,10 @@ public:
 private:
 	CDSPRealFFT* Object; ///< FFT object.
 
-	static CSyncSpinLock StateSync; ///< FFTObjects synchronizer.
+	static CSyncObject StateSync; ///< FFTObjects synchronizer.
 	static CDSPRealFFT :: CObjKeeper FFTObjects[]; ///< Pool of FFT objects of
-		/// various sizes.
+		///< various sizes.
+		///<
 
 	/**
 	 * Function acquires FFT object from the global pool.
@@ -470,7 +474,7 @@ private:
 	{
 		R8BASSERT( SizeBits > 0 && SizeBits <= 30 );
 
-		R8BSYNCSPIN( StateSync );
+		R8BSYNC( StateSync );
 
 		if( FFTObjects[ SizeBits ] == NULL )
 		{
@@ -491,7 +495,7 @@ private:
 
 	void release( CDSPRealFFT* const ffto )
 	{
-		R8BSYNCSPIN( StateSync );
+		R8BSYNC( StateSync );
 
 		ffto -> Next = FFTObjects[ ffto -> SizeBits ];
 		FFTObjects[ ffto -> SizeBits ] = ffto;
