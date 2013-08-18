@@ -28,7 +28,9 @@ namespace r8b {
  * should have. This must be an even value. Instead of using a high N value
  * for higher precision the oversampling should be used in the first place.
  * @param Fracs The number of fractional delay positions to sample. Using
- * higher values does not increase the overall precision considerably.
+ * higher values does not increase the overall precision considerably. With
+ * N=8 and Fracs=192 the peak group delay error is only 3.33e-6 samples and
+ * peak gain error is only 7.92e-5 decibel.
  */
 
 template< int N, int Fracs >
@@ -37,6 +39,9 @@ class CDSPFracDelayFilterBank : public R8B_BASECLASS
 public:
 	CDSPFracDelayFilterBank()
 	{
+		R8BASSERT( N >= 4 );
+		R8BASSERT( Fracs > 0 );
+
 		CDSPSincFilterGen sinc;
 		sinc.Len2 = FuncLenD2;
 		sinc.FracDelay = 1.0;
@@ -73,11 +78,14 @@ protected:
 		///< samples (taps).
 		///<
 	static const int FuncLen2 = FuncLen << 1; ///< = FuncLen * 2.
+		///<
 	static const int FuncLenD2 = FuncLen >> 1; ///< = FuncLen / 2.
+		///<
 	static const int FuncLenD2Minus1 = FuncLenD2 - 1; ///< = FuncLenD2 - 1.
 		///< This value also equals to filter's latency in samples (taps).
 		///<
 	static const int FuncLenD2Plus1 = FuncLenD2 + 1; ///< = FuncLenD2 + 1.
+		///<
 	static const int FuncFrac = Fracs; ///< The number of fractional sample
 		///< positions to use.
 		///<
@@ -107,7 +115,7 @@ protected:
  * before the interpolation is performed.
  */
 
-class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 8, 128 >
+class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 8, 192 >
 {
 	R8BNOCTOR( CDSPFracInterpolator );
 
@@ -164,14 +172,15 @@ public:
 	 * be equal to the value returned by the getOutputBufLen() function for
 	 * the given "l". This buffer should not be equal to "ip".
 	 * @param l The number of samples available in the input sample buffer.
-	 * @return The number of output samples written to the "op" buffer.
+	 * @return The number of output samples written to the "op" buffer. The
+	 * output latency is equal to FuncLenD2Plus1 samples (5 samples with
+	 * 8-sample filter).
 	 */
 
 	int process( const double* ip, double* op, int l )
 	{
 		R8BASSERT( l >= 0 );
-		R8BASSERT( ip != NULL || l == 0 );
-		R8BASSERT( op != NULL );
+		R8BASSERT( ip != op || l == 0 );
 
 		double* const op0 = op;
 
@@ -271,8 +280,11 @@ private:
 		///< filter.
 		///<
 	double Buf[ BufLen * 2 ]; ///< The ring buffer.
+		///<
 	double SrcSampleRate; ///< Source sample rate.
+		///<
 	double DstSampleRate; ///< Destination sample rate.
+		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FuncLenD2Plus1, the interpolation cycle
 		///< ends.
@@ -281,10 +293,15 @@ private:
 		///< with the BufLeft variable.
 		///<
 	int ReadPos; ///< The current buffer read position.
+		///<
 	int InCounter; ///< Interpolation position counter.
+		///<
 	int InPosInt; ///< Interpolation position (integer part).
+		///<
 	double InPosFrac; ///< Interpolation position (fractional part).
+		///<
 	double InPosShift; ///< Interpolation position fractional shift.
+		///<
 
 	CDSPFracInterpolator()
 	{
