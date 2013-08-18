@@ -17,16 +17,9 @@
 
 #include "r8bbase.h"
 
-#if defined( R8B_IPP )
-
-	// Do not forget to call the ippInit() function at the start of the
-	// application.
-
-	#include <ippcore.h>
-	#include <ipps.h>
-#else
+#if !R8B_IPP
 	#include "fft4g.h"
-#endif // R8B_IPP
+#endif // !R8B_IPP
 
 namespace r8b {
 
@@ -40,7 +33,7 @@ namespace r8b {
  * Uses functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
  * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
  *
- * Also uses Intel IPP library functions if available (the R8B_IPP macro was
+ * Also uses Intel IPP library functions if available (the R8B_IPP=1 macro was
  * defined). Note that IPP library's FFT functions are 2-3 times more
  * efficient on the modern Intel i7-3770K processor than Ooura's functions.
  * It may be worthwhile investing in IPP.
@@ -92,7 +85,7 @@ public:
 
 	void forward( double* const p ) const
 	{
-	#if defined( R8B_IPP )
+	#if R8B_IPP
 
 		ippsFFTFwd_RToPerm_64f( p, p, SPtr, WorkBuffer );
 
@@ -112,7 +105,7 @@ public:
 
 	void inverse( double* const p ) const
 	{
-	#if defined( R8B_IPP )
+	#if R8B_IPP
 
 		ippsFFTInv_PermToR_64f( p, p, SPtr, WorkBuffer );
 
@@ -131,13 +124,13 @@ public:
 	 *
 	 * @param ip1 Input data block 1.
 	 * @param ip2 Input data block 2.
-	 * @param[out] op Output data block.
+	 * @param[out] op Output data block, should not be equal to ip1 nor ip2.
 	 */
 
 	void multiplyBlocks( const double* const ip1, const double* const ip2,
 		double* const op ) const
 	{
-		#if defined( R8B_IPP )
+		#if R8B_IPP
 
 			ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op,
 				Size );
@@ -168,7 +161,7 @@ public:
 	 *
 	 * @param ip1 Input data block 1.
 	 * @param ip2 Input data block 2.
-	 * @param[out] op Output data block.
+	 * @param[out] op Output data block, should not be equal to ip1 nor ip2.
 	 */
 
 	void multiplyBlocksAdd( const double* const ip1, const double* const ip2,
@@ -177,7 +170,7 @@ public:
 		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
 
-		#if defined( R8B_IPP )
+		#if R8B_IPP
 
 			ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
 				(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
@@ -211,7 +204,7 @@ public:
 
 	void multiplyBlocks( const double* const ip, double* const op ) const
 	{
-	#if defined( R8B_IPP )
+	#if R8B_IPP
 
 		ippsMulPerm_64f( (Ipp64f*) op, (Ipp64f*) ip, (Ipp64f*) op, Size );
 
@@ -247,7 +240,7 @@ public:
 		p[ 0 ] *= p[ 0 ];
 		p[ 1 ] *= p[ 1 ];
 
-	#if defined( R8B_IPP )
+	#if R8B_IPP
 
 		ippsSqr_64fc( (Ipp64fc*) ( p + 2 ), (Ipp64fc*) ( p + 2 ),
 			( Size >> 1 ) - 1 );
@@ -269,19 +262,27 @@ public:
 
 private:
 	int SizeBits; ///< Size of FFT block (expressed as Nth power of 2).
+		///<
 	int Size; ///< Size of FFT block (number of real values).
+		///<
 	double InvMulConst; ///< Inverse FFT multiply constant.
+		///<
 	CDSPRealFFT* Next; ///< Next object in a singly-linked list.
+		///<
 
 	#if defined( VOX_IPP )
 		IppsFFTSpec_R_64f* SPtr; ///< Pointer to initialized data buffer
 			///< to be passed to IPP's FFT functions.
 			///<
 		CFixedBuffer< uint8_t > SpecBuffer; ///< Working buffer.
+			///<
 		CFixedBuffer< uint8_t > WorkBuffer; ///< Working buffer.
+			///<
 	#else // VOX_IPP
 		CFixedBuffer< int > ip; ///< Working buffer (ints).
+			///<
 		CFixedBuffer< double > w; ///< Working buffer (doubles).
+			///<
 	#endif // VOX_IPP
 
 	/**
@@ -317,6 +318,7 @@ private:
 
 	private:
 		CDSPRealFFT* Object; ///< FFT object being kept.
+			///<
 	};
 
 	CDSPRealFFT()
@@ -458,8 +460,10 @@ public:
 
 private:
 	CDSPRealFFT* Object; ///< FFT object.
+		///<
 
 	static CSyncObject StateSync; ///< FFTObjects synchronizer.
+		///<
 	static CDSPRealFFT :: CObjKeeper FFTObjects[]; ///< Pool of FFT objects of
 		///< various sizes.
 		///<

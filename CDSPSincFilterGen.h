@@ -51,7 +51,7 @@ public:
 		///<
 	int fl2; ///< Internal "half kernel size" value. This value can be used
 		///< as filter's latency in samples (taps), this variable is set after
-		///< the call to one of the init functions.
+		///< the call to one of the "init" functions.
 		///<
 
 	typedef double( CDSPSincFilterGen :: *CWindowFunc )(); ///< Windowing
@@ -66,6 +66,8 @@ public:
 
 	void initBand()
 	{
+		R8BASSERT( Len2 >= 2.0 );
+
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
 		f1.init( Freq1, 2.0, -Freq1 * fl2 );
@@ -89,6 +91,8 @@ public:
 
 	void initHilbert()
 	{
+		R8BASSERT( Len2 >= 2.0 );
+
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
 		f2.init( M_PI, 2.0, ( (double) -fl2 + 0.5 ) * M_PI );
@@ -112,6 +116,8 @@ public:
 
 	void initFrac()
 	{
+		R8BASSERT( Len2 >= 2.0 );
+
 		fl2 = (int) ceil( Len2 );
 		KernelLen = fl2 + fl2;
 		const double fl2b = fl2 - FracDelay;
@@ -171,7 +177,8 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	void generateBand( double* op,
+	template< class T >
+	void generateBand( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		int t = -fl2;
@@ -204,9 +211,12 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	void generateBandPow( double* op, const double p,
+	template< class T >
+	void generateBandPow( T* op, const double p,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
+		R8BASSERT( p > 0.0 );
+
 		int t = -fl2;
 
 		while( t < 0 )
@@ -238,7 +248,8 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	void generateHilbert( double* op,
+	template< class T >
+	void generateHilbert( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		double t = -M_PI * fl2;
@@ -253,7 +264,7 @@ public:
 		}
 
 		*op = 0.0;
-		double* ip = op;
+		T* ip = op;
 		l = fl2;
 
 		while( l > 0 )
@@ -273,9 +284,12 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	void generateFrac( double* op, const int opinc = 1,
+	template< class T >
+	void generateFrac( T* op, const int opinc = 1,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
+		R8BASSERT( opinc > 0 );
+
 		int t = -fl2;
 
 		if( t + FracDelay < -Len2 )
@@ -338,10 +352,15 @@ public:
 
 private:
 	CSineGen f1; ///< Sine function 1.
+		///<
 	CSineGen f2; ///< Sine function 2.
+		///<
 	CSineGen w; ///< Windowing function.
+		///<
 	CSineGen w2; ///< Windowing function 2.
+		///<
 	CSineGen w3; ///< Windowing function 3.
+		///<
 };
 
 } // namespace r8b

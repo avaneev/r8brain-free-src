@@ -15,13 +15,12 @@
  * \section intro_sec Introduction
  *
  * Open source high-quality professional audio sample rate converter (SRC)
- * library. Features routines for realtime SRC (non-realtime conversion is
- * also possible), both up- and down-sampling, from/to any sample rate,
- * including non-integer sample rates. SRC routines were implemented in
- * multi-platform C++ code, and have a high level of optimality. The user can
- * select the transition band/steepness of the low-pass (reconstruction)
- * filter, expressed as a percentage of the full spectral bandwidth, and the
- * desired stop-band attenuation in decibel.
+ * library. Features routines for SRC, both up- and down-sampling, from/to any
+ * sample rate, including non-integer sample rates. SRC routines were
+ * implemented in multi-platform C++ code, and have a high level of
+ * optimality. The user can select the transition band/steepness of the
+ * low-pass (reconstruction) filter, expressed as a percentage of the full
+ * spectral bandwidth, and the desired stop-band attenuation in decibel.
  *
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with minimal performance impact
@@ -238,8 +237,9 @@ public:
  *
  * Fixed memory buffer object. Supports allocation of a fixed amount of
  * memory. Does not store buffer's capacity - the user should know the actual
- * size of the buffer. Does not feature "internal" storage, memory is always
- * allocated via the R8B_MEMALLOCCLASS class's functions.
+ * capacity of the buffer. Does not feature "internal" storage, memory is
+ * always allocated via the R8B_MEMALLOCCLASS class's functions. Thus the
+ * object of this class can be moved in memory.
  *
  * This class manages memory space only - it does not perform element class
  * construction operations.
@@ -328,6 +328,7 @@ public:
 
 private:
 	T* Data; ///< Element buffer pointer.
+		///<
 };
 
 /**
@@ -426,6 +427,7 @@ public:
 
 private:
 	T Object; ///< Pointer to keeped object.
+		///<
 };
 
 /**
@@ -504,11 +506,14 @@ public:
 private:
 	#if defined( VOX_WIN )
 		CRITICAL_SECTION CritSec; ///< Standard Windows critical section
-			/// structure.
+			///< structure.
+			///<
 	#elif defined( VOX_MAC )
 		MPCriticalRegionID CritRegion; ///< Mac OS X critical region object.
+			///<
 	#elif defined( VOX_LNX )
 		pthread_mutex_t Mutex; ///< pthread.h mutex object.
+			///<
 	#endif
 };
 
@@ -566,6 +571,7 @@ public:
 
 protected:
 	CSyncObject* SyncObj; ///< Sync object in use (can be NULL).
+		///<
 };
 
 /**
@@ -644,9 +650,13 @@ struct CSineGen
 
 private:
 	double bias; ///< Value bias.
+		///<
 	double svalue1; ///< Current sine value.
+		///<
 	double svalue2; ///< Previous sine value.
+		///<
 	double sincr; ///< Sine value increment.
+		///<
 };
 
 /**
