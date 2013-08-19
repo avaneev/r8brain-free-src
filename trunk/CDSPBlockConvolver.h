@@ -95,6 +95,41 @@ public:
 	}
 
 	/**
+	 * @return The number of samples that should be passed to *this object
+	 * before the actual output starts. This value includes latencies induced
+	 * by both the convolver and filter.
+	 */
+
+	int getInLenBeforeOutStart() const
+	{
+		return( UpShift == 0 ? Latency : ( Latency + 1 ) >> 1 );
+	}
+
+	/**
+	 * @param MaxInLen The number of samples planned to process at once, at
+	 * most.
+	 * @return The minimal length of the output buffer required when
+	 * processing the "MaxInLen" number of input samples.
+	 */
+
+	int getMaxOutLen( const int MaxInLen ) const
+	{
+		R8BASSERT( MaxInLen >= 0 );
+
+		if( ResamplingMode == CDSPResamplingMode :: rsUpsample2X )
+		{
+			return( MaxInLen * 2 );
+		}
+
+		if( ResamplingMode == CDSPResamplingMode :: rsNone )
+		{
+			return( MaxInLen );
+		}
+
+		return(( MaxInLen + 1 ) >> 1 );
+	}
+
+	/**
 	 * Function performs convolution processing.
 	 *
 	 * @param ip Input data pointer.

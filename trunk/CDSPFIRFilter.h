@@ -35,6 +35,13 @@ class CDSPFIRFilter : public R8B_BASECLASS
 	friend class CDSPFIRFilterCache;
 
 public:
+	~CDSPFIRFilter()
+	{
+		R8BASSERT( RefCount == 0 );
+
+		delete Next;
+	}
+
 	/**
 	 * @return The minimal allowed low-pass filter's transition band, in
 	 * percent.
@@ -82,14 +89,14 @@ public:
 
 	void unref();
 
-//private:
+private:
+	double ReqNormFreq; ///< Required normalized frequency, 0 to 1 inclusive.
+		///<
 	double ReqTransBand; ///< Required transition band in percent, as passed
 		///< by the user.
 		///<
 	double ReqAtten; ///< Required stop-band attenuation in decibel, as passed
 		///< by the user (positive value).
-		///<
-	double ReqNormFreq; ///< Required normalized frequency, 0 to 1 inclusive.
 		///<
 	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
 		///<
@@ -111,13 +118,6 @@ public:
 	{
 	}
 
-	~CDSPFIRFilter()
-	{
-		R8BASSERT( RefCount == 0 );
-
-		delete Next;
-	}
-
 	/**
 	 * Function builds filter kernel based on the ReqTransBand, ReqAtten and
 	 * ReqNormFreq parameters.
@@ -131,46 +131,39 @@ public:
 		// Apply 4-range correction to the "attenuation" for +/- 1 dB
 		// precision, without this correction the error is +/- 3 dB.
 
-/*		if( atten >= -74.491228 )
+		if( atten >= -74.491228 )
 		{
 			double atten_b = 0.0;
 
-			if( atten >= -51.684211 )
+			if( atten >= -50.651267 )
 			{
-				atten_b = -0.829696426211327 * tanh( asinh( exp(
-					45.5128926823736 + atten )));
+				atten_b = 0.699900982886959 * cos( 0.222669162355806 *
+					atten );
 			}
 
-			atten -= 1.60162457719159 * cos( 0.2275932374 * atten ) +
-				0.007760471984 * atten * cos( 0.362404487622517 * atten ) +
-				0.10883971116495 * cos( 0.362404487622517 * atten ) * cos(
-				0.2275932374 * atten ) + ( tb * exp( 0.007760471984 *
-				atten ) - 26.0611670112 ) / atten + 40.7128199336019 * tb *
-				cos( 0.2275932374 * atten ) * exp( 0.007760471984 * atten ) /
-				sqr( atten );
+			atten -= 0.438075758491934 + 1.72682101344218 * cos(
+				0.230227912668262 * atten ) + 0.0102506237901691 * atten *
+				sin( 0.334121655800277 * atten );
 
 			atten -= atten_b;
 		}
 		else
 		if( atten >= -100.491228 )
 		{
-			atten -= 0.000113213237897317 * sqr( atten ) + 0.793550007500516 *
-				sin( 83.0416222478535 * atten ) - 0.350810743965283 -
-				0.0995936726749391 * sin( 0.648821254094537 * atten ) -
-				0.149140276869197 * atan( tb + sin( 82.9028303222071 *
-				atten ));
+			atten -= 2.20298948096653 * cos( 0.400387943600211 * atten ) +
+				0.0162671715330083 * atten * cos( 0.400358395063225 *
+				atten ) - 1.95268707933334 - 0.0263263087274513 * atten;
 		}
 		else
 		{
-			atten -= 12.4234779355465 * sin( 0.0817883700557827 * atten ) *
-				atan2( 2.47589559940658, 0.0817883700557827 * atten ) +
-				0.568973104476937 * sin( -0.123878394587376 * atten ) * atan2(
-				0.0131909300728093 * atten + sin( -0.123878394587376 *
-				atten ), cos( 0.679208894848161 + 0.0962288403966891 *
-				atten )) - 0.118055681608262 - 35.0053725501349 * sin(
-				0.0817883700557827 * atten );
+			atten -= 12.4238553852216 * sin( 0.08178837006 * atten ) * atan2(
+				2.477633394, 0.08178837006 * atten ) + 0.5689731045 * sin(
+				-0.1238783946 * atten ) * atan2( 0.01319093007 * atten + sin(
+				-0.1238783946 * atten ), cos( 0.6821178425 + 0.0962288404 *
+				atten )) - 0.1170035732 - 35.00537255 * sin( 0.08178837006 *
+				atten );
 		}
-*/
+
 		// A set of "magic formulas" that calculate "half-band filter kernel
 		// length" (hl), windowing function's power factor (pwr) and
 		// "-3 dB frequency offset" (fo).
@@ -214,7 +207,6 @@ public:
 			( BlockSize * 2 - sinc.KernelLen ) * sizeof( double ));
 
 		ffto -> forward( KernelBlock );
-//normalizeFIRFilter( &KernelBlock[ 0 ], sinc.KernelLen, 1.0 );
 	}
 };
 
@@ -249,32 +241,33 @@ public:
 	 * required attenuation: the real filter specs can be considered precise,
 	 * "to spec" if the required attenuation is above 95 dB.
 	 *
-	 * @param ReqTransBand Required transition band, in percent of the full
-	 * bandwidth, in the range CDSPFIRFilter::getLPMinTransBand() to
+	 * @param ReqNormFreq Required normalized frequency, in the range 0 to 1,
+	 * inclusive. This is the point after which the stop-band spans.
+	 * @param ReqTransBand Required transition band, in percent of the
+	 * 0 to ReqNormFreq spectral bandwidth, in the range
+	 * CDSPFIRFilter::getLPMinTransBand() to
 	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive. The transition band
-	 * specifies part of the spectrum between the -3 dB and Nyquist points.
-	 * The real resulting -3 dB point varies in the range from -2.98 to
-	 * -3.09 dB, but is generally very close to -3 dB.
+	 * specifies part of the spectrum between the -3 dB and ReqNormFreq
+	 * points. The real resulting -3 dB point varies in the range from -2.98
+	 * to -3.09 dB, but is generally very close to -3 dB.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive. Note that the stop-band attenuation of the resulting filter
 	 * varies in the range +/- 1 decibel in comparison to the required value.
-	 * @param ReqNormFreq Required normalized frequency, in the range 0 to 1,
-	 * inclusive.
 	 * @return A reference to a new or a previously calculated low-pass FIR
 	 * filter object with the required characteristics. A reference count is
 	 * incremented in the returned filter object which should be released
 	 * after use via the CDSPFIRFilter::unref() function.
 	 */
 
-	static CDSPFIRFilter& getLPFilter( const double ReqTransBand,
-		const double ReqAtten, const double ReqNormFreq )
+	static CDSPFIRFilter& getLPFilter( const double ReqNormFreq,
+		const double ReqTransBand, const double ReqAtten )
 	{
+		R8BASSERT( ReqNormFreq >= 0.0 && ReqNormFreq <= 1.0 );
 		R8BASSERT( ReqTransBand >= CDSPFIRFilter::getLPMinTransBand() );
 		R8BASSERT( ReqTransBand <= CDSPFIRFilter::getLPMaxTransBand() );
 		R8BASSERT( ReqAtten >= CDSPFIRFilter::getLPMinAtten() );
 		R8BASSERT( ReqAtten <= CDSPFIRFilter::getLPMaxAtten() );
-		R8BASSERT( ReqNormFreq >= 0.0 && ReqNormFreq <= 1.0 );
 
 		R8BSYNC( StateSync );
 
@@ -283,9 +276,9 @@ public:
 
 		while( CurFilter != NULL )
 		{
-			if( CurFilter -> ReqTransBand == ReqTransBand &&
-				CurFilter -> ReqAtten == ReqAtten &&
-				CurFilter -> ReqNormFreq == ReqNormFreq )
+			if( CurFilter -> ReqNormFreq == ReqNormFreq &&
+				CurFilter -> ReqTransBand == ReqTransBand &&
+				CurFilter -> ReqAtten == ReqAtten )
 			{
 				break;
 			}
@@ -338,9 +331,9 @@ public:
 			// filter kernel.
 
 			CurFilter = new CDSPFIRFilter();
+			CurFilter -> ReqNormFreq = ReqNormFreq;
 			CurFilter -> ReqTransBand = ReqTransBand;
 			CurFilter -> ReqAtten = ReqAtten;
-			CurFilter -> ReqNormFreq = ReqNormFreq;
 			CurFilter -> buildLPFilter();
 			FilterCount++;
 		}

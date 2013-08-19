@@ -252,28 +252,22 @@ public:
 	void generateHilbert( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
-		double t = -M_PI * fl2;
-		int l = fl2;
+		T* op2 = op + fl2 + fl2;
+		int t = -fl2;
 
-		while( l > 0 )
+		while( t < 0 )
 		{
-			*op = ( f2.gen() - 1.0 ) * ( *this.*wfunc )() / t;
+			const double v =
+				( f2.gen() - 1.0 ) * ( *this.*wfunc )() / M_PI / t;
+
+			*op = v;
 			op++;
-			t += M_PI;
-			l--;
+			*op2 = -v;
+			op2--;
+			t++;
 		}
 
 		*op = 0.0;
-		T* ip = op;
-		l = fl2;
-
-		while( l > 0 )
-		{
-			op++;
-			ip--;
-			*op = -*ip;
-			l--;
-		}
 	}
 
 	/**
