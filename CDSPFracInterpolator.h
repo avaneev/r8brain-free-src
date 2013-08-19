@@ -22,15 +22,20 @@ namespace r8b {
  *
  * Class implements storage and initialization of a bank of sinc-based
  * fractional delay filters. The filters are windowed by the Blackman
- * windowing function.
+ * windowing function. The N and Fracs parameters can be varied freely
+ * without breaking the resampler.
+ *
+ * Note: it is not desirable to construct objects of this class on stack due
+ * to its large member data size.
  *
  * @param N Specifies the number of samples (taps) each filter
- * should have. This must be an even value. Instead of using a high N value
- * for higher precision the oversampling should be used in the first place.
+ * should have. This must be an even value, the minimal value for N is 4. To
+ * achieve a higher resampling precision, the oversampling should be used in
+ * the first place instead of using a high N value.
  * @param Fracs The number of fractional delay positions to sample. Using
  * higher values does not increase the overall precision considerably. With
  * N=8 and Fracs=192 the peak group delay error is only 3.33e-6 samples and
- * peak gain error is only 7.92e-5 decibel.
+ * peak gain error is only 7.92e-5 decibel. The minimal value for Fracs is 1.
  */
 
 template< int N, int Fracs >
@@ -113,6 +118,9 @@ protected:
  * samples or the algorithm in its current form will fail. However, this
  * condition can be easily met if the input signal gets downsampled first
  * before the interpolation is performed.
+ *
+ * Note: it is not desirable to construct objects of this class on stack due
+ * to its large member data size.
  */
 
 class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 8, 192 >
@@ -122,8 +130,8 @@ class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 8, 192 >
 public:
 	/**
 	 * Constructor initalizes the interpolator. It is important to call the
-	 * getOutputBufLen() function afterwards to obtain the optimal output
-	 * buffer length.
+	 * getMaxOutLen() function afterwards to obtain the optimal output buffer
+	 * length.
 	 *
 	 * @param aSrcSampleRate Source signal sample rate.
 	 * @param aDstSampleRate Destination signal sample rate.
@@ -152,16 +160,27 @@ public:
 	}
 
 	/**
-	 * @param l The number of samples at most planned to process at once.
-	 * @return The minimal length of the output buffer required when
-	 * processing the "l" number of input samples.
+	 * @return The number of samples that should be passed to *this object
+	 * before the actual output starts.
 	 */
 
-	int getOutputBufLen( const int l ) const
+	int getInLenBeforeOutStart() const
 	{
-		R8BASSERT( l >= 0 );
+		return( FuncLenD2Plus1 );
+	}
 
-		return( (int) ceil( l * DstSampleRate / SrcSampleRate ) + 1 );
+	/**
+	 * @param MaxInLen The number of samples planned to process at once, at
+	 * most.
+	 * @return The minimal length of the output buffer required when
+	 * processing the "MaxInLen" number of input samples.
+	 */
+
+	int getMaxOutLen( const int MaxInLen ) const
+	{
+		R8BASSERT( MaxInLen >= 0 );
+
+		return( (int) ceil( MaxInLen * DstSampleRate / SrcSampleRate ) + 1 );
 	}
 
 	/**
@@ -169,8 +188,9 @@ public:
 	 *
 	 * @param ip Input sample buffer.
 	 * @param[out] op Output sample buffer, the capacity of this buffer should
-	 * be equal to the value returned by the getOutputBufLen() function for
-	 * the given "l". This buffer should not be equal to "ip".
+	 * be equal to the value returned by the getMaxOutLen() function for the
+	 * given "l". This buffer can be equal to "ip" only if the
+	 * getMaxOutLen( l ) function's returned value is lesser than "l".
 	 * @param l The number of samples available in the input sample buffer.
 	 * @return The number of output samples written to the "op" buffer. The
 	 * output latency is equal to FuncLenD2Plus1 samples (5 samples with

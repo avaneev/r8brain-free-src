@@ -15,23 +15,27 @@
  * \section intro_sec Introduction
  *
  * Open source high-quality professional audio sample rate converter (SRC)
- * library. Features routines for SRC, both up- and down-sampling, from/to any
- * sample rate, including non-integer sample rates. SRC routines were
- * implemented in multi-platform C++ code, and have a high level of
+ * library. Features routines for SRC, both up- and down-sampling, to/from any
+ * sample rate, including non-integer sample rates: it can be also used for
+ * converting to/from SACD sample rate and even go beyond that. SRC routines
+ * were implemented in multi-platform C++ code, and have a high level of
  * optimality. The user can select the transition band/steepness of the
  * low-pass (reconstruction) filter, expressed as a percentage of the full
- * spectral bandwidth, and the desired stop-band attenuation in decibel.
+ * spectral bandwidth of the input signal (or the output signal if
+ * downsampling is performed), and the desired stop-band attenuation in
+ * decibel.
  *
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with minimal performance impact
  * due to a high level of reusability of its most "initialization-expensive"
  * objects: the fast Fourier transform and filter response objects.
  *
- * The algorithm at first produces 2X to 3X oversampled signal and then
- * performs fractional delay interpolation using a bank of very short (8 taps)
- * cross-faded FIR filters. This puts the algorithm into the league of the
- * fastest among the most precise SRC algorithms. The more precise alternative
- * being only the whole number-factored SRC, which is slower.
+ * The algorithm at first produces 2X oversampled (relative to the destination
+ * sample rate) signal and then performs fractional delay interpolation using
+ * a bank of very short (8 taps) cross-faded FIR filters. This puts the
+ * algorithm into the league of the fastest among the most precise SRC
+ * algorithms. The more precise alternative being only the whole
+ * number-factored SRC, which is slower.
  *
  * \section license License
  *
