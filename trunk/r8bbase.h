@@ -39,6 +39,70 @@
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
  *
+ * \section requirements Requirements
+ *
+ * C++ compiler and system with the "double" floating point type (53-bit
+ * mantissa) support. No explicit code for the "float" type is present in this
+ * library. However, if the "double" type really represents the "float" type
+ * (24-bit mantissa) in a given compiler, on a given system, the library won't
+ * become broken, only the conversion quality may become degraded. The library
+ * always uses the "sizeof( double )" operator to obtain "double" floating
+ * point type's size in bytes.
+ *
+ * \section usage Usage Information
+ *
+ * The code of the library resides in the "r8b" C++ namespace, effectively
+ * isolating it from all other code. The code is thread-safe. A separate
+ * resampler object should be created for each audio channel or stream being
+ * processed.
+ *
+ * The sample rate converter (resampler) is represented by the
+ * r8b::CDSPResampler class, which is a single front-end class for the whole
+ * library. You do not basically need to use nor understand any other classes
+ * beside this class.
+ *
+ * Note that you will need to compile the "r8bbase.cpp" source file and
+ * include the resulting object file into your application build. This source
+ * file includes definitions of several global static objects used by the
+ * library.
+ *
+ * The code of this library was commented in Doxygen] style. To generate the
+ * documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
+ * command from the library's directory.
+ *
+ * Preliminary tests show that the resampler (at 3% transition band, 96 dB
+ * attenuation, 256 samples input buffer) achieves 9*n_cores Mflops when
+ * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
+ * Intel Core i7-3770K processor-based system without overclocking. This
+ * approximately translates to realtime resampling at 100% CPU load of
+ * 90*n_cores audio streams.
+ * 
+ * \section notes Notes
+ *
+ * The transition band is specified as the normalized spectral space of the
+ * input signal (or the output signal if downsampling is performed) between
+ * filter's -3 dB point and the Nyquist frequency, and ranges from 0.5% to
+ * 25%. Stop-band attenuation can be specified in the range 38 to 170 decibel
+ * (with +/- 1 dB error).
+ *
+ * An extended transition band range from 25% to 45% is also available, but
+ * its parameter errors are higher (+/- 3 dB attenuation error).
+ *
+ * This library was tested for compatibility with GNU C++ 4 and Intel C++
+ * compilers, on 32- and 64-bit Windows, Mac OS X and CentOS Linux.
+ *
+ * All code is fully "inline", without the need to compile many source files.
+ * The memory footprint is quite small ("double" type data):
+ *
+ *  * 165 KB of static memory for fractional delay filters
+ *  * filter memory, per filter (N*8*2, where N is the block size, usually in
+ *    the range 256 to 2048)
+ *  * Ooura's FFT algorithm tables, per channel (N*8)
+ *  * convolver memory, per channel (N*8*5)
+ *  * interpolator memory (8 KB per channel)
+ *  * IO buffers, per channel (proportional to the maximal input buffer length
+ *    and source to destination sample rate ratio)
+ *
  * \section license License
  *
  * The MIT License (MIT)
@@ -67,7 +131,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 0.1
+ * \version 0.1
  */
 
 #ifndef R8BBASE_INCLUDED
