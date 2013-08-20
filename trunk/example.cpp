@@ -21,7 +21,7 @@ int main()
 	CWaveFile outf;
 	outf.inheritFormat( inf );
 	outf.SampleRate = OutSampleRate;
-	outf.saveFile( "Audio2.wav" );
+	outf.saveFile( "AudioOut.wav" );
 
 	const int InBufCapacity = 2048;
 	CFixedBuffer< double > InBufs[ inf.ChannelCount ];

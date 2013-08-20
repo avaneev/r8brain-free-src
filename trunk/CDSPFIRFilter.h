@@ -32,7 +32,6 @@ class CDSPFIRFilter : public R8B_BASECLASS
 {
 	R8BNOCTOR( CDSPFIRFilter );
 
-	friend class CDSPBlockConvolver;
 	friend class CDSPFIRFilterCache;
 
 public:
@@ -81,6 +80,37 @@ public:
 	static double getLPMaxAtten()
 	{
 		return( 170.0 );
+	}
+
+	/**
+	 * @return Filter's block size, espressed as Nth power of 2. The actual
+	 * size is twice higher due to zero-padding.
+	 */
+
+	int getBlockSizeBits() const
+	{
+		return( BlockSizeBits );
+	}
+
+	/**
+	 * @return Filter's latency, in samples.
+	 */
+
+	int getLatency() const
+	{
+		return( Latency );
+	}
+
+	/**
+	 * @return Filter's kernel block, in complex-numbered form obtained via
+	 * the CDSPRealFFT::forward() function call, zero-padded, gain-adjusted
+	 * with the CDSPRealFFT::getInvMulConst() constant, immediately suitable
+	 * for convolution.
+	 */
+
+	const double* getKernelBlock() const
+	{
+		return( KernelBlock );
 	}
 
 	/**

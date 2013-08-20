@@ -109,6 +109,8 @@ public:
 		else
 		{
 			SrcSRMult = 1;
+			SrcSRDiv = 1;
+			ConvCount = 0;
 		}
 
 		Interp = new CDSPFracInterpolator( SrcSampleRate * SrcSRMult /

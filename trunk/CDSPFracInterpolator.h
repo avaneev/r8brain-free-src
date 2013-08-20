@@ -60,10 +60,10 @@ protected:
 		///<
 
 	/**
-	 * \brief Static fractional delay filter table.
+	 * \brief Static fractional delay filter table class.
 	 *
 	 * Static fractional delay filter function table storage and
-	 * initialization object.
+	 * initialization class.
 	 */
 
 	struct CFuncTable
