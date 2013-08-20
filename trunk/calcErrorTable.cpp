@@ -18,50 +18,6 @@
 #include "CDSPFIRFilter.h"
 using namespace r8b;
 
-/**
- * Function calculates frequency response of the specified FIR filter at the
- * specified circular frequency.
- *
- * @param flt FIR filter's coefficients.
- * @param fltlen Number of coefficients (taps) in the filter.
- * @param th Circular frequency (0..pi).
- * @param[out] re0 Resulting real part of the complex frequency response.
- * @param[out] im0 Resulting imaginary part of the complex frequency response.
- */
-
-template< class T >
-inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
-	double& re0, double& im0 )
-{
-	double re = 0.0;
-	double im = 0.0;
-
-	double svalue1 = 0.0;
-	double svalue2 = sin( -th );
-	double sincr = 2.0 * cos( th );
-	double cvalue1 = 1.0;
-	double cvalue2 = sin( M_PI * 0.5 - th );
-
-	while( fltlen > 0 )
-	{
-		re += svalue1 * flt[ 0 ];
-		im += cvalue1 * flt[ 0 ];
-		flt++;
-		fltlen--;
-
-		double tmp = svalue1;
-		svalue1 = sincr * svalue1 - svalue2;
-		svalue2 = tmp;
-
-		tmp = cvalue1;
-		cvalue1 = sincr * cvalue1 - cvalue2;
-		cvalue2 = tmp;
-	}
-
-	re0 = re;
-	im0 = im;
-}
-
 int main()
 {
 	const double MinAtten = CDSPFIRFilter :: getLPMinAtten();
