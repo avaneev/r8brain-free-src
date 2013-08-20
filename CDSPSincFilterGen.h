@@ -2,6 +2,7 @@
 
 /**
  * \file CDSPSincFilterGen.h
+ *
  * \brief Sinc function-based FIR filter generator class.
  *
  * This file includes the CDSPSincFilterGen class implementation that
@@ -73,14 +74,14 @@ public:
 		f1.init( Freq1, 2.0, -Freq1 * fl2 );
 		f2.init( Freq2, 2.0, -Freq2 * fl2 );
 
-		const double wstep = M_PI / Len2;
-		w.init( wstep, 2.0, -wstep * fl2 + M_PI * 0.5 );
+		const double step1 = M_PI / Len2;
+		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 );
 
-		const double wstep2 = wstep + wstep;
-		w2.init( wstep2, 2.0, -wstep2 * fl2 + M_PI * 0.5 );
+		const double step2 = M_2PI / Len2;
+		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 );
 
-		const double wstep3 = wstep2 + wstep;
-		w3.init( wstep3, 2.0, -wstep3 * fl2 + M_PI * 0.5 );
+		const double step3 = M_3PI / Len2;
+		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 );
 	}
 
 	/**
@@ -95,16 +96,15 @@ public:
 
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
-		f2.init( M_PI, 2.0, ( (double) -fl2 + 0.5 ) * M_PI );
 
-		const double wstep = M_PI / Len2;
-		w.init( wstep, 2.0, -wstep * fl2 + M_PI * 0.5 );
+		const double step1 = M_PI / Len2;
+		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 );
 
-		const double wstep2 = wstep + wstep;
-		w2.init( wstep2, 2.0, -wstep2 * fl2 + M_PI * 0.5 );
+		const double step2 = M_2PI / Len2;
+		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 );
 
-		const double wstep3 = wstep2 + wstep;
-		w3.init( wstep3, 2.0, -wstep3 * fl2 + M_PI * 0.5 );
+		const double step3 = M_3PI / Len2;
+		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 );
 	}
 
 	/**
@@ -120,17 +120,15 @@ public:
 
 		fl2 = (int) ceil( Len2 );
 		KernelLen = fl2 + fl2;
-		const double fl2b = fl2 - FracDelay;
-		f2.init( M_PI, 2.0, -M_PI * fl2b );
 
-		const double wstep = M_PI / Len2;
-		w.init( wstep, 2.0, -wstep * fl2b + M_PI * 0.5 );
+		const double step1 = M_PI / Len2;
+		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
 
-		const double wstep2 = wstep + wstep;
-		w2.init( wstep2, 2.0, -wstep2 * fl2b + M_PI * 0.5 );
+		const double step2 = M_2PI / Len2;
+		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
 
-		const double wstep3 = wstep2 + wstep;
-		w3.init( wstep3, 2.0, -wstep3 * fl2b + M_PI * 0.5 );
+		const double step3 = M_3PI / Len2;
+		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
 	}
 
 	/**
@@ -139,7 +137,18 @@ public:
 
 	double calcWindowHann()
 	{
-		return( 0.5 + 0.5 * w.gen() );
+		return( 0.5 + 0.5 * w1.gen() );
+	}
+
+	/**
+	 * @return The next "Hann raised to power 6" windowing function
+	 * coefficient. This windowing function is suitable for fractional delay
+	 * filters.
+	 */
+
+	double calcWindowHann6()
+	{
+		return( sqr( sqr( sqr( calcWindowHann() ))));
 	}
 
 	/**
@@ -148,7 +157,7 @@ public:
 
 	double calcWindowHamming()
 	{
-		return( 0.54 + 0.46 * w.gen() );
+		return( 0.54 + 0.46 * w1.gen() );
 	}
 
 	/**
@@ -157,7 +166,7 @@ public:
 
 	double calcWindowBlackman()
 	{
-		return( 0.42 + 0.5 * w.gen() + 0.08 * w2.gen() );
+		return( 0.42 + 0.5 * w1.gen() + 0.08 * w2.gen() );
 	}
 
 	/**
@@ -166,8 +175,18 @@ public:
 
 	double calcWindowNuttall()
 	{
-		return( 0.355768 + 0.487396 * w.gen() + 0.144232 * w2.gen() +
+		return( 0.355768 + 0.487396 * w1.gen() + 0.144232 * w2.gen() +
 			0.012604 * w3.gen() );
+	}
+
+	/**
+	 * @return The next "Nuttall squared" windowing function coefficient. This
+	 * window is good for high dynamic range spectral analysis.
+	 */
+
+	double calcWindowNuttall2()
+	{
+		return( sqr( calcWindowNuttall() ));
 	}
 
 	/**
@@ -185,7 +204,7 @@ public:
 
 		while( t < 0 )
 		{
-			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / M_PI / t;
+			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / t / M_PI;
 			op++;
 			t++;
 		}
@@ -198,7 +217,7 @@ public:
 		{
 			t++;
 			op++;
-			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / M_PI / t;
+			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / t / M_PI;
 		}
 	}
 
@@ -222,7 +241,7 @@ public:
 		while( t < 0 )
 		{
 			*op = ( f2.gen() - f1.gen() ) * pows( ( *this.*wfunc )(), p ) /
-				M_PI / t;
+				t / M_PI;
 
 			op++;
 			t++;
@@ -237,7 +256,7 @@ public:
 			t++;
 			op++;
 			*op = ( f2.gen() - f1.gen() ) * pows( ( *this.*wfunc )(), p ) /
-				M_PI / t;
+				t / M_PI;
 		}
 	}
 
@@ -252,14 +271,13 @@ public:
 	void generateHilbert( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
+		static const double fvalues[ 2 ] = { 0.0, -2.0 };
 		T* op2 = op + fl2 + fl2;
 		int t = -fl2;
 
 		while( t < 0 )
 		{
-			const double v =
-				( f2.gen() - 1.0 ) * ( *this.*wfunc )() / M_PI / t;
-
+			const double v = fvalues[ t & 1 ] * ( *this.*wfunc )() / t / M_PI;
 			*op = v;
 			op++;
 			*op2 = -v;
@@ -284,11 +302,14 @@ public:
 	{
 		R8BASSERT( opinc > 0 );
 
+		double f[ 2 ];
+		f[ 0 ] = sin( FracDelay * M_PI ) / M_PI;
+		f[ 1 ] = -f[ 0 ];
+
 		int t = -fl2;
 
 		if( t + FracDelay < -Len2 )
 		{
-			f2.gen();
 			( *this.*wfunc )();
 			*op = 0.0;
 			op += opinc;
@@ -297,7 +318,7 @@ public:
 
 		while( t < -1 )
 		{
-			*op = f2.gen() * ( *this.*wfunc )() / M_PI / ( t + FracDelay );
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay );
 			op += opinc;
 			t++;
 		}
@@ -307,12 +328,11 @@ public:
 
 		if( fabs( ut ) < m )
 		{
-			f2.gen();
 			*op = ( *this.*wfunc )();
 		}
 		else
 		{
-			*op = f2.gen() * ( *this.*wfunc )() / M_PI / ut;
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut;
 		}
 
 		op += opinc;
@@ -321,12 +341,11 @@ public:
 
 		if( fabs( ut ) < m )
 		{
-			f2.gen();
 			*op = ( *this.*wfunc )();
 		}
 		else
 		{
-			*op = f2.gen() * ( *this.*wfunc )() / M_PI / ut;
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut;
 		}
 
 		const int mt = fl2 - 2;
@@ -335,13 +354,13 @@ public:
 		{
 			op += opinc;
 			t++;
-			*op = f2.gen() * ( *this.*wfunc )() / M_PI / ( t + FracDelay );
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay );
 		}
 
 		op += opinc;
 		t++;
 		ut = t + FracDelay;
-		*op = ( ut > Len2 ? 0.0 : f2.gen() * ( *this.*wfunc )() / M_PI / ut );
+		*op = ( ut > Len2 ? 0.0 : f[ t & 1 ] * ( *this.*wfunc )() / ut );
 	}
 
 private:
@@ -349,11 +368,11 @@ private:
 		///<
 	CSineGen f2; ///< Sine function 2.
 		///<
-	CSineGen w; ///< Windowing function.
+	CSineGen w1; ///< Cosine wave 1 for windowing function.
 		///<
-	CSineGen w2; ///< Windowing function 2.
+	CSineGen w2; ///< Cosine wave 2 for windowing function.
 		///<
-	CSineGen w3; ///< Windowing function 3.
+	CSineGen w3; ///< Cosine wave 3 for windowing function.
 		///<
 };
 
