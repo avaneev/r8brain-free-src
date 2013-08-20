@@ -2,6 +2,7 @@
 
 /**
  * \file CDSPRealFFT.h
+ *
  * \brief Real-valued FFT transform class.
  *
  * This file includes FFT object implementation. All created FFT objects are
@@ -35,8 +36,9 @@ namespace r8b {
  *
  * Also uses Intel IPP library functions if available (the R8B_IPP=1 macro was
  * defined). Note that IPP library's FFT functions are 2-3 times more
- * efficient on the modern Intel i7-3770K processor than Ooura's functions.
- * It may be worthwhile investing in IPP.
+ * efficient on the modern Intel Core i7-3770K processor than Ooura's
+ * functions. It may be worthwhile investing in IPP. Note, that FFT functions
+ * take less than 20% of the overall sample rate conversion time.
  */
 
 class CDSPRealFFT : public R8B_BASECLASS
@@ -270,7 +272,7 @@ private:
 	CDSPRealFFT* Next; ///< Next object in a singly-linked list.
 		///<
 
-	#if defined( VOX_IPP )
+	#if R8B_IPP
 		IppsFFTSpec_R_64f* SPtr; ///< Pointer to initialized data buffer
 			///< to be passed to IPP's FFT functions.
 			///<
@@ -278,12 +280,12 @@ private:
 			///<
 		CFixedBuffer< uint8_t > WorkBuffer; ///< Working buffer.
 			///<
-	#else // VOX_IPP
+	#else // R8B_IPP
 		CFixedBuffer< int > ip; ///< Working buffer (ints).
 			///<
 		CFixedBuffer< double > w; ///< Working buffer (doubles).
 			///<
-	#endif // VOX_IPP
+	#endif // R8B_IPP
 
 	/**
 	 * A simple class that keeps the pointer to the object and deletes it
@@ -336,13 +338,13 @@ private:
 	CDSPRealFFT( const int aSizeBits )
 		: SizeBits( aSizeBits )
 		, Size( 1 << aSizeBits )
-	#if defined( VOX_IPP )
+	#if R8B_IPP
 		, InvMulConst( 1.0 / (double) Size )
-	#else // VOX_IPP
+	#else // R8B_IPP
 		, InvMulConst( 2.0 / (double) Size )
-	#endif // VOX_IPP
+	#endif // R8B_IPP
 	{
-	#if defined( VOX_IPP )
+	#if R8B_IPP
 
 		int SpecSize;
 		int SpecBufferSize;
@@ -358,13 +360,13 @@ private:
 		ippsFFTInit_R_64f( &SPtr, SizeBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, SpecBuffer, InitBuffer );
 
-	#else // VOX_IPP
+	#else // R8B_IPP
 
 		ip.alloc( (int) ceil( 2.0 + sqrt( (double) ( Size >> 1 ))));
 		ip[ 0 ] = 0;
 		w.alloc( Size >> 1 );
 
-	#endif // VOX_IPP
+	#endif // R8B_IPP
 	}
 
 	~CDSPRealFFT()

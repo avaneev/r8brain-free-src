@@ -1,5 +1,6 @@
 /**
  * \file r8bbase.cpp
+ *
  * \brief C++ file that should be compiled and included into your application.
  *
  * This is a single library file that should be compiled and included into the
@@ -11,6 +12,7 @@
  */
 
 #include "CDSPFIRFilter.h"
+#include "CDSPFracInterpolator.h"
 
 namespace r8b {
 
@@ -19,5 +21,7 @@ CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
 CSyncObject CDSPFIRFilterCache :: StateSync;
 CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
 int CDSPFIRFilterCache :: FilterCount = 0;
+const CDSPFracDelayFilterBank< 40, 1024 > :: CFuncTable
+	CDSPFracDelayFilterBank< 40, 1024 > :: FuncTable;
 
 } // namespace r8b

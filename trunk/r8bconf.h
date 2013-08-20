@@ -3,6 +3,7 @@
 
 /**
  * \file r8bconf.h
+ *
  * \brief The "configuration" inclusion file you can modify.
  *
  * This is the "configuration" inclusion file for the "r8brain-free-src"

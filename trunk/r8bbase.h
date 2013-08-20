@@ -2,6 +2,7 @@
 
 /**
  * \file r8bbase.h
+ *
  * \brief The "base" inclusion file with basic classes and functions.
  *
  * This is the "base" inclusion file for the "r8brain-free-src" sample rate
@@ -12,10 +13,11 @@
  * See the "License.txt" file for license.
  *
  * \mainpage
+ *
  * \section intro_sec Introduction
  *
  * Open source high-quality professional audio sample rate converter (SRC)
- * library. Features routines for SRC, both up- and down-sampling, to/from any
+ * library. Features routines for SRC, both up- and downsampling, to/from any
  * sample rate, including non-integer sample rates: it can be also used for
  * converting to/from SACD sample rate and even go beyond that. SRC routines
  * were implemented in multi-platform C++ code, and have a high level of
@@ -31,10 +33,10 @@
  * objects: the fast Fourier transform and filter response objects.
  *
  * The algorithm at first produces 2X oversampled (relative to the destination
- * sample rate) signal and then performs fractional delay interpolation using
- * a bank of very short (8 taps) cross-faded FIR filters. This puts the
- * algorithm into the league of the fastest among the most precise SRC
- * algorithms. The more precise alternative being only the whole
+ * sample rate) signal and then performs interpolation using a bank of short
+ * (40 taps) spline-interpolated sinc-based fractional delay filters. This
+ * puts the algorithm into the league of the fastest among the most precise
+ * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which is slower.
  *
  * \section license License
@@ -109,6 +111,15 @@ namespace r8b {
 
 	#define M_2PI 6.28318530717958648
 #endif // M_2PI
+
+#if !defined( M_3PI )
+	/**
+	 * The M_3PI macro equals to "3 * pi" constant, fits 53-bit floating point
+	 * mantissa.
+	 */
+
+	#define M_3PI 9.42477796076937972
+#endif // M_3PI
 
 /**
  * A special macro that defines empty copy-constructor and copy operator with
@@ -664,87 +675,6 @@ private:
 };
 
 /**
- * Function normalizes FIR filter so that its frequency response at DC is
- * equal to DCGain.
- *
- * @param[in,out] p Filter coefficients.
- * @param l Filter length.
- * @param DCGain Filter's gain at DC (linear, non-decibel value).
- * @param pstep "p" array step.
- */
-
-template< class T >
-inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
-	const int pstep = 1 )
-{
-	double s = 0.0;
-	T* pp = p;
-	int i = l;
-
-	while( i > 0 )
-	{
-		s += *pp;
-		pp += pstep;
-		i--;
-	}
-
-	s = DCGain / s;
-	pp = p;
-	i = l;
-
-	while( i > 0 )
-	{
-		*pp *= s;
-		pp += pstep;
-		i--;
-	}
-}
-
-/**
- * Function calculates frequency response of the specified FIR filter at the
- * specified circular frequency.
- *
- * @param flt FIR filter's coefficients.
- * @param fltlen Number of coefficients (taps) in the filter.
- * @param th Circular frequency [0; pi].
- * @param[out] re0 Resulting real part of the complex frequency response.
- * @param[out] im0 Resulting imaginary part of the complex frequency response.
- */
-
-template< class T >
-inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
-	double& re0, double& im0 )
-{
-	double re = 0.0;
-	double im = 0.0;
-
-	double svalue1 = 0.0;
-	double svalue2 = sin( -th );
-	double sincr = 2.0 * cos( th );
-	double cvalue1 = 1.0;
-	double cvalue2 = sin( M_PI * 0.5 - th );
-
-	while( fltlen > 0 )
-	{
-		re += svalue1 * flt[ 0 ];
-		im += cvalue1 * flt[ 0 ];
-		flt++;
-		fltlen--;
-
-		double tmp = svalue1;
-		svalue1 = sincr * svalue1 - svalue2;
-		svalue2 = tmp;
-
-		tmp = cvalue1;
-		cvalue1 = sincr * cvalue1 - cvalue2;
-		cvalue2 = tmp;
-	}
-
-	re0 = re;
-	im0 = im;
-}
-
-/**
  * @param v Input value.
  * @return Calculated bit occupancy of the specified input value. Bit
  * occupancy means how many significant lower bits are necessary to store a
@@ -786,6 +716,64 @@ inline int getBitOccupancy( const int v )
 		return(( t = v >> 8 ) ? 8 + OccupancyTable[ t ] :
 			OccupancyTable[ v ]);
 	}
+}
+
+/**
+ * Function normalizes FIR filter so that its frequency response at DC is
+ * equal to DCGain.
+ *
+ * @param[in,out] p Filter coefficients.
+ * @param l Filter length.
+ * @param DCGain Filter's gain at DC (linear, non-decibel value).
+ * @param pstep "p" array step.
+ */
+
+template< class T >
+inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
+	const int pstep = 1 )
+{
+	double s = 0.0;
+	T* pp = p;
+	int i = l;
+
+	while( i > 0 )
+	{
+		s += *pp;
+		pp += pstep;
+		i--;
+	}
+
+	s = DCGain / s;
+	pp = p;
+	i = l;
+
+	while( i > 0 )
+	{
+		*pp *= s;
+		pp += pstep;
+		i--;
+	}
+}
+
+/**
+ * Function calculates coefficients used to calculate 4-point Hermite spline
+ * function of 3rd order.
+ *
+ * @param c Output coefficients buffer, length = 4.
+ * @param xm1 Point at x-1 position.
+ * @param x0 Point at x position.
+ * @param x1 Point at x+1 position.
+ * @param x2 Point at x+2 position.
+ */
+
+template< class T, class T2 >
+inline void calcHermiteCoeffs( T* c, const T2 xm1, const T2 x0, const T2 x1,
+	const T2 x2 )
+{
+	c[ 0 ] = x0;
+	c[ 1 ] = 0.5 * ( x1 - xm1 );
+	c[ 2 ] = xm1 - 2.5 * x0 + x1 + x1 - 0.5 * x2;
+	c[ 3 ] = 0.5 * ( x2 - xm1 ) + 1.5 * ( x0 - x1 );
 }
 
 #if !defined( min )

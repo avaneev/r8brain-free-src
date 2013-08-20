@@ -2,6 +2,7 @@
 
 /**
  * \file CDSPFracInterpolator.h
+ *
  * \brief Fractional delay interpolator and filter bank classes.
  *
  * This file includes fractional delay interpolator class.
@@ -21,68 +22,31 @@ namespace r8b {
  * \brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
- * fractional delay filters. The filters are windowed by the Blackman
- * windowing function. The N and Fracs parameters can be varied freely
- * without breaking the resampler.
+ * fractional delay filters, expressed as 4-point Hermite spline coefficients
+ * of 3rd order. The filters are windowed by the Hann^6 windowing function.
+ * The N and Fracs parameters can be varied freely without breaking the
+ * resampler.
  *
- * Note: it is not desirable to construct objects of this class on stack due
- * to its large member data size.
- *
- * @param N Specifies the number of samples (taps) each filter
- * should have. This must be an even value, the minimal value for N is 4. To
- * achieve a higher resampling precision, the oversampling should be used in
- * the first place instead of using a high N value.
- * @param Fracs The number of fractional delay positions to sample. Using
- * higher values does not increase the overall precision considerably. With
- * N=8 and Fracs=192 the peak group delay error is only 3.33e-6 samples and
- * peak gain error is only 7.92e-5 decibel. The minimal value for Fracs is 1.
+ * @param N Specifies the number of samples (taps) each filter should have.
+ * This must be an even value, the minimal value for N is 4. To achieve a
+ * higher resampling precision, the oversampling should be used in the first
+ * place instead of using a higher N value.
+ * @param Fracs The number of fractional delay positions to sample. This do
+ * not have to be a high value since spline interpolation provides a good
+ * match. 1024 covers the most demanding precision requirement. For image
+ * resizing this value can be set to a lower value.
  */
 
 template< int N, int Fracs >
 class CDSPFracDelayFilterBank : public R8B_BASECLASS
 {
-public:
-	CDSPFracDelayFilterBank()
-	{
-		R8BASSERT( N >= 4 );
-		R8BASSERT( Fracs > 0 );
-
-		CDSPSincFilterGen sinc;
-		sinc.Len2 = FuncLenD2;
-		sinc.FracDelay = 1.0;
-
-		double* p = &FuncTable[ 0 ];
-		sinc.initFrac();
-		sinc.generateFrac( p, 2 );
-		normalizeFIRFilter( p, FuncLen, 1.0, 2 );
-		p += FuncLen2;
-
-		int i;
-
-		for( i = 1; i <= FuncFrac; i++ )
-		{
-			sinc.FracDelay = (double) ( FuncFrac - i ) / FuncFrac;
-			sinc.initFrac();
-			sinc.generateFrac( p, 2 );
-			normalizeFIRFilter( p, FuncLen, 1.0, 2 );
-
-			int z;
-
-			for( z = 0; z < FuncLen; z++ )
-			{
-				// Calculate delta between adjacent fractional delay filters.
-
-				p[ 1 - FuncLen2 ] = p[ 0 ] - p[ -FuncLen2 ];
-				p += 2;
-			}
-		}
-	}
-
 protected:
 	static const int FuncLen = N; ///< Fractional delay function length in
 		///< samples (taps).
 		///<
 	static const int FuncLen2 = FuncLen << 1; ///< = FuncLen * 2.
+		///<
+	static const int FuncLen4 = FuncLen << 2; ///< = FuncLen * 4.
 		///<
 	static const int FuncLenD2 = FuncLen >> 1; ///< = FuncLen / 2.
 		///<
@@ -94,9 +58,78 @@ protected:
 	static const int FuncFrac = Fracs; ///< The number of fractional sample
 		///< positions to use.
 		///<
-	double FuncTable[ FuncLen2 * ( FuncFrac + 1 )]; ///< Table of fractional
-		///< delay functions for all discrete fractional x = 0..1 sample
-		///< positions, and deltas between adjacent functions.
+
+	/**
+	 * \brief Static fractional delay filter table.
+	 *
+	 * Static fractional delay filter function table storage and
+	 * initialization object.
+	 */
+
+	struct CFuncTable
+	{
+		double FuncTable[ FuncLen4 * ( FuncFrac + 4 )]; ///< Table of
+			///< fractional delay functions for all discrete fractional x =
+			///< 0..1 sample positions, and 3rd order Hermite spline
+			///< interpolation coefficients.
+			///<
+
+		double& operator []( const int i )
+		{
+			return( FuncTable[ i ]);
+		}
+
+		const double& operator []( const int i ) const
+		{
+			return( FuncTable[ i ]);
+		}
+
+		CFuncTable()
+		{
+			R8BASSERT( N >= 4 );
+			R8BASSERT( Fracs > 0 );
+
+			CDSPSincFilterGen sinc;
+			sinc.Len2 = FuncLenD2;
+
+			double* p = (double*) FuncTable;
+			int i;
+
+			for( i = -1; i <= FuncFrac + 2; i++ )
+			{
+				sinc.FracDelay = (double) ( FuncFrac - i ) / FuncFrac;
+				sinc.initFrac();
+				sinc.generateFrac( p, 4,
+					&CDSPSincFilterGen :: calcWindowHann6 );
+
+				normalizeFIRFilter( p, FuncLen, 1.0, 4 );
+				p += FuncLen4;
+			}
+
+			// Calculate Hermite spline interpolation coefficients.
+
+			p = FuncTable;
+			const int FuncPos2 = FuncLen4;
+			const int FuncPos3 = FuncLen4 * 2;
+			const int FuncPos4 = FuncLen4 * 3;
+
+			for( i = 0; i <= FuncFrac; i++ )
+			{
+				int l = FuncLen;
+
+				while( l > 0 )
+				{
+					calcHermiteCoeffs( p, p[ 0 ], p[ FuncPos2 ],
+						p[ FuncPos3 ], p[ FuncPos4 ]);
+
+					p += 4;
+					l--;
+				}
+			}
+		}
+	};
+
+	static const CFuncTable FuncTable; ///< Static function table object.
 		///<
 };
 
@@ -105,10 +138,10 @@ protected:
  *
  * Class implements the fractional delay interpolator. This implementation at
  * first puts the input signal into a ring buffer and then performs
- * interpolation. The interpolation is performed using very short (8 taps)
+ * interpolation. The interpolation is performed using short (40 taps)
  * sinc-based fractional delay filters. These filters are contained in a bank,
- * and for the sake of higher precision two close filters are crossfaded to
- * achieve an even higher precision.
+ * and for higher precision they are interpolated between adjacent filters via
+ * 4-point Hermite spline interpolation of 3rd order.
  *
  * To increase sample timing precision, this class uses "resettable counter"
  * approach. This gives less than "1 per 100 billion" sample timing error when
@@ -116,14 +149,11 @@ protected:
  *
  * VERY IMPORTANT: the interpolation step should not exceed FuncLenD2Plus1
  * samples or the algorithm in its current form will fail. However, this
- * condition can be easily met if the input signal gets downsampled first
- * before the interpolation is performed.
- *
- * Note: it is not desirable to construct objects of this class on stack due
- * to its large member data size.
+ * condition can be easily met if the input signal is downsampled first before
+ * the interpolation is performed.
  */
 
-class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 8, 192 >
+class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 40, 1024 >
 {
 	R8BNOCTOR( CDSPFracInterpolator );
 
@@ -234,23 +264,17 @@ public:
 				const int fti = (int) x; // Function table index.
 				x -= fti; // Coefficient for cross-fade between adjacent
 					// fractional delay filters.
-				const double* const ftp = &FuncTable[ fti * FuncLen2 ];
+				const double x2 = x * x;
+				const double x3 = x2 * x;
+				const double* const ftp = &FuncTable[ fti * FuncLen4 ];
 				const double* const rp = Buf + ReadPos;
-
-/*				*op = ( ftp[ 0 ] + ftp[ 1 ] * x ) * rp[ 0 ] +
-					( ftp[  2 ] + ftp[  3 ] * x ) * rp[ 1 ] +
-					( ftp[  4 ] + ftp[  5 ] * x ) * rp[ 2 ] +
-					( ftp[  6 ] + ftp[  7 ] * x ) * rp[ 3 ] +
-					( ftp[  8 ] + ftp[  9 ] * x ) * rp[ 4 ] +
-					( ftp[ 10 ] + ftp[ 11 ] * x ) * rp[ 5 ] +
-					( ftp[ 12 ] + ftp[ 13 ] * x ) * rp[ 6 ] +
-					( ftp[ 14 ] + ftp[ 15 ] * x ) * rp[ 7 ];*/
-
 				double s = 0.0;
 
 				for( i = 0; i < FuncLen; i++ )
 				{
-					s += ( ftp[ i * 2 ] + ftp[ i * 2 + 1 ] * x ) * rp[ i ];
+					const int ii = i * 4;
+					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
+						ftp[ ii + 2 ] * x2 + ftp[ ii + 3 ] * x3 ) * rp[ i ];
 				}
 
 				*op = s;
