@@ -88,7 +88,7 @@ public:
 		int SrcSRDiv;
 		int MaxOutLen = MaxInLen;
 
-		if( DstSampleRate * 2.0 > SrcSampleRate )
+		if( DstSampleRate * 2 > SrcSampleRate )
 		{
 			// Only a single convolver with 2X upsampling is required.
 
@@ -98,11 +98,11 @@ public:
 			const double NormFreq = ( DstSampleRate >= SrcSampleRate ? 0.5 :
 				0.5 * DstSampleRate / SrcSampleRate );
 
-			ConvCount = 1;
 			Convs[ 0 ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
 				ReqAtten ), CDSPResamplingMode :: rsUpsample2X );
 
+			ConvCount = 1;
 			ConvBuffer.alloc( MaxInLen * 2 );
 			MaxOutLen = Convs[ 0 ] -> getMaxOutLen( MaxOutLen );
 		}
@@ -111,10 +111,30 @@ public:
 			SrcSRMult = 1;
 			SrcSRDiv = 1;
 			ConvCount = 0;
+
+			while( DstSampleRate * 4 * SrcSRDiv <= SrcSampleRate )
+			{
+				Convs[ ConvCount ] = new CDSPBlockConvolver(
+					CDSPFIRFilterCache :: getLPFilter( 0.5, 34, ReqAtten ),
+					CDSPResamplingMode :: rsDownsample2X );
+
+				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
+				ConvCount++;
+				SrcSRDiv *= 2;
+			}
+
+			const double NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
+
+			Convs[ ConvCount ] = new CDSPBlockConvolver(
+				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
+				ReqAtten ), CDSPResamplingMode :: rsNone );
+
+			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
+			ConvCount++;
 		}
 
-		Interp = new CDSPFracInterpolator( SrcSampleRate * SrcSRMult /
-			SrcSRDiv, DstSampleRate );
+		Interp = new CDSPFracInterpolator(
+			SrcSampleRate * SrcSRMult / SrcSRDiv, DstSampleRate );
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
@@ -169,7 +189,7 @@ public:
 	}
 
 private:
-	CPtrKeeper< CDSPBlockConvolver* > Convs[ 8 ]; ///< 8 convolvers with the
+	CPtrKeeper< CDSPBlockConvolver* > Convs[ 7 ]; ///< 7 convolvers with the
 		///< built-in 2x downsampling is enough for 256x downsampling.
 		///<
 	int ConvCount; ///< The number of objects defined in the Convs[] array.

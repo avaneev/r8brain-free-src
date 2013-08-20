@@ -5,7 +5,8 @@
  *
  * This is an example file which you won't be able to compile as it includes
  * some undisclosed program code. Please consider this example as a
- * pseudo-code demonstrating the use of the library.
+ * pseudo-code demonstrating the use of the library. Here you can find an
+ * example implementation of the simplest sample rate converter utility.
  *
  * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
  * See the "License.txt" file for license.
@@ -34,7 +35,7 @@ int main()
 		InBufs[ i ].alloc( InBufCapacity );
 
 		Resamps[ i ] = new CDSPResampler( inf.SampleRate, OutSampleRate,
-			2, 96, InBufCapacity );
+			3, 96, InBufCapacity );
 	}
 
 	int64_t ol = inf.SampleCount * OutSampleRate / inf.SampleRate;
@@ -56,15 +57,16 @@ int main()
 
 		const int b = (int) ( ol < ReadCount ? ol : ReadCount );
 		double* opp[ inf.ChannelCount ];
-		int wc;
+		int WriteCount; // At initial steps can be equal to 0 after resampler.
+			// Same number for all channels.
 
 		for( i = 0; i < inf.ChannelCount; i++ )
 		{
-			wc = Resamps[ i ] -> process( InBufs[ i ], b, opp[ i ]);
+			WriteCount = Resamps[ i ] -> process( InBufs[ i ], b, opp[ i ]);
 		}
 
-		outf.writeData( opp, wc );
-		ol -= wc;
+		outf.writeData( opp, WriteCount );
+		ol -= WriteCount;
 	}
 
 	outf.finalize();
