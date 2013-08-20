@@ -37,7 +37,7 @@
  * (40 taps) spline-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
- * number-factored SRC, which is slower.
+ * number-factored SRC, which can be slower.
  *
  * \section license License
  *

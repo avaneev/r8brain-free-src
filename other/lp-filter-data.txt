@@ -1,4 +1,4 @@
-Data set for transition bands 0.5%..22%
+Data set for transition bands 0.5%..25%
 ---------------------------------------
 
 Precise "fo", "hl" and "pwr" values for the specified "transition band" and

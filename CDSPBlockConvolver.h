@@ -67,12 +67,12 @@ public:
 		const CDSPResamplingMode aResamplingMode =
 		CDSPResamplingMode :: rsNone )
 		: Filter( &aFilter )
-		, ffto( Filter -> BlockSizeBits + 1 )
+		, ffto( Filter -> getBlockSizeBits() + 1 )
 		, ResamplingMode( aResamplingMode )
 		, UpShift( ResamplingMode ==
 			CDSPResamplingMode :: rsUpsample2X ? 1 : 0 )
-		, BlockSize( 1 << Filter -> BlockSizeBits )
-		, Latency( BlockSize + Filter -> Latency )
+		, BlockSize( 1 << Filter -> getBlockSizeBits() )
+		, Latency( BlockSize + Filter -> getLatency() )
 	{
 		const int bs = BlockSize * (int) sizeof( double );
 
@@ -176,7 +176,7 @@ public:
 			memcpy( op, &CurOutput[ Offs ], b * sizeof( double ));
 
 			ffto -> forward( CurInput );
-			ffto -> multiplyBlocks( Filter -> KernelBlock, CurInput );
+			ffto -> multiplyBlocks( Filter -> getKernelBlock(), CurInput );
 			ffto -> inverse( CurInput );
 
 			double* const tmp = CurInput;
