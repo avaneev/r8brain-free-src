@@ -43,7 +43,7 @@ int main()
 	while( ol > 0 )
 	{
 		int ReadCount;
-		VOXCHECK( inf.readData( InBufs, InBufCapacity, ReadCount ));
+		inf.readData( InBufs, InBufCapacity, ReadCount );
 
 		if( ReadCount == -1 )
 		{

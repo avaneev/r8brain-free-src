@@ -85,7 +85,7 @@ public:
 		R8BASSERT( MaxInLen >= 0 );
 
 		int SrcSRMult;
-		int SrcSRDiv;
+		int SrcSRDiv = 1;
 		int MaxOutLen = MaxInLen;
 
 		if( DstSampleRate * 2 > SrcSampleRate )
@@ -93,7 +93,6 @@ public:
 			// Only a single convolver with 2X upsampling is required.
 
 			SrcSRMult = 2;
-			SrcSRDiv = 1;
 
 			const double NormFreq = ( DstSampleRate >= SrcSampleRate ? 0.5 :
 				0.5 * DstSampleRate / SrcSampleRate );
@@ -109,7 +108,6 @@ public:
 		else
 		{
 			SrcSRMult = 1;
-			SrcSRDiv = 1;
 			ConvCount = 0;
 
 			while( DstSampleRate * 4 * SrcSRDiv <= SrcSampleRate )

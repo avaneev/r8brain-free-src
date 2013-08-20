@@ -24,8 +24,8 @@ namespace r8b {
  *
  * Class that implements calculation and storing of a FIR filter (currently
  * contains low-pass filter calculation routines designed for sample rate
- * conversion. Objects of this class cannot be created directly, but can be
- * obtained via the CDSPFilterCache object.
+ * conversion). Objects of this class cannot be created directly, but can be
+ * obtained via the CDSPFilterCache::getLPFilter() static function.
  */
 
 class CDSPFIRFilter : public R8B_BASECLASS
@@ -84,7 +84,7 @@ public:
 
 	/**
 	 * @return Filter's block size, espressed as Nth power of 2. The actual
-	 * size is twice higher due to zero-padding.
+	 * size is twice as large due to zero-padding.
 	 */
 
 	int getBlockSizeBits() const
