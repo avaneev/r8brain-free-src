@@ -24,9 +24,9 @@ namespace r8b {
 
 enum CDSPResamplingMode
 {
-	rsNone = 0, ///< No resampling.
-	rsUpsample2X, ///< 2x upsampling.
-	rsDownsample2X ///< 2x downsampling.
+	rsmNone = 0, ///< No resampling.
+	rsmUpsample2X, ///< 2x upsampling.
+	rsmDownsample2X ///< 2x downsampling.
 };
 
 /**
@@ -64,13 +64,11 @@ public:
 	 */
 
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,
-		const CDSPResamplingMode aResamplingMode =
-		CDSPResamplingMode :: rsNone )
+		const CDSPResamplingMode aResamplingMode = rsmNone )
 		: Filter( &aFilter )
 		, ffto( Filter -> getBlockSizeBits() + 1 )
 		, ResamplingMode( aResamplingMode )
-		, UpShift( ResamplingMode ==
-			CDSPResamplingMode :: rsUpsample2X ? 1 : 0 )
+		, UpShift( ResamplingMode == rsmUpsample2X ? 1 : 0 )
 		, BlockSize( 1 << Filter -> getBlockSizeBits() )
 		, Latency( BlockSize + Filter -> getLatency() )
 	{
@@ -117,12 +115,12 @@ public:
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
-		if( ResamplingMode == CDSPResamplingMode :: rsUpsample2X )
+		if( ResamplingMode == rsmUpsample2X )
 		{
 			return( MaxInLen * 2 );
 		}
 
-		if( ResamplingMode == CDSPResamplingMode :: rsNone )
+		if( ResamplingMode == rsmNone )
 		{
 			return( MaxInLen );
 		}
@@ -135,11 +133,11 @@ public:
 	 *
 	 * @param ip Input data pointer.
 	 * @param[out] op0 Output data pointer (can be equal to "ip" only if
-	 * rsNone or rsDownsample2X resampling mode is used). On function's exit
+	 * rsmNone or rsmDownsample2X resampling mode is used). On function's exit
 	 * this variable will point to the actual output data within the output
-	 * buffer. The length of the output buffer if resampling mode rsUpsample2X
-	 * is used should be twice as large as the input buffer. If rsDownsample2X
-	 * is used the size should be equal to "l0 / 2 + 1".
+	 * buffer. The length of the output buffer if resampling mode
+	 * rsmUpsample2X is used should be twice as large as the input buffer. If
+	 * rsmDownsample2X is used the size should be equal to "l0 / 2 + 1".
 	 * @param l0 How many samples to process.
 	 * @return The number of output samples available after processing. This
 	 * value can be smaller in comparison to the original "l0" value due to
@@ -201,7 +199,7 @@ public:
 			LatencyLeft = 0;
 		}
 
-		if( ResamplingMode == CDSPResamplingMode :: rsDownsample2X && l0 > 0 )
+		if( ResamplingMode == rsmDownsample2X && l0 > 0 )
 		{
 			// Perform quick 2x downsampling.
 
