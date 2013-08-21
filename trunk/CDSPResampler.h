@@ -99,7 +99,7 @@ public:
 
 			Convs[ 0 ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten ), CDSPResamplingMode :: rsUpsample2X );
+				ReqAtten ), rsmUpsample2X );
 
 			ConvCount = 1;
 			ConvBuffer.alloc( MaxInLen * 2 );
@@ -114,7 +114,7 @@ public:
 			{
 				Convs[ ConvCount ] = new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 0.5, 34, ReqAtten ),
-					CDSPResamplingMode :: rsDownsample2X );
+					rsmDownsample2X );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 				ConvCount++;
@@ -125,7 +125,7 @@ public:
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten ), CDSPResamplingMode :: rsNone );
+				ReqAtten ), rsmNone );
 
 			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 			ConvCount++;

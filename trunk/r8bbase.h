@@ -88,7 +88,7 @@
  * An extended transition band range from 25% to 45% is also available, but
  * its parameter errors are higher (+/- 3 dB attenuation error).
  *
- * This library was tested for compatibility with GNU C++ 4 and Intel C++
+ * This library was tested for compatibility with GNU C++ and Intel C++
  * compilers, on 32- and 64-bit Windows, Mac OS X and CentOS Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
@@ -131,7 +131,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.1
+ * \version 0.2
  */
 
 #ifndef R8BBASE_INCLUDED

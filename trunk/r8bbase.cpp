@@ -21,7 +21,10 @@ CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
 CSyncObject CDSPFIRFilterCache :: StateSync;
 CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
 int CDSPFIRFilterCache :: FilterCount = 0;
+
+template<>
 const CDSPFracDelayFilterBank< 40, 1024 > :: CFuncTable
-	CDSPFracDelayFilterBank< 40, 1024 > :: FuncTable;
+	CDSPFracDelayFilterBank< 40, 1024 > :: FuncTable =
+	CDSPFracDelayFilterBank< 40, 1024 > :: CFuncTable();
 
 } // namespace r8b
