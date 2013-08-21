@@ -55,14 +55,19 @@ int main()
 			}
 		}
 
-		const int b = (int) ( ol < ReadCount ? ol : ReadCount );
 		double* opp[ inf.ChannelCount ];
-		int WriteCount; // At initial steps can be equal to 0 after resampler.
-			// Same number for all channels.
+		int WriteCount; // At initial steps this variable can be equal to 0
+			// after resampler. Same number for all channels.
 
 		for( i = 0; i < inf.ChannelCount; i++ )
 		{
-			WriteCount = Resamps[ i ] -> process( InBufs[ i ], b, opp[ i ]);
+			WriteCount = Resamps[ i ] -> process(
+				InBufs[ i ], ReadCount, opp[ i ]);
+		}
+
+		if( WriteCount > ol )
+		{
+			WriteCount = ol;
 		}
 
 		outf.writeData( opp, WriteCount );
