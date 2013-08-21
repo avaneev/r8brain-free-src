@@ -34,7 +34,7 @@ namespace r8b {
  * @param Fracs The number of fractional delay positions to sample. This do
  * not have to be a high value since spline interpolation provides a good
  * match. 1024 covers the most demanding precision requirement. For image
- * resizing this value can be set to a lower value.
+ * resizing this value can be set to a much lower value (e.g. N=10, Fracs=64).
  */
 
 template< int N, int Fracs >
@@ -134,7 +134,7 @@ protected:
 };
 
 /**
- * \brief Fractional delay interpolator class.
+ * \brief Fractional delay filter-based interpolator class.
  *
  * Class implements the fractional delay interpolator. This implementation at
  * first puts the input signal into a ring buffer and then performs
@@ -338,7 +338,7 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
-	int InCounter; ///< Interpolation position counter.
+	int InCounter; ///< Interpolation step counter.
 		///<
 	int InPosInt; ///< Interpolation position (integer part).
 		///<

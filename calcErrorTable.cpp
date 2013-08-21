@@ -40,7 +40,7 @@ int main()
 			CDSPFIRFilter& f =
 				CDSPFIRFilterCache :: getLPFilter( 0.5, tb, atten );
 
-			// Perform inverse FFT to obtain time-domain filter response.
+			// Perform inverse FFT to obtain time-domain FIR filter.
 
 			CDSPRealFFTKeeper ffto( f.getBlockSizeBits() + 1 );
 			CFixedBuffer< double > Kernel( 2 << f.getBlockSizeBits() );

@@ -30,7 +30,7 @@
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with minimal performance impact
  * due to a high level of reusability of its most "initialization-expensive"
- * objects: the fast Fourier transform and filter response objects.
+ * objects: the fast Fourier transform and FIR filter objects.
  *
  * The algorithm at first produces 2X oversampled (relative to the destination
  * sample rate) signal and then performs interpolation using a bank of short
@@ -74,19 +74,22 @@
  * attenuation, 256 samples input buffer) achieves 9*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-3770K processor-based system without overclocking. This
- * approximately translates to realtime resampling at 100% CPU load of
- * 90*n_cores audio streams.
+ * approximately translates to realtime resampling of 90*n_cores audio
+ * streams, at 100% CPU load.
  * 
  * \section notes Notes
  *
  * The transition band is specified as the normalized spectral space of the
  * input signal (or the output signal if downsampling is performed) between
  * filter's -3 dB point and the Nyquist frequency, and ranges from 0.5% to
- * 25%. Stop-band attenuation can be specified in the range 38 to 170 decibel
+ * 25%. Stop-band attenuation can be specified in the range 38 to 220 decibel
  * (with +/- 1 dB error).
  *
  * An extended transition band range from 25% to 45% is also available, but
  * its parameter errors are higher (+/- 3 dB attenuation error).
+ *
+ * This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
+ * 4X, 8X, 16X, etc. upsampling and downsampling).
  *
  * This library was tested for compatibility with GNU C++ and Intel C++
  * compilers, on 32- and 64-bit Windows, Mac OS X and CentOS Linux.
@@ -131,7 +134,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.2
+ * \version 0.3
  */
 
 #ifndef R8BBASE_INCLUDED
