@@ -28,10 +28,6 @@ namespace r8b {
  * front-end class to perform sample rate conversion to/from any sample rate,
  * including non-integer sample rates.
  *
- * Note that, even if technically possible, resampling should not be performed
- * if the source and destination sample rates are equal since the low-pass
- * pass (reconstruction) filter is always applied to the signal.
- *
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size.
  */
@@ -56,8 +52,30 @@ public:
 	 * beyond human perception. When upsampling 88200 or 96000 audio to higher
 	 * sample rates the ReqTransBand can be considerably increased, up to 20.
 	 *
+	 * It should be noted that ReqAtten specifies the minimal difference
+	 * between the loudest input signal component and the produced aliasing
+	 * artifacts during resampling. For example, if ReqAtten=96 was specified
+	 * when performing 2x upsampling, the further analysis of the resulting
+	 * signal may display high-frequency components which are quieter than the
+	 * loudest part of the input signal by only 96 decibel. The high-frequency
+	 * part won't become "magically" completely silent lean after resampling.
+	 * You have to specify higher ReqAtten values if you need a totally clean
+	 * high-frequency content. On the other hand, it may not be reasonable to
+	 * have a high-frequency content cleaner than the input signal itself: if
+	 * the input signal is 16-bit, setting ReqAtten to 144 will make its
+	 * high-frequency content 24-bit, but the original part of the signal will
+	 * remain 16-bit.
+	 *
 	 * @param SrcSampleRate Source signal sample rate.
-	 * @param DstSampleRate Destination signal sample rate.
+	 * @param DstSampleRate Destination signal sample rate. The "power of 2"
+	 * ratios between the source and destination sample rates force resampler
+	 * to use several fast "power of 2" resampling steps, without using
+	 * fractional interpolation at all. Note that the "power of 2" upsampling
+	 * (but not downsampling) requires a lot of buffer memory: e.g. upsampling
+	 * by a factor of 16 requires an intermediate buffer MaxInLen*(16+8)
+	 * samples long. So, when doing the "power of 2" upsampling it is highly
+	 * recommended to do it in small steps, e.g. no more than 256 samples at
+	 * once (also set MaxInLen to 256).
 	 * @param ReqTransBand Required transition band, in percent of the
 	 * spectral space of the input signal (or the output signal if
 	 * downsampling is performed) between filter's -3 dB point and the Nyquist
@@ -84,17 +102,23 @@ public:
 		R8BASSERT( DstSampleRate > 0.0 );
 		R8BASSERT( MaxInLen >= 0 );
 
+		if( SrcSampleRate == DstSampleRate )
+		{
+			ConvCount = 0;
+			return;
+		}
+
 		int SrcSRMult;
 		int SrcSRDiv = 1;
 		int MaxOutLen = MaxInLen;
+		int ConvBufCapacities[ 2 ];
 
 		if( DstSampleRate * 2 > SrcSampleRate )
 		{
 			// Only a single convolver with 2X upsampling is required.
 
 			SrcSRMult = 2;
-
-			const double NormFreq = ( DstSampleRate >= SrcSampleRate ? 0.5 :
+			const double NormFreq = ( DstSampleRate > SrcSampleRate ? 0.5 :
 				0.5 * DstSampleRate / SrcSampleRate );
 
 			Convs[ 0 ] = new CDSPBlockConvolver(
@@ -102,33 +126,108 @@ public:
 				ReqAtten ), rsmUpsample2X );
 
 			ConvCount = 1;
-			ConvBuffer.alloc( MaxInLen * 2 );
 			MaxOutLen = Convs[ 0 ] -> getMaxOutLen( MaxOutLen );
+			ConvBufCapacities[ 0 ] = MaxOutLen;
+
+			// Find if the destination to source sample rate ratio is
+			// a "power of 2" value.
+
+			int UseConvCount = 1;
+
+			while( true )
+			{
+				const double TestSR = SrcSampleRate * ( 1 << UseConvCount );
+
+				if( TestSR > DstSampleRate )
+				{
+					UseConvCount = 0; // Power of 2 not found.
+					break;
+				}
+
+				if( TestSR == DstSampleRate )
+				{
+					break; // Power of 2 found.
+				}
+
+				UseConvCount++;
+			}
+
+			if( UseConvCount > 0 )
+			{
+				R8BASSERT( UseConvCount <= ConvCountMax );
+
+				ConvBufCapacities[ 1 ] = 0;
+				ConvCount = UseConvCount;
+				int i;
+
+				for( i = 1; i < UseConvCount; i++ )
+				{
+					const double tb = ( i >= 2 ? 48 : 34 );
+
+					Convs[ i ] = new CDSPBlockConvolver(
+						CDSPFIRFilterCache :: getLPFilter( 0.5, tb,
+						ReqAtten ), rsmUpsample2X );
+
+					MaxOutLen = Convs[ i ] -> getMaxOutLen( MaxOutLen );
+					ConvBufCapacities[ i & 1 ] = MaxOutLen;
+				}
+
+				ConvBufs[ 0 ].alloc( ConvBufCapacities[ 0 ]);
+
+				if( ConvBufCapacities[ 1 ] > 0 )
+				{
+					ConvBufs[ 1 ].alloc( ConvBufCapacities[ 1 ]);
+				}
+
+				return; // No interpolator is needed.
+			}
+
+			ConvBufs[ 0 ].alloc( ConvBufCapacities[ 0 ]);
 		}
 		else
 		{
 			SrcSRMult = 1;
+			ConvBufCapacities[ 0 ] = 0;
 			ConvCount = 0;
+			const double CheckSR = DstSampleRate * 4;
 
-			while( DstSampleRate * 4 * SrcSRDiv <= SrcSampleRate )
+			while( CheckSR * SrcSRDiv <= SrcSampleRate )
 			{
+				SrcSRDiv *= 2;
+
+				// If downsampling is even deeper, use a less steep filter at
+				// this step.
+
+				const double tb =
+					( CheckSR * SrcSRDiv <= SrcSampleRate ? 48 : 34 );
+
 				Convs[ ConvCount ] = new CDSPBlockConvolver(
-					CDSPFIRFilterCache :: getLPFilter( 0.5, 34, ReqAtten ),
+					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten ),
 					rsmDownsample2X );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 				ConvCount++;
-				SrcSRDiv *= 2;
+
+				R8BASSERT( ConvCount < ConvCountMax );
 			}
 
 			const double NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
+			const CDSPResamplingMode rsm =
+				( NormFreq == 0.5 ? rsmDownsample2X : rsmNone );
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten ), rsmNone );
+				ReqAtten ), rsm );
 
 			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 			ConvCount++;
+
+			if( rsm == rsmDownsample2X )
+			{
+				// No further interpolation is necessary.
+
+				return;
+			}
 		}
 
 		Interp = new CDSPFracInterpolator(
@@ -136,24 +235,27 @@ public:
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
-		if( ConvBuffer != NULL && MaxOutLen <= MaxInLen * 2 )
+		if( MaxOutLen <= ConvBufCapacities[ 0 ])
 		{
-			InterpBuffer = ConvBuffer;
+			InterpBuf = ConvBufs[ 0 ];
 		}
 		else
 		if( MaxOutLen <= MaxInLen )
 		{
-			InterpBuffer = NULL;
+			InterpBuf = NULL;
 		}
 		else
 		{
-			TmpBuffer.alloc( MaxOutLen );
-			InterpBuffer = TmpBuffer;
+			TmpBuf.alloc( MaxOutLen );
+			InterpBuf = TmpBuf;
 		}
 	}
 
 	/**
 	 * Function performs sample rate conversion.
+	 *
+	 * If the source and destination sample rates are equal, the resampler
+	 * will do nothing and will simply return the input buffer unchanged.
 	 *
 	 * @param ip0 Input buffer. This buffer may be used as output buffer by
 	 * this function.
@@ -168,42 +270,61 @@ public:
 	{
 		R8BASSERT( l >= 0 );
 
-		double* const op1 = ( ConvBuffer == NULL ? ip0 : ConvBuffer );
+		if( ConvCount == 0 )
+		{
+			op0 = ip0;
+			return( l );
+		}
+
 		double* ip = ip0;
 		double* op;
 		int i;
 
 		for( i = 0; i < ConvCount; i++ )
 		{
-			op = op1;
+			op = ( ConvBufs[ i & 1 ] == NULL ? ip0 : ConvBufs[ i & 1 ]);
 			l = Convs[ i ] -> process( ip, op, l );
 			ip = op;
 		}
 
-		op = ( InterpBuffer == NULL ? ip0 : InterpBuffer );
+		if( Interp == NULL )
+		{
+			op0 = op;
+			return( l );
+		}
+
+		op = ( InterpBuf == NULL ? ip0 : InterpBuf );
 		op0 = op;
 
 		return( Interp -> process( ip, op, l ));
 	}
 
 private:
-	CPtrKeeper< CDSPBlockConvolver* > Convs[ 7 ]; ///< 7 convolvers with the
-		///< built-in 2x downsampling is enough for 256x downsampling.
+	static const int ConvCountMax = 8; ///< 8 convolvers with the
+		///< built-in 2x up- or downsampling is enough for 256x up- or
+		///< downsampling.
+		///<
+	CPtrKeeper< CDSPBlockConvolver* > Convs[ ConvCountMax ]; ///< Convolvers.
 		///<
 	int ConvCount; ///< The number of objects defined in the Convs[] array.
+		///< Equals to 0 if sample rate conversion is not needed.
 		///<
 	CPtrKeeper< CDSPFracInterpolator* > Interp; ///< Fractional interpolator
-		///< object.
+		///< object. Equals NULL if no fractional interpolation is required
+		///< meaning the "power of 2" resampling performed or no resampling is
+		///< performed at all.
 		///<
-	CFixedBuffer< double > ConvBuffer; ///< Intermediate convolution buffer to
-		///< use, used only when 2x upsampling is performed. If NULL then the
-		///< input buffer will be used instead.
+	CFixedBuffer< double > ConvBufs[ 2 ]; ///< Intermediate convolution
+		///< buffers to use, used only when at least 2x upsampling is
+		///< performed. These buffers are used in flip-flop manner. If NULL
+		///< then the input buffer will be used instead.
 		///<
-	CFixedBuffer< double > TmpBuffer; ///< Additional output buffer.
+	CFixedBuffer< double > TmpBuf; ///< Additional output buffer, can be
+		///< addressed by the InterpBuf pointer.
 		///<
-	double* InterpBuffer; ///< Final output interpolation buffer to use.
-		///< If NULL then then input buffer will be used instead. Otherwise
-		///< this pointer points to either ConvBuffer or TmpBuffer.
+	double* InterpBuf; ///< Final output interpolation buffer to use. If NULL
+		///< then the input buffer will be used instead. Otherwise this
+		///< pointer points to either one of ConvBufs or TmpBuf.
 		///<
 
 	CDSPResampler()

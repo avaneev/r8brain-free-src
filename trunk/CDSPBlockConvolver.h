@@ -57,10 +57,9 @@ public:
 	 * inhertied by *this object, and the object will be released when *this
 	 * object is destroyed.
 	 * @param aResamplingMode Resampling mode to use: see
-	 * CDSPBlockConvolver::CDSPResamplingMode. Note that the filter should
-	 * meet alias-free resampling requirements if resampling is used: the
-	 * normalized low-pass frequency of the filter should be equal to 0.5 or
-	 * lower.
+	 * r8b::CDSPResamplingMode. Note that the filter should meet alias-free
+	 * resampling requirements if resampling is used: the normalized low-pass
+	 * frequency of the filter should be equal to 0.5 or lower.
 	 */
 
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,

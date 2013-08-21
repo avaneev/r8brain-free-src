@@ -1,5 +1,5 @@
-Data set for transition bands 0.5%..25%
----------------------------------------
+Data set for transition bands 0.5%..25%, using the "Blackman" window
+--------------------------------------------------------------------
 
 Precise "fo", "hl" and "pwr" values for the specified "transition band" and
 "attenuation" values. This data set can be used directly, or used for

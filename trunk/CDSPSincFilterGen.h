@@ -190,6 +190,22 @@ public:
 	}
 
 	/**
+	 * @return The next "Blackman-Nuttall" windowing function coefficient.
+	 * This (together with the "Nuttall") windowing function provides quite
+	 * short filters for the given transition band and stop-band attenuation,
+	 * 10-20% shorter than the Blackman windowing function. However, the
+	 * aliased components if the filter is used for resampling are stronger
+	 * than what "Blackman" function offers (-55 dB in "Blackman" vs -30 dB
+	 * in "Nuttall" vs -5 dB in "Blackman-Nuttall").
+	 */
+
+	double calcWindowBlackmanNuttall()
+	{
+		return( 0.3635819 + 0.4891775 * w1.gen() + 0.1365995 * w2.gen() +
+			0.0106411 * w3.gen() );
+	}
+
+	/**
 	 * Function calculates band-limited windowed sinc function.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
@@ -303,7 +319,7 @@ public:
 		R8BASSERT( opinc > 0 );
 
 		double f[ 2 ];
-		f[ 0 ] = sin( FracDelay * M_PI ) / M_PI;
+		f[ 0 ] = sin( FracDelay * M_PI );
 		f[ 1 ] = -f[ 0 ];
 
 		int t = -fl2;
@@ -318,7 +334,7 @@ public:
 
 		while( t < -1 )
 		{
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay );
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) / M_PI;
 			op += opinc;
 			t++;
 		}
@@ -332,7 +348,7 @@ public:
 		}
 		else
 		{
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut;
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI;
 		}
 
 		op += opinc;
@@ -345,7 +361,7 @@ public:
 		}
 		else
 		{
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut;
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI;
 		}
 
 		const int mt = fl2 - 2;
@@ -354,13 +370,14 @@ public:
 		{
 			op += opinc;
 			t++;
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay );
+			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) / M_PI;
 		}
 
 		op += opinc;
 		t++;
 		ut = t + FracDelay;
-		*op = ( ut > Len2 ? 0.0 : f[ t & 1 ] * ( *this.*wfunc )() / ut );
+		*op = ( ut > Len2 ? 0.0 :
+			f[ t & 1 ] * ( *this.*wfunc )() / ut ) / M_PI;
 	}
 
 private:
