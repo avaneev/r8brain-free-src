@@ -101,7 +101,8 @@
  *  * 165 KB of static memory for fractional delay filters
  *  * filter memory, per filter (N*8*2, where N is the block size, usually in
  *    the range 256 to 2048)
- *  * Ooura's FFT algorithm tables, per channel (N*8)
+ *  * Ooura's FFT algorithm tables, per channel (N*8), plus 1-7 smaller tables
+ *    (128*8) are needed for the "power of 2" resampling
  *  * convolver memory, per channel (N*8*5)
  *  * interpolator memory (8 KB per channel)
  *  * IO buffers, per channel (proportional to the maximal input buffer length
@@ -788,14 +789,13 @@ template< class T >
 inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
 	double& re0, double& im0 )
 {
-	double re = 0.0;
-	double im = 0.0;
-
 	double svalue1 = 0.0;
 	double svalue2 = sin( -th );
-	double sincr = 2.0 * cos( th );
+	const double sincr = 2.0 * cos( th );
 	double cvalue1 = 1.0;
 	double cvalue2 = sin( M_PI * 0.5 - th );
+	double re = 0.0;
+	double im = 0.0;
 
 	while( fltlen > 0 )
 	{
