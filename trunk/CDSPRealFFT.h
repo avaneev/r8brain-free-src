@@ -38,7 +38,9 @@ namespace r8b {
  * defined). Note that IPP library's FFT functions are 2-3 times more
  * efficient on the modern Intel Core i7-3770K processor than Ooura's
  * functions. It may be worthwhile investing in IPP. Note, that FFT functions
- * take less than 20% of the overall sample rate conversion time.
+ * take less than 20% of the overall sample rate conversion time. However,
+ * when the "power of 2" resampling is used the performance of FFT functions
+ * becomes "everything".
  */
 
 class CDSPRealFFT : public R8B_BASECLASS
