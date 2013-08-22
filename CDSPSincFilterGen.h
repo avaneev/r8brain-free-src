@@ -132,6 +132,30 @@ public:
 	}
 
 	/**
+	 * This function is similar to the initFrac() function, but initializes
+	 * cosine wave generators for use with the calcWindowVaneev() windowing
+	 * function. The generateFrac() function should be used to calculate the
+	 * filter, with the calcWindowVaneev() function as parameter.
+	 */
+
+	void initFracVaneev()
+	{
+		R8BASSERT( Len2 >= 2.0 );
+
+		fl2 = (int) ceil( Len2 );
+		KernelLen = fl2 + fl2;
+
+		const double step1 = 1.00 * M_PI / Len2;
+		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
+
+		const double step2 = 0.75 * M_PI / Len2;
+		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
+
+		const double step3 = 0.50 * M_PI / Len2;
+		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
+	}
+
+	/**
 	 * @return The next "Hann" windowing function coefficient.
 	 */
 
@@ -149,6 +173,21 @@ public:
 	double calcWindowHann6()
 	{
 		return( sqr( sqr( sqr( calcWindowHann() ))));
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient. This
+	 * windowing function is suitable for fractional delay filters even better
+	 * than the "Hann^6" function.
+	 */
+
+	double calcWindowVaneev()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( sqr( v0 ) * sqr( sqr( v1 )) * sqr( sqr( sqr( v2 ))));
 	}
 
 	/**

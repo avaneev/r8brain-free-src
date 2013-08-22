@@ -34,7 +34,7 @@
  *
  * The algorithm at first produces 2X oversampled (relative to the destination
  * sample rate) signal and then performs interpolation using a bank of short
- * (40 taps) spline-interpolated sinc-based fractional delay filters. This
+ * (38 taps) spline-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -72,10 +72,10 @@
  * command from the library's directory.
  *
  * Preliminary tests show that the resampler (at 3% transition band, 96 dB
- * attenuation, 256 samples input buffer) achieves 9*n_cores Mflops when
+ * attenuation, 256 samples input buffer) achieves 9.8*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-3770K processor-based system without overclocking. This
- * approximately translates to realtime resampling of 90*n_cores audio
+ * approximately translates to realtime resampling of 100*n_cores audio
  * streams, at 100% CPU load.
  * 
  * \section notes Notes
@@ -96,17 +96,17 @@
  * compilers, on 32- and 64-bit Windows, Mac OS X and CentOS Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
- * The memory footprint is quite small ("double" type data):
+ * The memory footprint is quite modest ("double" type data):
  *
- *  * 165 KB of static memory for fractional delay filters
- *  * filter memory, per filter (N*8*2, where N is the block size, usually in
- *    the range 256 to 2048)
- *  * Ooura's FFT algorithm tables, per channel (N*8), plus 1-7 smaller tables
- *    (128*8) are needed for the "power of 2" resampling
- *  * convolver memory, per channel (N*8*5)
+ *  * 1.5 MB of static memory for fractional delay filters
+ *  * filter memory, per filter (N*8*2 bytes, where N is the block size,
+ *    usually in the range 256 to 2048)
+ *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
+ *    smaller tables (128*8 bytes) for the "power of 2" resampling
+ *  * convolver memory, per channel (N*8*5 bytes)
  *  * interpolator memory (8 KB per channel)
- *  * IO buffers, per channel (proportional to the maximal input buffer length
- *    and source to destination sample rate ratio)
+ *  * I/O buffers, per channel (proportional to the maximal input buffer
+ *    length and source to destination sample rate ratio)
  *
  * \section license License
  *
@@ -136,7 +136,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.4
+ * \version 0.5
  */
 
 #ifndef R8BBASE_INCLUDED

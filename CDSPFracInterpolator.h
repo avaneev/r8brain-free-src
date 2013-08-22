@@ -98,9 +98,9 @@ protected:
 			for( i = -1; i <= FuncFrac + 2; i++ )
 			{
 				sinc.FracDelay = (double) ( FuncFrac - i ) / FuncFrac;
-				sinc.initFrac();
+				sinc.initFracVaneev();
 				sinc.generateFrac( p, 4,
-					&CDSPSincFilterGen :: calcWindowHann6 );
+					&CDSPSincFilterGen :: calcWindowVaneev );
 
 				normalizeFIRFilter( p, FuncLen, 1.0, 4 );
 				p += FuncLen4;
@@ -153,7 +153,7 @@ protected:
  * the interpolation is performed.
  */
 
-class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 40, 1024 >
+class CDSPFracInterpolator : public CDSPFracDelayFilterBank< 38, 1280 >
 {
 	R8BNOCTOR( CDSPFracInterpolator );
 
