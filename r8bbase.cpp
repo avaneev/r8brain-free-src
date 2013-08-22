@@ -7,6 +7,9 @@
  * project that uses the "r8brain-free-src" sample rate converter. This file
  * defines several global static objects used by the library.
  *
+ * You may also need to include to your project: the "Kernel32" library
+ * (on Windows) and the "pthread" library on Mac OS X and Linux.
+ *
  * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
