@@ -64,7 +64,8 @@
  * Note that you will need to compile the "r8bbase.cpp" source file and
  * include the resulting object file into your application build. This source
  * file includes definitions of several global static objects used by the
- * library.
+ * library. You may also need to include to your project: the "Kernel32"
+ * library (on Windows) and the "pthread" library on Mac OS X and Linux.
  *
  * The code of this library was commented in Doxygen] style. To generate the
  * documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
@@ -134,7 +135,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.3
+ * \version 0.4
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -148,11 +149,9 @@
 
 #if defined( R8B_WIN )
 	#include <windows.h>
-#elif defined( R8B_MAC )
-	#include <libkern/OSAtomic.h>
-#elif defined( R8B_LNX )
+#else // R8B_WIN
 	#include <pthread.h>
-#endif
+#endif // R8B_WIN
 
 /**
  * \brief The "r8brain-free-src" library namespace.
@@ -531,26 +530,22 @@ public:
 	{
 		#if defined( VOX_WIN )
 			InitializeCriticalSectionAndSpinCount( &CritSec, 4000 );
-		#elif defined( VOX_MAC )
-			MPCreateCriticalRegion( &CritRegion );
-		#elif defined( VOX_LNX )
+		#else // VOX_WIN
 			pthread_mutexattr_t MutexAttrs;
 			pthread_mutexattr_init( &MutexAttrs );
 			pthread_mutexattr_settype( &MutexAttrs, PTHREAD_MUTEX_RECURSIVE );
 			pthread_mutex_init( &Mutex, &MutexAttrs );
 			pthread_mutexattr_destroy( &MutexAttrs );
-		#endif
+		#endif // VOX_WIN
 	}
 
 	~CSyncObject()
 	{
 		#if defined( VOX_WIN )
 			DeleteCriticalSection( &CritSec );
-		#elif defined( VOX_MAC )
-			MPDeleteCriticalRegion( CritRegion );
-		#elif defined( VOX_LNX )
+		#else // VOX_WIN
 			pthread_mutex_destroy( &Mutex );
-		#endif
+		#endif // VOX_WIN
 	}
 
 	/**
@@ -562,11 +557,9 @@ public:
 	{
 		#if defined( VOX_WIN )
 			EnterCriticalSection( &CritSec );
-		#elif defined( VOX_MAC )
-			MPEnterCriticalRegion( CritRegion, kDurationForever );
-		#elif defined( VOX_LNX )
+		#else // VOX_WIN
 			pthread_mutex_lock( &Mutex );
-		#endif
+		#endif // VOX_WIN
 	}
 
 	/**
@@ -578,11 +571,9 @@ public:
 	{
 		#if defined( VOX_WIN )
 			LeaveCriticalSection( &CritSec );
-		#elif defined( VOX_MAC )
-			MPExitCriticalRegion( CritRegion );
-		#elif defined( VOX_LNX )
+		#else // VOX_WIN
 			pthread_mutex_unlock( &Mutex );
-		#endif
+		#endif // VOX_WIN
 	}
 
 private:
@@ -590,13 +581,10 @@ private:
 		CRITICAL_SECTION CritSec; ///< Standard Windows critical section
 			///< structure.
 			///<
-	#elif defined( VOX_MAC )
-		MPCriticalRegionID CritRegion; ///< Mac OS X critical region object.
-			///<
-	#elif defined( VOX_LNX )
+	#else // VOX_WIN
 		pthread_mutex_t Mutex; ///< pthread.h mutex object.
 			///<
-	#endif
+	#endif // VOX_WIN
 };
 
 /**
