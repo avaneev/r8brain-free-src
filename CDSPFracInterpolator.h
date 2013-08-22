@@ -217,9 +217,9 @@ public:
 	 * Function performs input sample stream interpolation.
 	 *
 	 * @param ip Input sample buffer.
-	 * @param[out] op Output sample buffer, the capacity of this buffer should
-	 * be equal to the value returned by the getMaxOutLen() function for the
-	 * given "l". This buffer can be equal to "ip" only if the
+	 * @param[out] op0 Output sample buffer, the capacity of this buffer
+	 * should be equal to the value returned by the getMaxOutLen() function
+	 * for the given "l". This buffer can be equal to "ip" only if the
 	 * getMaxOutLen( l ) function's returned value is lesser than "l".
 	 * @param l The number of samples available in the input sample buffer.
 	 * @return The number of output samples written to the "op" buffer. The
@@ -227,12 +227,12 @@ public:
 	 * 8-sample filter).
 	 */
 
-	int process( const double* ip, double* op, int l )
+	int process( const double* ip, double* const op0, int l )
 	{
 		R8BASSERT( l >= 0 );
 		R8BASSERT( ip != op || l == 0 );
 
-		double* const op0 = op;
+		double* op = op0;
 
 		while( l > 0 )
 		{
@@ -262,7 +262,7 @@ public:
 			{
 				double x = InPosFrac * FuncFrac;
 				const int fti = (int) x; // Function table index.
-				x -= fti; // Coefficient for cross-fade between adjacent
+				x -= fti; // Coefficient for interpolation between adjacent
 					// fractional delay filters.
 				const double x2 = x * x;
 				const double x3 = x2 * x;
