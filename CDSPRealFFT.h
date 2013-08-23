@@ -278,9 +278,9 @@ private:
 		IppsFFTSpec_R_64f* SPtr; ///< Pointer to initialized data buffer
 			///< to be passed to IPP's FFT functions.
 			///<
-		CFixedBuffer< uint8_t > SpecBuffer; ///< Working buffer.
+		CFixedBuffer< unsigned char > SpecBuffer; ///< Working buffer.
 			///<
-		CFixedBuffer< uint8_t > WorkBuffer; ///< Working buffer.
+		CFixedBuffer< unsigned char > WorkBuffer; ///< Working buffer.
 			///<
 	#else // R8B_IPP
 		CFixedBuffer< int > ip; ///< Working buffer (ints).
@@ -355,7 +355,7 @@ private:
 		ippsFFTGetSize_R_64f( SizeBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, &SpecSize, &SpecBufferSize, &BufferSize );
 
-		CFixedBuffer< uint8_t > InitBuffer( SpecBufferSize );
+		CFixedBuffer< unsigned char > InitBuffer( SpecBufferSize );
 		SpecBuffer.alloc( SpecSize );
 		WorkBuffer.alloc( BufferSize );
 

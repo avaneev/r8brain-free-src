@@ -55,11 +55,11 @@ public:
 	 * It should be noted that ReqAtten specifies the minimal difference
 	 * between the loudest input signal component and the produced aliasing
 	 * artifacts during resampling. For example, if ReqAtten=96 was specified
-	 * when performing 2x upsampling, the further analysis of the resulting
-	 * signal may display high-frequency components which are quieter than the
-	 * loudest part of the input signal by only 96 decibel. The high-frequency
-	 * part won't become "magically" completely silent lean after resampling.
-	 * You have to specify higher ReqAtten values if you need a totally clean
+	 * when performing 2x upsampling, the analysis of the resulting signal may
+	 * display high-frequency components which are quieter than the loudest
+	 * part of the input signal by only 96 decibel. The high-frequency part
+	 * won't become "magically" completely silent after resampling. You have
+	 * to specify higher ReqAtten values if you need a totally clean
 	 * high-frequency content. On the other hand, it may not be reasonable to
 	 * have a high-frequency content cleaner than the input signal itself: if
 	 * the input signal is 16-bit, setting ReqAtten to 144 will make its

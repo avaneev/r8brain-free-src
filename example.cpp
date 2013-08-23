@@ -38,7 +38,7 @@ int main()
 			3, 96, InBufCapacity );
 	}
 
-	int64_t ol = inf.SampleCount * OutSampleRate / inf.SampleRate;
+	long long int ol = inf.SampleCount * OutSampleRate / inf.SampleRate;
 
 	while( ol > 0 )
 	{
