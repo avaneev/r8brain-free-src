@@ -192,8 +192,8 @@ namespace r8b {
  * the "private:" prefix. This macro should be used in classes that cannot be
  * copied in a standard C++ way.
  *
- * This macro do not need to be defined in classes derived from a class where
- * such macro was already used.
+ * This macro does not need to be defined in classes derived from a class
+ * where such macro was already used.
  *
  * @param ClassName The name of the class which uses this macro.
  */
@@ -323,7 +323,7 @@ public:
  * object of this class can be moved in memory.
  *
  * This class manages memory space only - it does not perform element class
- * construction operations.
+ * construction nor destruction operations.
  *
  * @param T The class of the stored elements (e.g. "double").
  */
@@ -521,7 +521,7 @@ private:
  * this kind of thread-locking mechanism. This will not produce a dead-lock.
  */
 
-struct CSyncObject
+class CSyncObject
 {
 	R8BNOCTOR( CSyncObject );
 
@@ -590,13 +590,13 @@ private:
 /**
  * \brief A "keeper" class for CSyncObject-based synchronization.
  *
- * Sync keeper object. This object can be used as auto-init and auto-deinit
- * object to call the acquire() and release() functions of the object of the
- * CSyncObject class. This "keeper" object is best used in functions as an
- * "automatic" object allocated on the stack.
+ * Sync keeper class. The object of this class can be used as auto-init and
+ * auto-deinit object for calling the acquire() and release() functions of the
+ * object of the CSyncObject class. This "keeper" object is best used in
+ * functions as an "automatic" object allocated on the stack.
  */
 
-struct CSyncKeeper
+class CSyncKeeper
 {
 	R8BNOCTOR( CSyncKeeper );
 
@@ -667,8 +667,9 @@ protected:
  * Class implements sine signal generator with optional biasing.
  */
 
-struct CSineGen
+class CSineGen
 {
+public:
 	/**
 	 * Function initializes *this sine signal generator.
 	 *

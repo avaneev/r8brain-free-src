@@ -66,14 +66,9 @@ protected:
 	 * initialization class.
 	 */
 
-	struct CFuncTable
+	class CFuncTable
 	{
-		double FuncTable[ FuncLen4 * ( FuncFrac + 4 )]; ///< Table of
-			///< fractional delay functions for all discrete fractional x =
-			///< 0..1 sample positions, and 3rd order Hermite spline
-			///< interpolation coefficients.
-			///<
-
+	public:
 		double& operator []( const int i )
 		{
 			return( FuncTable[ i ]);
@@ -127,6 +122,13 @@ protected:
 				}
 			}
 		}
+
+	private:
+		double FuncTable[ FuncLen4 * ( FuncFrac + 4 )]; ///< Table of
+			///< fractional delay functions for all discrete fractional x =
+			///< 0..1 sample positions, and 3rd order Hermite spline
+			///< interpolation coefficients.
+			///<
 	};
 
 	static const CFuncTable FuncTable; ///< Static function table object.
