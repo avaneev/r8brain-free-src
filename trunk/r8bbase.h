@@ -51,15 +51,15 @@
  *
  * \section usage Usage Information
  *
- * The code of the library resides in the "r8b" C++ namespace, effectively
- * isolating it from all other code. The code is thread-safe. A separate
- * resampler object should be created for each audio channel or stream being
- * processed.
- *
  * The sample rate converter (resampler) is represented by the
  * r8b::CDSPResampler class, which is a single front-end class for the whole
  * library. You do not basically need to use nor understand any other classes
  * beside this class.
+ *
+ * The code of the library resides in the "r8b" C++ namespace, effectively
+ * isolating it from all other code. The code is thread-safe. A separate
+ * resampler object should be created for each audio channel or stream being
+ * processed.
  *
  * Note that you will need to compile the "r8bbase.cpp" source file and
  * include the resulting object file into your application build. This source
@@ -142,7 +142,6 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -529,24 +528,24 @@ struct CSyncObject
 public:
 	CSyncObject()
 	{
-		#if defined( VOX_WIN )
+		#if defined( R8B_WIN )
 			InitializeCriticalSectionAndSpinCount( &CritSec, 4000 );
-		#else // VOX_WIN
+		#else // R8B_WIN
 			pthread_mutexattr_t MutexAttrs;
 			pthread_mutexattr_init( &MutexAttrs );
 			pthread_mutexattr_settype( &MutexAttrs, PTHREAD_MUTEX_RECURSIVE );
 			pthread_mutex_init( &Mutex, &MutexAttrs );
 			pthread_mutexattr_destroy( &MutexAttrs );
-		#endif // VOX_WIN
+		#endif // R8B_WIN
 	}
 
 	~CSyncObject()
 	{
-		#if defined( VOX_WIN )
+		#if defined( R8B_WIN )
 			DeleteCriticalSection( &CritSec );
-		#else // VOX_WIN
+		#else // R8B_WIN
 			pthread_mutex_destroy( &Mutex );
-		#endif // VOX_WIN
+		#endif // R8B_WIN
 	}
 
 	/**
@@ -556,11 +555,11 @@ public:
 
 	void acquire()
 	{
-		#if defined( VOX_WIN )
+		#if defined( R8B_WIN )
 			EnterCriticalSection( &CritSec );
-		#else // VOX_WIN
+		#else // R8B_WIN
 			pthread_mutex_lock( &Mutex );
-		#endif // VOX_WIN
+		#endif // R8B_WIN
 	}
 
 	/**
@@ -570,22 +569,22 @@ public:
 
 	void release()
 	{
-		#if defined( VOX_WIN )
+		#if defined( R8B_WIN )
 			LeaveCriticalSection( &CritSec );
-		#else // VOX_WIN
+		#else // R8B_WIN
 			pthread_mutex_unlock( &Mutex );
-		#endif // VOX_WIN
+		#endif // R8B_WIN
 	}
 
 private:
-	#if defined( VOX_WIN )
+	#if defined( R8B_WIN )
 		CRITICAL_SECTION CritSec; ///< Standard Windows critical section
 			///< structure.
 			///<
-	#else // VOX_WIN
+	#else // R8B_WIN
 		pthread_mutex_t Mutex; ///< pthread.h mutex object.
 			///<
-	#endif // VOX_WIN
+	#endif // R8B_WIN
 };
 
 /**
