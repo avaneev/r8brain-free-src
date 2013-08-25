@@ -510,6 +510,141 @@ private:
 	}
 };
 
+/**
+ * Function calculates the minimum-phase transform of the filter kernel, using
+ * a discrete Hilbert transform in cepstrum domain.
+ *
+ * For more details, see part III.B of
+ * http://www.hpl.hp.com/personal/Niranjan_Damera-Venkata/files/ComplexMinPhase.pdf
+ *
+ * @param[in,out] Kernel Filter kernel buffer.
+ * @param KernelLen Filter kernel's length, in samples.
+ * @param LenMult Kernel length multiplier. Used as a coefficient of the
+ * "oversampling" in the frequency domain. Such oversampling is needed to
+ * improve the precision of the minimum-phase transform. If the filter's
+ * attenuation is high, this multiplier should be increased or otherwise the
+ * required attenuation will not be reached due to "smoothing" effect of this
+ * transform.
+ * @param DoFinalMul "True" if the final multiplication after transform should
+ * be performed or not. Such multiplication returns the gain of the signal to
+ * its original value. This parameter can be set to "false" if normalization
+ * of the resulting filter kernel is planned to be used.
+ * @param[out] DCGroupDelay If not NULL, this variable receives group delay
+ * at DC offset, in samples (can be a non-integer value).
+ */
+
+inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
+	const int LenMult = 2, const bool DoFinalMul = true,
+	double* const DCGroupDelay = NULL )
+{
+	R8BASSERT( KernelLen > 0 );
+	R8BASSERT( LenMult >= 2 );
+
+	const int SizeBits = getBitOccupancy(( KernelLen * LenMult ) - 1 );
+	const int Size = 1 << SizeBits;
+	const int Size2 = Size >> 1;
+	int i;
+
+	CFixedBuffer< double > ip( Size );
+	CFixedBuffer< double > ip2( Size2 + 1 );
+
+	memcpy( &ip[ 0 ], Kernel, KernelLen * sizeof( double ));
+	memset( &ip[ KernelLen ], 0, ( Size - KernelLen ) * sizeof( double ));
+
+	CDSPRealFFTKeeper ffto( SizeBits );
+	ffto -> forward( ip );
+
+	// Create the "log |c|" spectrum while saving the original power spectrum
+	// in the "ip2" buffer.
+
+	ip2[ 0 ] = ip[ 0 ];
+	ip[ 0 ] = log( fabs( ip[ 0 ]));
+	ip2[ Size2 ] = ip[ 1 ];
+	ip[ 1 ] = log( fabs( ip[ 1 ]));
+
+	for( i = 1; i < Size2; i++ )
+	{
+		ip2[ i ] = sqrt( ip[ i * 2 ] * ip[ i * 2 ] +
+			ip[ i * 2 + 1 ] * ip[ i * 2 + 1 ]);
+
+		ip[ i * 2 ] = log( ip2[ i ]);
+		ip[ i * 2 + 1 ] = 0.0;
+	}
+
+	// Convert to cepstrum and apply discrete Hilbert transform.
+
+	ffto -> inverse( ip );
+
+	ip[ 0 ] = 0.0;
+
+	for( i = 1; i < Size2; i++ )
+	{
+		ip[ i ] *= ffto -> getInvMulConst();
+	}
+
+	ip[ Size2 ] = 0.0;
+
+	for( i = Size2 + 1; i < Size; i++ )
+	{
+		ip[ i ] *= -ffto -> getInvMulConst();
+	}
+
+	// Convert Hilbert-transformed cepstrum back to the "log |c|" spectrum and
+	// perform its exponentiation, multiplied by the power spectrum previously
+	// saved in the "ip2" buffer.
+
+	ffto -> forward( ip );
+
+	ip[ 0 ] = ip2[ 0 ];
+	ip[ 1 ] = ip2[ Size2 ];
+
+	for( i = 1; i < Size2; i++ )
+	{
+		const double p = ip2[ i ];
+		ip[ i * 2 + 0 ] = cos( ip[ i * 2 + 1 ]) * p;
+		ip[ i * 2 + 1 ] = sin( ip[ i * 2 + 1 ]) * p;
+	}
+
+	ffto -> inverse( ip );
+
+	if( DoFinalMul )
+	{
+		for( i = 0; i < KernelLen; i++ )
+		{
+			Kernel[ i ] = ip[ i ] * ffto -> getInvMulConst();
+		}
+	}
+	else
+	{
+		memcpy( &Kernel[ 0 ], &ip[ 0 ], KernelLen * sizeof( double ));
+	}
+
+	if( DCGroupDelay != NULL )
+	{
+		double tmp;
+
+		calcFIRFilterResponseAndGroupDelay( Kernel, KernelLen, 0.0,
+			tmp, tmp, *DCGroupDelay );
+	}
+/*
+	const int thcount = 10000;
+	const double g = 10.0 / log( 10.0 );
+
+	for( i = 0; i < thcount; i++ )
+	{
+		const double th = M_PI * i / ( thcount - 1 );
+		double re;
+		double im;
+		double gd;
+
+		calcFIRFilterResponseAndGroupDelay( Kernel, KernelLen, th,
+			re, im, gd );
+
+		printf( "%.3f\t%.10f\n", g * log( re * re + im * im ), gd );
+//		printf( "%.3f\n", g * log( re * re + im * im ));
+	}*/
+}
+
 } // namespace r8b
 
 #endif // VOX_CDSPREALFFT_INCLUDED

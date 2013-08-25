@@ -30,9 +30,9 @@ namespace r8b {
 class CDSPSincFilterGen
 {
 public:
-	double Len2; ///< Required half kernel length in samples (can be a
-		///< fractional value). Final physical kernel length will be provided
-		///< in the KernelLen variable. Len2 should be >= 2.
+	double Len2; ///< Required half filter kernel's length in samples (can be
+		///< a fractional value). Final physical kernel length will be
+		///< provided in the KernelLen variable. Len2 should be >= 2.
 		///<
 	double Freq1; ///< Required corner circular frequency 1 [0; pi]. Used only
 		///< in the generateBand() function.
@@ -133,9 +133,9 @@ public:
 
 	/**
 	 * This function is similar to the initFrac() function, but initializes
-	 * cosine wave generators for use with the calcWindowVaneev() windowing
-	 * function. The generateFrac() function should be used to calculate the
-	 * filter, with the calcWindowVaneev() function as parameter.
+	 * cosine wave generators for use with the calcWindowVaneevNN() windowing
+	 * functions. The generateFrac() function should be used to calculate the
+	 * filter, with the calcWindowVaneevNN() function as parameter.
 	 */
 
 	void initFracVaneev()
@@ -176,18 +176,89 @@ public:
 	}
 
 	/**
-	 * @return The next "Vaneev" windowing function coefficient. This
-	 * windowing function is suitable for fractional delay filters even better
-	 * than the "Hann^6" function.
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of length 38 or longer. This windowing
+	 * function is suitable for fractional delay filters even better than the
+	 * "Hann^6" function.
 	 */
 
-	double calcWindowVaneev()
+	double calcWindowVaneev38()
 	{
 		const double v0 = 0.5 + 0.5 * w1.gen();
 		const double v1 = 0.5 + 0.5 * w2.gen();
 		const double v2 = 0.5 + 0.5 * w3.gen();
 
 		return( sqr( v0 ) * sqr( sqr( v1 )) * sqr( sqr( sqr( v2 ))));
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of length 32, 34 and 36.
+	 */
+
+	double calcWindowVaneev32()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( sqr( v0 ) * sqr( sqr( v1 )) * sqr( sqr( v2 )));
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of lengths 24, 26, 28 and 30.
+	 */
+
+	double calcWindowVaneev24()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( sqr( v0 ) * sqr( v1 ) * sqr( sqr( v2 )));
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of length 20 and 22.
+	 */
+
+	double calcWindowVaneev20()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( v0 * sqr( v1 ) * sqr( sqr( v2 )));
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of lengths 14, 16 and 18.
+	 */
+
+	double calcWindowVaneev14()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( v0 * sqr( v1 ) * v2 );
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters of length 10 and 12.
+	 */
+
+	double calcWindowVaneev10()
+	{
+		const double v0 = 0.5 + 0.5 * w1.gen();
+		const double v1 = 0.5 + 0.5 * w2.gen();
+		const double v2 = 0.5 + 0.5 * w3.gen();
+
+		return( v0 * v1 * v2 );
 	}
 
 	/**
@@ -245,7 +316,8 @@ public:
 	}
 
 	/**
-	 * Function calculates band-limited windowed sinc function.
+	 * Function calculates band-limited windowed sinc function-based filter
+	 * kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
 	 * @param wfunc Windowing function to use.
@@ -277,8 +349,8 @@ public:
 	}
 
 	/**
-	 * Function calculates band-limited windowed sinc function, with the
-	 * window raised to the specified power.
+	 * Function calculates band-limited windowed sinc function-based filter
+	 * kernel, with the window raised to the specified power.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
 	 * @param p Power factor.
@@ -316,7 +388,7 @@ public:
 	}
 
 	/**
-	 * Function calculates windowed Hilbert transformer filter.
+	 * Function calculates windowed Hilbert transformer filter kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
 	 * @param wfunc Windowing function to use.
@@ -344,7 +416,7 @@ public:
 	}
 
 	/**
-	 * Function calculates windowed fractional delay filter.
+	 * Function calculates windowed fractional delay filter kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
 	 * @param opinc Output buffer increment, in "op" elements.

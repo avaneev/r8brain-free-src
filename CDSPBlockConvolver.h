@@ -22,7 +22,7 @@ namespace r8b {
  * Enumeration of the built-in resampling modes.
  */
 
-enum CDSPResamplingMode
+enum EDSPResamplingMode
 {
 	rsmNone = 0, ///< No resampling.
 	rsmUpsample2X, ///< 2x upsampling.
@@ -56,14 +56,14 @@ public:
 	 * @param aFilter Pre-calculated filter data. Reference to this object is
 	 * inhertied by *this object, and the object will be released when *this
 	 * object is destroyed.
-	 * @param aResamplingMode Resampling mode to use: see
-	 * r8b::CDSPResamplingMode. Note that the filter should meet alias-free
-	 * resampling requirements if resampling is used: the normalized low-pass
-	 * frequency of the filter should be equal to 0.5 or lower.
+	 * @param aResamplingMode Resampling mode to use. Note that the filter
+	 * should meet alias-free resampling requirements if resampling is used:
+	 * the normalized low-pass frequency of the filter should be equal to 0.5
+	 * or lower.
 	 */
 
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,
-		const CDSPResamplingMode aResamplingMode = rsmNone )
+		const EDSPResamplingMode aResamplingMode = rsmNone )
 		: Filter( &aFilter )
 		, ffto( Filter -> getBlockSizeBits() + 1 )
 		, ResamplingMode( aResamplingMode )
@@ -225,14 +225,14 @@ private:
 		///<
 	CDSPRealFFTKeeper ffto; ///< FFT object, size Filter.BlockSizeBits + 1.
 		///<
-	CDSPResamplingMode ResamplingMode; ///< Built-in resampling mode to use.
+	EDSPResamplingMode ResamplingMode; ///< Built-in resampling mode to use.
 		///<
 	int UpShift; ///< Upsampling shift. Equals 1 if 2x upsampling is used,
 		///< 0 otherwise.
 		///<
 	int BlockSize; ///< Block size in samples.
 		///<
-	int Latency; ///< Processing and kernel's latency.
+	int Latency; ///< Processing and filter kernel's latency.
 		///<
 	CFixedBuffer< double > PrevInput; ///< Previous input data,
 		///< size = BlockSize.
