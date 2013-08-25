@@ -263,6 +263,33 @@ public:
 	}
 
 	/**
+	 * Function clears (resets) the state of *this object and returns it to
+	 * the state after construction. All input data accumulated in the
+	 * internal buffer so far will be discarded.
+	 *
+	 * This function makes it possible to use *this object for converting
+	 * separate streams from the same source sample rate to the same
+	 * destination sample rate without reconstructing the object. It is more
+	 * efficient to clear the state of the resampler object than to destroy it
+	 * and create a new object.
+	 */
+
+	void clear()
+	{
+		int i;
+
+		for( i = 0; i < ConvCount; i++ )
+		{
+			Convs[ i ] -> clear();
+		}
+
+		if( Interp != NULL )
+		{
+			Interp -> clear();
+		}
+	}
+
+	/**
 	 * Function performs sample rate conversion.
 	 *
 	 * If the source and destination sample rates are equal, the resampler

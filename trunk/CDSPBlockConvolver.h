@@ -63,7 +63,7 @@ public:
 	 */
 
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,
-		const EDSPResamplingMode aResamplingMode = rsmNone )
+		const EDSPResamplingMode aResamplingMode )
 		: Filter( &aFilter )
 		, ffto( Filter -> getBlockLenBits() + 1 )
 		, ResamplingMode( aResamplingMode )
@@ -74,7 +74,6 @@ public:
 		const int bs = BlockLen * (int) sizeof( double );
 
 		PrevInput.alloc( bs );
-		memset( &PrevInput[ 0 ], 0, bs );
 
 		WorkBlocks[ 0 ].alloc( bs * 2 );
 		CurInput = WorkBlocks[ 0 ];
@@ -82,9 +81,7 @@ public:
 		WorkBlocks[ 1 ].alloc( bs * 2 );
 		CurOutput = WorkBlocks[ 1 ];
 
-		InDataLeft = BlockLen;
-		LatencyLeft = Latency;
-		DownSkip = 0;
+		clear();
 	}
 
 	~CDSPBlockConvolver()
@@ -125,6 +122,21 @@ public:
 		}
 
 		return(( MaxInLen + 1 ) >> 1 );
+	}
+
+	/**
+	 * Function clears (resets) the state of *this object and returns it to
+	 * the state after construction. All input data accumulated in the
+	 * internal buffer so far will be discarded.
+	 */
+
+	void clear()
+	{
+		memset( &PrevInput[ 0 ], 0, BlockLen * sizeof( double ));
+
+		InDataLeft = BlockLen;
+		LatencyLeft = Latency;
+		DownSkip = 0;
 	}
 
 	/**

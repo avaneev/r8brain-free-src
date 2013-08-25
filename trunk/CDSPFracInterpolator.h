@@ -193,15 +193,16 @@ public:
 	 *
 	 * @param aSrcSampleRate Source sample rate.
 	 * @param aDstSampleRate Destination sample rate.
-	 * @param InitFracPos Initial fractional position, in samples, in the
+	 * @param aInitFracPos Initial fractional position, in samples, in the
 	 * range [0; 1). A non-zero value can be specified to remove the
 	 * fractional delay introduced by a minimum-phase filter.
 	 */
 
 	CDSPFracInterpolator( const double aSrcSampleRate,
-		const double aDstSampleRate, const double InitFracPos )
+		const double aDstSampleRate, const double aInitFracPos )
 		: SrcSampleRate( aSrcSampleRate )
 		, DstSampleRate( aDstSampleRate )
+		, InitFracPos( aInitFracPos )
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -209,18 +210,7 @@ public:
 		R8BASSERT( BufLenBits >= 5 );
 		R8BASSERT(( 1 << BufLenBits ) >= FilterLen * 3 );
 
-		BufLeft = 0;
-		WritePos = 0;
-		ReadPos = BufLen - FilterLenD2Minus1; // Set "read" position to
-			// account for filter's latency at zero fractional delay which
-			// equals to FilterLenD2Minus1.
-
-		memset( Buf + ReadPos, 0, FilterLenD2Minus1 * sizeof( double ));
-
-		InCounter = 0;
-		InPosInt = 0;
-		InPosFrac = InitFracPos;
-		InPosShift = InitFracPos;
+		clear();
 	}
 
 	/**
@@ -272,6 +262,31 @@ public:
 		InCounter = 0;
 		InPosInt = 0;
 		InPosShift = InPosFrac;
+	}
+
+	/**
+	 * Function clears (resets) the state of *this object and returns it to
+	 * the state after construction. All input data accumulated in the
+	 * internal buffer so far will be discarded.
+	 *
+	 * Note that the destination sample rate will remain unchanged, even if it
+	 * was changed since the time of *this object's construction.
+	 */
+
+	void clear()
+	{
+		BufLeft = 0;
+		WritePos = 0;
+		ReadPos = BufLen - FilterLenD2Minus1; // Set "read" position to
+			// account for filter's latency at zero fractional delay which
+			// equals to FilterLenD2Minus1.
+
+		memset( &Buf[ ReadPos ], 0, FilterLenD2Minus1 * sizeof( double ));
+
+		InCounter = 0;
+		InPosInt = 0;
+		InPosFrac = InitFracPos;
+		InPosShift = InitFracPos;
 	}
 
 	/**
@@ -392,6 +407,9 @@ private:
 	double SrcSampleRate; ///< Source sample rate.
 		///<
 	double DstSampleRate; ///< Destination sample rate.
+		///<
+	double InitFracPos; ///< Initial fractional position, in samples, in the
+		///< range [0; 1).
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation
