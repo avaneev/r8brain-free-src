@@ -7,7 +7,7 @@
  *
  * This file includes FFT object implementation. All created FFT objects are
  * kept in a global list after use for future reusal. Such approach minimizes
- * time necessary to initialize the FFT object of the required size.
+ * time necessary to initialize the FFT object of the required length.
  *
  * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
  * See the "License.txt" file for license.
@@ -61,30 +61,30 @@ public:
 	}
 
 	/**
-	 * @return The size (the number of real values in a transform) of *this
+	 * @return The length (the number of real values in a transform) of *this
 	 * FFT object, expressed as Nth power of 2.
 	 */
 
-	int getSizeBits() const
+	int getLenBits() const
 	{
-		return( SizeBits );
+		return( LenBits );
 	}
 
 	/**
-	 * @return The size (the number of real values in a transform) of *this
+	 * @return The length (the number of real values in a transform) of *this
 	 * FFT object.
 	 */
 
-	int getSize() const
+	int getLen() const
 	{
-		return( Size );
+		return( Len );
 	}
 
 	/**
 	 * Function performs in-place forward FFT.
 	 *
-	 * @param[in,out] p Pointer to data block to transform, size should be
-	 * equal to *this object's Size.
+	 * @param[in,out] p Pointer to data block to transform, length should be
+	 * equal to *this object's getLen().
 	 */
 
 	void forward( double* const p ) const
@@ -95,7 +95,7 @@ public:
 
 	#else // R8B_IPP
 
-		ooura_fft :: rdft( Size, 1, p, ip.getPtr(), w.getPtr() );
+		ooura_fft :: rdft( Len, 1, p, ip.getPtr(), w.getPtr() );
 
 	#endif // R8B_IPP
 	}
@@ -103,8 +103,8 @@ public:
 	/**
 	 * Function performs in-place inverse FFT.
 	 *
-	 * @param[in,out] p Pointer to data block to transform, size should be
-	 * equal to *this object's Size.
+	 * @param[in,out] p Pointer to data block to transform, length should be
+	 * equal to *this object's getLen().
 	 */
 
 	void inverse( double* const p ) const
@@ -115,7 +115,7 @@ public:
 
 	#else // R8B_IPP
 
-		ooura_fft :: rdft( Size, -1, p, ip.getPtr(), w.getPtr() );
+		ooura_fft :: rdft( Len, -1, p, ip.getPtr(), w.getPtr() );
 
 	#endif // R8B_IPP
 	}
@@ -123,7 +123,7 @@ public:
 	/**
 	 * Function multiplies two complex-valued data blocks and places result in
 	 * a new data block. Length of all data blocks should be equal to *this
-	 * object's block size. Input blocks should have been produced with the
+	 * object's block length. Input blocks should have been produced with the
 	 * forward() function of *this object.
 	 *
 	 * @param ip1 Input data block 1.
@@ -137,7 +137,7 @@ public:
 		#if R8B_IPP
 
 			ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op,
-				Size );
+				Len );
 
 		#else // R8B_IPP
 
@@ -146,7 +146,7 @@ public:
 
 			int i = 2;
 
-			while( i < Size )
+			while( i < Len )
 			{
 				op[ i ] = ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
 				op[ i + 1 ] =
@@ -178,13 +178,13 @@ public:
 
 			ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
 				(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
-				( Size >> 1 ) - 1 );
+				( Len >> 1 ) - 1 );
 
 		#else // R8B_IPP
 
 			int i = 2;
 
-			while( i < Size )
+			while( i < Len )
 			{
 				op[ i ] += ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
 				op[ i + 1 ] +=
@@ -198,7 +198,7 @@ public:
 
 	/**
 	 * Function multiplies two complex-valued data blocks in-place. Length of
-	 * all data blocks should be equal to *this object's block size. Input
+	 * all data blocks should be equal to *this object's block length. Input
 	 * blocks should have been produced with the forward() function of *this
 	 * object.
 	 *
@@ -210,7 +210,7 @@ public:
 	{
 	#if R8B_IPP
 
-		ippsMulPerm_64f( (Ipp64f*) op, (Ipp64f*) ip, (Ipp64f*) op, Size );
+		ippsMulPerm_64f( (Ipp64f*) op, (Ipp64f*) ip, (Ipp64f*) op, Len );
 
 	#else // R8B_IPP
 
@@ -219,7 +219,7 @@ public:
 
 		int i = 2;
 
-		while( i < Size )
+		while( i < Len )
 		{
 			const double t = op[ i ] * ip[ i ] - op[ i + 1 ] * ip[ i + 1 ];
 			op[ i + 1 ] = op[ i ] * ip[ i + 1 ] + op[ i + 1 ] * ip[ i ];
@@ -234,9 +234,9 @@ public:
 	 * Function performs in-place spectrum squaring. May cause aliasing
 	 * if the filter was not zero-padded before the forward() function call.
 	 *
-	 * @param[in,out] p Pointer to data block to square, size should be equal
-	 * to *this object's Size. This data block should contain complex spectrum
-	 * data, previously obtained via the forward() function.
+	 * @param[in,out] p Pointer to data block to square, length should be
+	 * equal to *this object's getLen(). This data block should contain
+	 * complex spectrum data, previously obtained via the forward() function.
 	 */
 
 	void sqr( double* const p ) const
@@ -247,13 +247,13 @@ public:
 	#if R8B_IPP
 
 		ippsSqr_64fc( (Ipp64fc*) ( p + 2 ), (Ipp64fc*) ( p + 2 ),
-			( Size >> 1 ) - 1 );
+			( Len >> 1 ) - 1 );
 
 	#else // R8B_IPP
 
 		int i = 2;
 
-		while( i < Size )
+		while( i < Len )
 		{
 			const double r = p[ i ] * p[ i ] - p[ i + 1 ] * p[ i + 1 ];
 			p[ i + 1 ] = p[ i ] * ( p[ i + 1 ] + p[ i + 1 ]);
@@ -265,9 +265,9 @@ public:
 	}
 
 private:
-	int SizeBits; ///< Size of FFT block (expressed as Nth power of 2).
+	int LenBits; ///< Length of FFT block (expressed as Nth power of 2).
 		///<
-	int Size; ///< Size of FFT block (number of real values).
+	int Len; ///< Length of FFT block (number of real values).
 		///<
 	double InvMulConst; ///< Inverse FFT multiply constant.
 		///<
@@ -332,18 +332,18 @@ private:
 	/**
 	 * Constructor initializes FFT object.
 	 *
-	 * @param SizeBits Size of FFT block (Nth power of 2), specifies the
+	 * @param aLenBits The length of FFT block (Nth power of 2), specifies the
 	 * number of real values in a block. Values from 1 to 30 inclusive are
 	 * supported.
 	 */
 
-	CDSPRealFFT( const int aSizeBits )
-		: SizeBits( aSizeBits )
-		, Size( 1 << aSizeBits )
+	CDSPRealFFT( const int aLenBits )
+		: LenBits( aLenBits )
+		, Len( 1 << aLenBits )
 	#if R8B_IPP
-		, InvMulConst( 1.0 / (double) Size )
+		, InvMulConst( 1.0 / Len )
 	#else // R8B_IPP
-		, InvMulConst( 2.0 / (double) Size )
+		, InvMulConst( 2.0 / Len )
 	#endif // R8B_IPP
 	{
 	#if R8B_IPP
@@ -352,21 +352,21 @@ private:
 		int SpecBufferSize;
 		int BufferSize;
 
-		ippsFFTGetSize_R_64f( SizeBits, IPP_FFT_NODIV_BY_ANY,
+		ippsFFTGetSize_R_64f( LenBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, &SpecSize, &SpecBufferSize, &BufferSize );
 
 		CFixedBuffer< unsigned char > InitBuffer( SpecBufferSize );
 		SpecBuffer.alloc( SpecSize );
 		WorkBuffer.alloc( BufferSize );
 
-		ippsFFTInit_R_64f( &SPtr, SizeBits, IPP_FFT_NODIV_BY_ANY,
+		ippsFFTInit_R_64f( &SPtr, LenBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, SpecBuffer, InitBuffer );
 
 	#else // R8B_IPP
 
-		ip.alloc( (int) ceil( 2.0 + sqrt( (double) ( Size >> 1 ))));
+		ip.alloc( (int) ceil( 2.0 + sqrt( (double) ( Len >> 1 ))));
 		ip[ 0 ] = 0;
-		w.alloc( Size >> 1 );
+		w.alloc( Len >> 1 );
 
 	#endif // R8B_IPP
 	}
@@ -396,15 +396,15 @@ public:
 	}
 
 	/**
-	 * Function acquires FFT object with the specified block size.
+	 * Function acquires FFT object with the specified block length.
 	 *
-	 * @param SizeBits Size of FFT block (Nth power of 2), in the range
+	 * @param LenBits The length of FFT block (Nth power of 2), in the range
 	 * [1; 30] inclusive, specifies the number of real values in a FFT block.
 	 */
 
-	CDSPRealFFTKeeper( const int SizeBits )
+	CDSPRealFFTKeeper( const int LenBits )
 	{
-		Object = acquire( SizeBits );
+		Object = acquire( LenBits );
 	}
 
 	~CDSPRealFFTKeeper()
@@ -427,18 +427,18 @@ public:
 	}
 
 	/**
-	 * Function acquires FFT object with the specified block size. This
+	 * Function acquires FFT object with the specified block length. This
 	 * function can be called any number of times.
 	 *
-	 * @param SizeBits Size of FFT block (Nth power of 2), in the range
+	 * @param LenBits The length of FFT block (Nth power of 2), in the range
 	 * [1; 30] inclusive, specifies the number of real values in a FFT block.
 	 */
 
-	void init( const int SizeBits )
+	void init( const int LenBits )
 	{
 		if( Object != NULL )
 		{
-			if( Object -> SizeBits == SizeBits )
+			if( Object -> LenBits == LenBits )
 			{
 				return;
 			}
@@ -446,7 +446,7 @@ public:
 			release( Object );
 		}
 
-		Object = acquire( SizeBits );
+		Object = acquire( LenBits );
 	}
 
 	/**
@@ -469,28 +469,28 @@ private:
 	static CSyncObject StateSync; ///< FFTObjects synchronizer.
 		///<
 	static CDSPRealFFT :: CObjKeeper FFTObjects[]; ///< Pool of FFT objects of
-		///< various sizes.
+		///< various lengths.
 		///<
 
 	/**
 	 * Function acquires FFT object from the global pool.
 	 *
-	 * @param SizeBits FFT block size (expressed as Nth power of 2).
+	 * @param LenBits FFT block length (expressed as Nth power of 2).
 	 */
 
-	CDSPRealFFT* acquire( const int SizeBits )
+	CDSPRealFFT* acquire( const int LenBits )
 	{
-		R8BASSERT( SizeBits > 0 && SizeBits <= 30 );
+		R8BASSERT( LenBits > 0 && LenBits <= 30 );
 
 		R8BSYNC( StateSync );
 
-		if( FFTObjects[ SizeBits ] == NULL )
+		if( FFTObjects[ LenBits ] == NULL )
 		{
-			return( new CDSPRealFFT( SizeBits ));
+			return( new CDSPRealFFT( LenBits ));
 		}
 
-		CDSPRealFFT* ffto = FFTObjects[ SizeBits ];
-		FFTObjects[ SizeBits ] = ffto -> Next;
+		CDSPRealFFT* ffto = FFTObjects[ LenBits ];
+		FFTObjects[ LenBits ] = ffto -> Next;
 
 		return( ffto );
 	}
@@ -505,8 +505,8 @@ private:
 	{
 		R8BSYNC( StateSync );
 
-		ffto -> Next = FFTObjects[ ffto -> SizeBits ];
-		FFTObjects[ ffto -> SizeBits ] = ffto;
+		ffto -> Next = FFTObjects[ ffto -> LenBits ];
+		FFTObjects[ ffto -> LenBits ] = ffto;
 	}
 };
 
@@ -540,18 +540,18 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	R8BASSERT( KernelLen > 0 );
 	R8BASSERT( LenMult >= 2 );
 
-	const int SizeBits = getBitOccupancy(( KernelLen * LenMult ) - 1 );
-	const int Size = 1 << SizeBits;
-	const int Size2 = Size >> 1;
+	const int LenBits = getBitOccupancy(( KernelLen * LenMult ) - 1 );
+	const int Len = 1 << LenBits;
+	const int Len2 = Len >> 1;
 	int i;
 
-	CFixedBuffer< double > ip( Size );
-	CFixedBuffer< double > ip2( Size2 + 1 );
+	CFixedBuffer< double > ip( Len );
+	CFixedBuffer< double > ip2( Len2 + 1 );
 
 	memcpy( &ip[ 0 ], Kernel, KernelLen * sizeof( double ));
-	memset( &ip[ KernelLen ], 0, ( Size - KernelLen ) * sizeof( double ));
+	memset( &ip[ KernelLen ], 0, ( Len - KernelLen ) * sizeof( double ));
 
-	CDSPRealFFTKeeper ffto( SizeBits );
+	CDSPRealFFTKeeper ffto( LenBits );
 	ffto -> forward( ip );
 
 	// Create the "log |c|" spectrum while saving the original power spectrum
@@ -559,10 +559,10 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	ip2[ 0 ] = ip[ 0 ];
 	ip[ 0 ] = log( fabs( ip[ 0 ]));
-	ip2[ Size2 ] = ip[ 1 ];
+	ip2[ Len2 ] = ip[ 1 ];
 	ip[ 1 ] = log( fabs( ip[ 1 ]));
 
-	for( i = 1; i < Size2; i++ )
+	for( i = 1; i < Len2; i++ )
 	{
 		ip2[ i ] = sqrt( ip[ i * 2 ] * ip[ i * 2 ] +
 			ip[ i * 2 + 1 ] * ip[ i * 2 + 1 ]);
@@ -577,14 +577,14 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	ip[ 0 ] = 0.0;
 
-	for( i = 1; i < Size2; i++ )
+	for( i = 1; i < Len2; i++ )
 	{
 		ip[ i ] *= ffto -> getInvMulConst();
 	}
 
-	ip[ Size2 ] = 0.0;
+	ip[ Len2 ] = 0.0;
 
-	for( i = Size2 + 1; i < Size; i++ )
+	for( i = Len2 + 1; i < Len; i++ )
 	{
 		ip[ i ] *= -ffto -> getInvMulConst();
 	}
@@ -596,9 +596,9 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	ffto -> forward( ip );
 
 	ip[ 0 ] = ip2[ 0 ];
-	ip[ 1 ] = ip2[ Size2 ];
+	ip[ 1 ] = ip2[ Len2 ];
 
-	for( i = 1; i < Size2; i++ )
+	for( i = 1; i < Len2; i++ )
 	{
 		const double p = ip2[ i ];
 		ip[ i * 2 + 0 ] = cos( ip[ i * 2 + 1 ]) * p;
@@ -626,23 +626,6 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 		calcFIRFilterResponseAndGroupDelay( Kernel, KernelLen, 0.0,
 			tmp, tmp, *DCGroupDelay );
 	}
-/*
-	const int thcount = 10000;
-	const double g = 10.0 / log( 10.0 );
-
-	for( i = 0; i < thcount; i++ )
-	{
-		const double th = M_PI * i / ( thcount - 1 );
-		double re;
-		double im;
-		double gd;
-
-		calcFIRFilterResponseAndGroupDelay( Kernel, KernelLen, th,
-			re, im, gd );
-
-		printf( "%.3f\t%.10f\n", g * log( re * re + im * im ), gd );
-//		printf( "%.3f\n", g * log( re * re + im * im ));
-	}*/
 }
 
 } // namespace r8b

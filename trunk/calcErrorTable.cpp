@@ -38,20 +38,21 @@ int main()
 			tb <= CDSPFIRFilter :: getLPMaxTransBand(); tb *= 1.03 )
 		{
 			CDSPFIRFilter& f =
-				CDSPFIRFilterCache :: getLPFilter( 0.5, tb, atten );
+				CDSPFIRFilterCache :: getLPFilter( 0.5, tb, atten,
+				fprLinearPhase );
 
 			// Perform inverse FFT to obtain time-domain FIR filter.
 
-			CDSPRealFFTKeeper ffto( f.getBlockSizeBits() + 1 );
-			CFixedBuffer< double > Kernel( 2 << f.getBlockSizeBits() );
+			CDSPRealFFTKeeper ffto( f.getBlockLenBits() + 1 );
+			CFixedBuffer< double > Kernel( 2 << f.getBlockLenBits() );
 			memcpy( &Kernel[ 0 ], f.getKernelBlock(),
-				( 2 * sizeof( double )) << f.getBlockSizeBits() );
+				( 2 * sizeof( double )) << f.getBlockLenBits() );
 
 			ffto -> inverse( Kernel );
 
 			// Calculate spectrum power at points of interest.
 
-			const int l = f.getLatency() * 2 + 1;
+			const int l = f.getKernelLen();
 			const double g = 10.0 / log( 10.0 );
 			double re;
 			double im;
@@ -62,10 +63,12 @@ int main()
 			calcFIRFilterResponse( &Kernel[ 0 ], l,
 				M_PI * ( 1.0 - tb * 0.01 ) * 0.5, re, im );
 
+			const double gtb = g * log( re * re + im * im );
+
 			// Output the error data.
 
 			printf( "%f\t%f\t%f\t%f\t%f\n", tb, -atten, g05,
-				g * log( re * re + im * im ), g05 + atten );
+				gtb, g05 + atten );
 
 			f.unref();
 		}

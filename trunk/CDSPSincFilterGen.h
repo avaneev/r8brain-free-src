@@ -50,7 +50,7 @@ public:
 	int KernelLen; ///< Resulting length of the filter kernel, this variable
 		///< is set after the call to one of the "init" functions.
 		///<
-	int fl2; ///< Internal "half kernel size" value. This value can be used
+	int fl2; ///< Internal "half kernel length" value. This value can be used
 		///< as filter's latency in samples (taps), this variable is set after
 		///< the call to one of the "init" functions.
 		///<

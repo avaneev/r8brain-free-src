@@ -33,12 +33,12 @@ enum EDSPResamplingMode
  * \brief Single-block overlap-save convolution processing class.
  *
  * Class that implements single-block overlap-save convolution processing. The
- * size of the single FFT block used depends on the length of the filter
+ * length of a single FFT block used depends on the length of the filter
  * kernel.
  *
  * The rationale behind "single-block" processing is that increasing the FFT
- * block size by 2 is more efficient than performing convolution at the same
- * FFT block size using two blocks.
+ * block length by 2 is more efficient than performing convolution at the same
+ * FFT block length using two blocks.
  *
  * This class also implements a built-in resampling (2X up or 2X down) which
  * simplifies the overall resampling objects topology.
@@ -65,13 +65,13 @@ public:
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,
 		const EDSPResamplingMode aResamplingMode = rsmNone )
 		: Filter( &aFilter )
-		, ffto( Filter -> getBlockSizeBits() + 1 )
+		, ffto( Filter -> getBlockLenBits() + 1 )
 		, ResamplingMode( aResamplingMode )
 		, UpShift( ResamplingMode == rsmUpsample2X ? 1 : 0 )
-		, BlockSize( 1 << Filter -> getBlockSizeBits() )
-		, Latency( BlockSize + Filter -> getLatency() )
+		, BlockLen( 1 << Filter -> getBlockLenBits() )
+		, Latency( BlockLen + Filter -> getLatency() )
 	{
-		const int bs = BlockSize * (int) sizeof( double );
+		const int bs = BlockLen * (int) sizeof( double );
 
 		PrevInput.alloc( bs );
 		memset( &PrevInput[ 0 ], 0, bs );
@@ -82,7 +82,7 @@ public:
 		WorkBlocks[ 1 ].alloc( bs * 2 );
 		CurOutput = WorkBlocks[ 1 ];
 
-		InDataLeft = BlockSize;
+		InDataLeft = BlockLen;
 		LatencyLeft = Latency;
 		DownSkip = 0;
 	}
@@ -136,7 +136,7 @@ public:
 	 * this variable will point to the actual output data within the output
 	 * buffer. The length of the output buffer if resampling mode
 	 * rsmUpsample2X is used should be twice as large as the input buffer. If
-	 * rsmDownsample2X is used the size should be equal to "l0 / 2 + 1".
+	 * rsmDownsample2X is used the length should be equal to "l0 / 2 + 1".
 	 * @param l0 How many samples to process.
 	 * @return The number of output samples available after processing. This
 	 * value can be smaller in comparison to the original "l0" value due to
@@ -155,7 +155,7 @@ public:
 
 		while( l > 0 )
 		{
-			const int Offs = BlockSize - InDataLeft;
+			const int Offs = BlockLen - InDataLeft;
 
 			if( l < InDataLeft )
 			{
@@ -167,7 +167,7 @@ public:
 			}
 
 			const int b = InDataLeft;
-			InDataLeft = BlockSize;
+			InDataLeft = BlockLen;
 
 			acquireInput( ip, Offs, b );
 			memcpy( op, &CurOutput[ Offs ], b * sizeof( double ));
@@ -223,22 +223,22 @@ public:
 private:
 	CDSPFIRFilter* Filter; ///< Filter in use.
 		///<
-	CDSPRealFFTKeeper ffto; ///< FFT object, size Filter.BlockSizeBits + 1.
+	CDSPRealFFTKeeper ffto; ///< FFT object, length = Filter.BlockLenBits + 1.
 		///<
 	EDSPResamplingMode ResamplingMode; ///< Built-in resampling mode to use.
 		///<
 	int UpShift; ///< Upsampling shift. Equals 1 if 2x upsampling is used,
 		///< 0 otherwise.
 		///<
-	int BlockSize; ///< Block size in samples.
+	int BlockLen; ///< Block length, in samples.
 		///<
 	int Latency; ///< Processing and filter kernel's latency.
 		///<
 	CFixedBuffer< double > PrevInput; ///< Previous input data,
-		///< size = BlockSize.
+		///< capacity = BlockLen.
 		///<
 	CFixedBuffer< double > WorkBlocks[ 2 ]; ///< Input and output blocks,
-		///< size = BlockSize * 2 each. Used in flip-flop manner.
+		///< capacity = BlockLen * 2 each. Used in the flip-flop manner.
 		///<
 	double* CurInput; ///< Input data buffer.
 		///<
@@ -260,7 +260,7 @@ private:
 	 * Function acquires input data and distributes it over the work buffers.
 	 *
 	 * @param ip Input buffer.
-	 * @param Offs Current input/output offset, 0..BlockSize-1.
+	 * @param Offs Current input/output offset, 0..BlockLen-1.
 	 * @param l Sample count.
 	 */
 
@@ -268,7 +268,7 @@ private:
 	{
 		double* const prev = &PrevInput[ Offs ];
 		double* const op = &CurInput[ Offs ];
-		double* const opoffs = op + BlockSize;
+		double* const opoffs = op + BlockLen;
 		int i;
 
 		if( UpShift == 0 )
