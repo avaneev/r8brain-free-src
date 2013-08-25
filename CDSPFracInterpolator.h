@@ -160,7 +160,7 @@ private:
  * approach. This gives less than "1 per 100 billion" sample timing error when
  * converting 44100 to 48000 sample rate.
  *
- * VERY IMPORTANT: the interpolation step should not exceed FilterLen/2+1
+ * VERY IMPORTANT: the interpolation step should not exceed FilterLen / 2 + 1
  * samples or the algorithm in its current form will fail. However, this
  * condition can be easily met if the input signal is downsampled first before
  * the interpolation is performed.
@@ -177,7 +177,7 @@ private:
  * @param BufLenBits The length of the ring buffer, expressed as Nth power of
  * 2. This value can be reduced if it is known that short input buffers will
  * be passed to the interpolator. The minimum value of this parameter is 5,
- * and 1<<BufLenBits should be at least 3 times larger than the FilterLen.
+ * and 1 << BufLenBits should be at least 3 times larger than the FilterLen.
  */
 
 template< int FilterLen, int FilterFracs, int BufLenBits >
@@ -257,6 +257,9 @@ public:
 	 * maximal possible destination sample rate to the constructor, obtaining
 	 * the getMaxOutLen() value and then setting the destination sample rate
 	 * to whatever value is needed.
+	 *
+	 * It is advisable to change the sample rate in small increments, and as
+	 * rarely as possible: e.g. every several samples.
 	 *
 	 * @param NewDstSampleRate New destination sample rate.
 	 */
@@ -373,8 +376,8 @@ private:
 		///< ( FilterLen >> 1 ) + 1.
 		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
-		///< buffer. The actual size is twice as large to allow "beyond max"
-		///< positioning.
+		///< buffer. The actual length is twice as long to allow "beyond max
+		///< position" positioning.
 		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.

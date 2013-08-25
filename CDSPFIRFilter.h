@@ -31,7 +31,13 @@ enum EDSPFilterPhaseResponse
 	fprMinPhase ///< Minimum-phase response. Features a minimal latency
 		///< response, but the response's phase is non-linear. The latency is
 		///< usually expressed as non-integer value, and usually is small, but
-		///< is never equal to zero.
+		///< is never equal to zero. The minimum-phase filter is transformed
+		///< from the linear-phase filter. The transformation has precision
+		///< limits which may skew both the -3 dB point and attenuation of the
+		///< filter being transformed: as it was measured, the skew happens
+		///< purely at random, and in most cases it is within tolerable range.
+		///< In a small (%1) random subset of cases the skew is bigger and
+		///< cannot be predicted.
 };
 
 /**
@@ -98,16 +104,6 @@ public:
 	}
 
 	/**
-	 * @return Filter's block size, espressed as Nth power of 2. The actual
-	 * size is twice as large due to zero-padding.
-	 */
-
-	int getBlockSizeBits() const
-	{
-		return( BlockSizeBits );
-	}
-
-	/**
 	 * @return Filter's latency, in samples (integer part).
 	 */
 
@@ -124,6 +120,26 @@ public:
 	double getLatencyFrac() const
 	{
 		return( LatencyFrac );
+	}
+
+	/**
+	 * @return Filter kernel length, in samples. Not to be confused with the
+	 * block length.
+	 */
+
+	int getKernelLen() const
+	{
+		return( KernelLen );
+	}
+
+	/**
+	 * @return Filter's block length, espressed as Nth power of 2. The actual
+	 * length is twice as large due to zero-padding.
+	 */
+
+	int getBlockLenBits() const
+	{
+		return( BlockLenBits );
 	}
 
 	/**
@@ -155,6 +171,7 @@ private:
 		///< by the user (positive value).
 		///<
 	EDSPFilterPhaseResponse ReqPhase; ///< Required filter's phase response.
+		///<
 	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
 		///<
 	int RefCount; ///< The number of references made to *this FIR filter.
@@ -162,12 +179,16 @@ private:
 	int Latency; ///< Filter's latency in samples (integer part).
 		///<
 	double LatencyFrac; ///< Filter's latency in samples (fractional part).
-	int BlockSizeBits; ///< Block size used to store FIR filter, expressed as
-		///< Nth power of 2. This value is used directly by the convolver.
 		///<
-	CFixedBuffer< double > KernelBlock; ///< FIR filter buffer, size equals to
-		///< 1 << ( BlockSizeBits + 1 ). Second part of the buffer contains
-		///< zero-padding to allow alias-free convolution.
+	int KernelLen; ///< Filter kernel length, in samples.
+		///<
+	int BlockLenBits; ///< Block length used to store *this FIR filter,
+		///< expressed as Nth power of 2. This value is used directly by the
+		///< convolver.
+		///<
+	CFixedBuffer< double > KernelBlock; ///< FIR filter buffer, capacity
+		///< equals to 1 << ( BlockLenBits + 1 ). Second part of the buffer
+		///< contains zero-padding to allow alias-free convolution.
 		///<
 
 	CDSPFIRFilter()
@@ -189,10 +210,11 @@ private:
 		sinc.Freq2 = M_PI * Params.fo * ReqNormFreq;
 		sinc.initBand();
 
-		BlockSizeBits = getBitOccupancy( sinc.KernelLen - 1 );
-		const int BlockSize = 1 << BlockSizeBits;
+		KernelLen = sinc.KernelLen;
+		BlockLenBits = getBitOccupancy( KernelLen - 1 );
+		const int BlockLen = 1 << BlockLenBits;
 
-		KernelBlock.alloc( BlockSize * 2 );
+		KernelBlock.alloc( BlockLen * 2 );
 		sinc.generateBandPow( &KernelBlock[ 0 ], Params.pwr, Params.WinFunc );
 
 		if( ReqPhase == fprLinearPhase )
@@ -204,21 +226,20 @@ private:
 		{
 			double DCGroupDelay;
 
-			const int LenMult = 2;
-			calcMinPhaseTransform( &KernelBlock[ 0 ], sinc.KernelLen, LenMult,
-				false, &DCGroupDelay );
+			calcMinPhaseTransform( &KernelBlock[ 0 ], KernelLen, 3, false,
+				&DCGroupDelay );
 
 			Latency = (int) DCGroupDelay;
 			LatencyFrac = DCGroupDelay - Latency;
 		}
 
-		CDSPRealFFTKeeper ffto( BlockSizeBits + 1 );
+		CDSPRealFFTKeeper ffto( BlockLenBits + 1 );
 
-		normalizeFIRFilter( &KernelBlock[ 0 ], sinc.KernelLen,
+		normalizeFIRFilter( &KernelBlock[ 0 ], KernelLen,
 			ffto -> getInvMulConst() );
 
-		memset( &KernelBlock[ sinc.KernelLen ], 0,
-			( BlockSize * 2 - sinc.KernelLen ) * sizeof( double ));
+		memset( &KernelBlock[ KernelLen ], 0,
+			( BlockLen * 2 - KernelLen ) * sizeof( double ));
 
 		ffto -> forward( KernelBlock );
 	}

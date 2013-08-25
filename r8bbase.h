@@ -100,7 +100,7 @@
  * The memory footprint is quite modest ("double" type data):
  *
  *  * 1.5 MB of static memory for fractional delay filters
- *  * filter memory, per filter (N*8*2 bytes, where N is the block size,
+ *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
  *    smaller tables (128*8 bytes) for the "power of 2" resampling
