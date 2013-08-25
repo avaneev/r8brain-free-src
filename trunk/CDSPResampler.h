@@ -92,11 +92,24 @@ public:
 	 * than this value should never be supplied to the resampler. Note that
 	 * the resampler may use the input buffer itself for intermediate sample
 	 * data storage.
+	 * @param UsePower2 "True" if the "power of 2" resampling optimization
+	 * should be used when possible.
+	 * @param ReqPhase Required filter's phase response. Note that this
+	 * setting does not affect interpolator's phase response which is always
+	 * linear-phase. Also note that if the "power of 2" resampling was engaged
+	 * by the resampler together with the minimum-phase response, the audio
+	 * stream may become fractionally delayed by up to 1 sample, depending on
+	 * the minimum-phase filter's actual fractional delay. If the output
+	 * stream should always start at "time zero" offset with minimum-phase
+	 * filters the UserPower2 should be set to "false". Linear-phase filters
+	 * do not have fractional delay.
 	 * @see CDSPFIRFilterCache::getLPFilter()
 	 */
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
-		const double ReqTransBand, const double ReqAtten, const int MaxInLen )
+		const double ReqTransBand, const double ReqAtten, const int MaxInLen,
+		const bool UsePower2 = true,
+		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase )
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -123,7 +136,7 @@ public:
 
 			Convs[ 0 ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten ), rsmUpsample2X );
+				ReqAtten, ReqPhase ), rsmUpsample2X );
 
 			ConvCount = 1;
 			MaxOutLen = Convs[ 0 ] -> getMaxOutLen( MaxOutLen );
@@ -152,7 +165,7 @@ public:
 				UseConvCount++;
 			}
 
-			if( UseConvCount > 0 )
+			if( UsePower2 && UseConvCount > 0 )
 			{
 				R8BASSERT( UseConvCount <= ConvCountMax );
 
@@ -166,7 +179,7 @@ public:
 
 					Convs[ i ] = new CDSPBlockConvolver(
 						CDSPFIRFilterCache :: getLPFilter( 0.5, tb,
-						ReqAtten ), rsmUpsample2X );
+						ReqAtten, ReqPhase ), rsmUpsample2X );
 
 					MaxOutLen = Convs[ i ] -> getMaxOutLen( MaxOutLen );
 					ConvBufCapacities[ i & 1 ] = MaxOutLen;
@@ -202,8 +215,8 @@ public:
 					( CheckSR * SrcSRDiv <= SrcSampleRate ? 48 : 34 );
 
 				Convs[ ConvCount ] = new CDSPBlockConvolver(
-					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten ),
-					rsmDownsample2X );
+					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
+					ReqPhase ), rsmDownsample2X );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 				ConvCount++;
@@ -212,26 +225,24 @@ public:
 			}
 
 			const double NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
-			const CDSPResamplingMode rsm =
-				( NormFreq == 0.5 ? rsmDownsample2X : rsmNone );
+			const EDSPResamplingMode rsm =
+				( UsePower2 && NormFreq == 0.5 ? rsmDownsample2X : rsmNone );
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten ), rsm );
+				ReqAtten, ReqPhase ), rsm );
 
 			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 			ConvCount++;
 
 			if( rsm == rsmDownsample2X )
 			{
-				// No further interpolation is necessary.
-
-				return;
+				return; // No interpolator is needed.
 			}
 		}
 
-		Interp = new CDSPFracInterpolator(
-			SrcSampleRate * SrcSRMult / SrcSRDiv, DstSampleRate );
+		Interp = new CDSPFracInterpolator< 38, 1280, 9 >(
+			SrcSampleRate * SrcSRMult / SrcSRDiv, DstSampleRate, 0.0 );
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
@@ -309,10 +320,10 @@ private:
 	int ConvCount; ///< The number of objects defined in the Convs[] array.
 		///< Equals to 0 if sample rate conversion is not needed.
 		///<
-	CPtrKeeper< CDSPFracInterpolator* > Interp; ///< Fractional interpolator
-		///< object. Equals NULL if no fractional interpolation is required
-		///< meaning the "power of 2" resampling performed or no resampling is
-		///< performed at all.
+	CPtrKeeper< CDSPFracInterpolator< 38, 1280, 9 >* > Interp; ///< Fractional
+		///< interpolator object. Equals NULL if no fractional interpolation
+		///< is required meaning the "power of 2" resampling is performed or
+		///< no resampling is performed at all.
 		///<
 	CFixedBuffer< double > ConvBufs[ 2 ]; ///< Intermediate convolution
 		///< buffers to use, used only when at least 2x upsampling is
@@ -324,7 +335,7 @@ private:
 		///<
 	double* InterpBuf; ///< Final output interpolation buffer to use. If NULL
 		///< then the input buffer will be used instead. Otherwise this
-		///< pointer points to either one of ConvBufs or TmpBuf.
+		///< pointer points to either ConvBufs or TmpBuf.
 		///<
 
 	CDSPResampler()

@@ -26,8 +26,8 @@ CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
 int CDSPFIRFilterCache :: FilterCount = 0;
 
 template<>
-const CDSPFracDelayFilterBank< 38, 1280 > :: CFuncTable
-	CDSPFracDelayFilterBank< 38, 1280 > :: FuncTable =
-	CDSPFracDelayFilterBank< 38, 1280 > :: CFuncTable();
+const CDSPFracDelayFilterBank< 38, 1280 >
+	CDSPFracInterpolator< 38, 1280, 9 > :: FilterBank =
+	CDSPFracDelayFilterBank< 38, 1280 >();
 
 } // namespace r8b

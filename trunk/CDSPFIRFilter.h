@@ -20,6 +20,21 @@
 namespace r8b {
 
 /**
+ * Enumeration of filter's phase responses.
+ */
+
+enum EDSPFilterPhaseResponse
+{
+	fprLinearPhase = 0, ///< Linear-phase response. Features a linear-phase
+		///< high-latency response, with the latency expressed as integer
+		///< value.
+	fprMinPhase ///< Minimum-phase response. Features a minimal latency
+		///< response, but the response's phase is non-linear. The latency is
+		///< usually expressed as non-integer value, and usually is small, but
+		///< is never equal to zero.
+};
+
+/**
  * \brief Calculation and storage class for FIR filters.
  *
  * Class that implements calculation and storing of a FIR filter (currently
@@ -93,12 +108,22 @@ public:
 	}
 
 	/**
-	 * @return Filter's latency, in samples.
+	 * @return Filter's latency, in samples (integer part).
 	 */
 
 	int getLatency() const
 	{
 		return( Latency );
+	}
+
+	/**
+	 * @return Filter's latency, in samples (fractional part). Always zero for
+	 * linear-phase filters.
+	 */
+
+	double getLatencyFrac() const
+	{
+		return( LatencyFrac );
 	}
 
 	/**
@@ -129,12 +154,14 @@ private:
 	double ReqAtten; ///< Required stop-band attenuation in decibel, as passed
 		///< by the user (positive value).
 		///<
+	EDSPFilterPhaseResponse ReqPhase; ///< Required filter's phase response.
 	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
 		///<
 	int RefCount; ///< The number of references made to *this FIR filter.
 		///<
-	int Latency; ///< Filter's latency in samples.
+	int Latency; ///< Filter's latency in samples (integer part).
 		///<
+	double LatencyFrac; ///< Filter's latency in samples (fractional part).
 	int BlockSizeBits; ///< Block size used to store FIR filter, expressed as
 		///< Nth power of 2. This value is used directly by the convolver.
 		///<
@@ -162,14 +189,31 @@ private:
 		sinc.Freq2 = M_PI * Params.fo * ReqNormFreq;
 		sinc.initBand();
 
-		Latency = sinc.fl2;
 		BlockSizeBits = getBitOccupancy( sinc.KernelLen - 1 );
 		const int BlockSize = 1 << BlockSizeBits;
+
 		KernelBlock.alloc( BlockSize * 2 );
+		sinc.generateBandPow( &KernelBlock[ 0 ], Params.pwr, Params.WinFunc );
+
+		if( ReqPhase == fprLinearPhase )
+		{
+			Latency = sinc.fl2;
+			LatencyFrac = 0.0;
+		}
+		else
+		{
+			double DCGroupDelay;
+
+			const int LenMult = 2;
+			calcMinPhaseTransform( &KernelBlock[ 0 ], sinc.KernelLen, LenMult,
+				false, &DCGroupDelay );
+
+			Latency = (int) DCGroupDelay;
+			LatencyFrac = DCGroupDelay - Latency;
+		}
 
 		CDSPRealFFTKeeper ffto( BlockSizeBits + 1 );
 
-		sinc.generateBandPow( &KernelBlock[ 0 ], Params.pwr, Params.WinFunc );
 		normalizeFIRFilter( &KernelBlock[ 0 ], sinc.KernelLen,
 			ffto -> getInvMulConst() );
 
@@ -230,10 +274,12 @@ public:
 	 * filter object with the required characteristics. A reference count is
 	 * incremented in the returned filter object which should be released
 	 * after use via the CDSPFIRFilter::unref() function.
+	 * @param ReqPhase Required filter's phase response.
 	 */
 
 	static CDSPFIRFilter& getLPFilter( const double ReqNormFreq,
-		const double ReqTransBand, const double ReqAtten )
+		const double ReqTransBand, const double ReqAtten,
+		const EDSPFilterPhaseResponse ReqPhase )
 	{
 		R8BASSERT( ReqNormFreq >= 0.0 && ReqNormFreq <= 1.0 );
 		R8BASSERT( ReqTransBand >= CDSPFIRFilter::getLPMinTransBand() );
@@ -250,7 +296,8 @@ public:
 		{
 			if( CurFilter -> ReqNormFreq == ReqNormFreq &&
 				CurFilter -> ReqTransBand == ReqTransBand &&
-				CurFilter -> ReqAtten == ReqAtten )
+				CurFilter -> ReqAtten == ReqAtten &&
+				CurFilter -> ReqPhase == ReqPhase )
 			{
 				break;
 			}
@@ -299,13 +346,14 @@ public:
 		}
 		else
 		{
-			// Create a new filter object (with RefCount == 1) and build
+			// Create a new filter object (with RefCount == 1) and build the
 			// filter kernel.
 
 			CurFilter = new CDSPFIRFilter();
 			CurFilter -> ReqNormFreq = ReqNormFreq;
 			CurFilter -> ReqTransBand = ReqTransBand;
 			CurFilter -> ReqAtten = ReqAtten;
+			CurFilter -> ReqPhase = ReqPhase;
 			FilterCount++;
 
 			CDSPFIRFilterParams Params;

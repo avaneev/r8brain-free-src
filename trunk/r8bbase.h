@@ -19,7 +19,7 @@
  * Open source high-quality professional audio sample rate converter (SRC)
  * library. Features routines for SRC, both up- and downsampling, to/from any
  * sample rate, including non-integer sample rates: it can be also used for
- * converting to/from SACD sample rate and even go beyond that. SRC routines
+ * conversion to/from SACD sample rate and even go beyond that. SRC routines
  * were implemented in multi-platform C++ code, and have a high level of
  * optimality. The user can select the transition band/steepness of the
  * low-pass (reconstruction) filter, expressed as a percentage of the full
@@ -67,8 +67,8 @@
  * library. You may also need to include to your project: the "Kernel32"
  * library (on Windows) and the "pthread" library on Mac OS X and Linux.
  *
- * The code of this library was commented in Doxygen] style. To generate the
- * documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
+ * The code of this library was commented in the Doxygen style. To generate
+ * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
  * Preliminary tests show that the resampler (at 3% transition band, 96 dB
@@ -92,8 +92,9 @@
  * This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
  * 4X, 8X, 16X, etc. upsampling and downsampling).
  *
- * This library was tested for compatibility with GNU C++ and Intel C++
- * compilers, on 32- and 64-bit Windows, Mac OS X and CentOS Linux.
+ * This library was tested for compatibility with GNU C++, Microsoft Visual
+ * Studio and Intel C++ compilers, on 32- and 64-bit Windows, Mac OS X and
+ * CentOS Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
  * The memory footprint is quite modest ("double" type data):
@@ -419,7 +420,7 @@ private:
  * should be deleted together with the "keeper" by calling object's "delete"
  * operator.
  *
- * @param T Pointer type to operate with, must include asterisk (e.g.
+ * @param T Pointer type to operate with, must include the asterisk (e.g.
  * "CDSPFIRFilter*").
  */
 
@@ -437,7 +438,7 @@ public:
 	/**
 	 * Constructor assigns a pointer to object to *this keeper.
 	 *
-	 * @param aObject Pointer to object to keep,
+	 * @param aObject Pointer to object to keep, can be NULL.
 	 */
 
 	template< class T2 >
@@ -455,7 +456,7 @@ public:
 	 * Function assigns a pointer to object to *this keeper. A previously
 	 * keeped pointer will be reset and object deleted.
 	 *
-	 * @param aObject Pointer to object to keep,
+	 * @param aObject Pointer to object to keep, can be NULL.
 	 */
 
 	template< class T2 >
@@ -591,9 +592,10 @@ private:
  * \brief A "keeper" class for CSyncObject-based synchronization.
  *
  * Sync keeper class. The object of this class can be used as auto-init and
- * auto-deinit object for calling the acquire() and release() functions of the
+ * auto-deinit object for calling the acquire() and release() functions of an
  * object of the CSyncObject class. This "keeper" object is best used in
- * functions as an "automatic" object allocated on the stack.
+ * functions as an "automatic" object allocated on the stack, possibly via the
+ * R8BSYNC() macro.
  */
 
 class CSyncKeeper
@@ -645,7 +647,8 @@ protected:
 };
 
 /**
- * The synchronization macro. The R8BSYNC( obj ) macro should be put before
+ * The synchronization macro. The R8BSYNC( obj ) macro, which creates and
+ * object of the r8b::CSyncKeeper class on stack, should be put before
  * sections of the code that may potentially change data asynchronously with
  * other threads at the same time. The R8BSYNC( obj ) macro "acquires" the
  * synchronization object thus blocking execution of other threads that also
@@ -739,7 +742,7 @@ private:
 
 inline int getBitOccupancy( const int v )
 {
-	static const int OccupancyTable[] =
+	static const char OccupancyTable[] =
 	{
 		1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
 		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -815,6 +818,72 @@ inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
 
 	re0 = re;
 	im0 = im;
+}
+
+/**
+ * Function calculates frequency response and group delay of the specified FIR
+ * filter at the specified circular frequency. The group delay is calculated
+ * by evaluating the filter's response at close sideband frequencies of "th".
+ *
+ * @param flt FIR filter's coefficients.
+ * @param fltlen Number of coefficients (taps) in the filter.
+ * @param th Circular frequency (0..pi).
+ * @param[out] re Resulting real part of the complex frequency response.
+ * @param[out] im Resulting imaginary part of the complex frequency response.
+ * @param[out] gd Resulting group delay at the specified frequency, in
+ * samples.
+ */
+
+template< class T >
+inline void calcFIRFilterResponseAndGroupDelay( const T* const flt,
+	const int fltlen, const double th, double& re, double& im, double& gd )
+{
+	// Calculate response at "th".
+
+	calcFIRFilterResponse( flt, fltlen, th, re, im );
+
+	// Calculate response at close sideband frequencies.
+
+	const int Count = 2;
+	const double thd2 = 1e-9;
+	double ths[ Count ] = { th - thd2, th + thd2 };
+
+	if( ths[ 0 ] < 0.0 )
+	{
+		ths[ 0 ] = 0.0;
+	}
+
+	if( ths[ 1 ] > M_PI )
+	{
+		ths[ 1 ] = M_PI;
+	}
+
+	double ph1[ Count ];
+	int i;
+
+	for( i = 0; i < Count; i++ )
+	{
+		double re1;
+		double im1;
+
+		calcFIRFilterResponse( flt, fltlen, ths[ i ], re1, im1 );
+		ph1[ i ] = atan2( im1, re1 );
+	}
+
+	if( fabs( ph1[ 1 ] - ph1[ 0 ]) > M_PI )
+	{
+		if( ph1[ 1 ] > ph1[ 0 ])
+		{
+			ph1[ 1 ] -= M_2PI;
+		}
+		else
+		{
+			ph1[ 1 ] += M_2PI;
+		}
+	}
+
+	const double thd = ths[ 1 ] - ths[ 0 ];
+	gd = ( ph1[ 1 ] - ph1[ 0 ]) / -thd;
 }
 
 /**
