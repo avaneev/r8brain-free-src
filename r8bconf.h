@@ -26,6 +26,25 @@
 	#error r8brain-free-src: unknown platform
 #endif
 
+#if !defined( R8B_FLTLEN )
+	/**
+	 * This macro defines the default fractional delay filter length. Macro is
+	 * used by the r8b::CDSPResampler class.
+	 */
+
+	#define R8B_FLTLEN 28
+#endif // !defined( R8B_FLTLEN )
+
+#if !defined( R8B_FLTFRACS )
+	/**
+	 * This macro defines the default number of fractional delay filters that
+	 * are sampled by the filter bank. Macro is used by the r8b::CDSPResampler
+	 * class.
+	 */
+
+	#define R8B_FLTFRACS 800
+#endif // !defined( R8B_FLTFRACS )
+
 #if !defined( R8B_IPP )
 	/**
 	 * Set the R8B_IPP macro definition to 1 to enable the use of Intel IPP's
@@ -85,5 +104,15 @@
 
 	#define R8B_FILTER_CACHE_MAX 64
 #endif // !defined( R8B_FILTER_CACHE_MAX )
+
+#if !defined( R8B_FLTTEST )
+	/**
+	 * This macro, when equal to 1, enables fractional delay filter bank
+	 * testing: in this mode the filter bank becomes dynamic member of the
+	 * CDSPFracInterpolator object instead of being a global static object.
+	 */
+
+	#define R8B_FLTTEST 0
+#endif // !defined( R8B_FLTTEST )
 
 #endif // R8BCONF_INCLUDED

@@ -34,7 +34,7 @@
  *
  * The algorithm at first produces 2X oversampled (relative to the destination
  * sample rate) signal and then performs interpolation using a bank of short
- * (38 taps) spline-interpolated sinc-based fractional delay filters. This
+ * (28 taps) spline-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -52,7 +52,7 @@
  * \section usage Usage Information
  *
  * The sample rate converter (resampler) is represented by the
- * r8b::CDSPResampler class, which is a single front-end class for the whole
+ * r8b::CDSPResampler<> class, which is a single front-end class for the whole
  * library. You do not basically need to use nor understand any other classes
  * beside this class.
  *
@@ -71,11 +71,11 @@
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
- * Preliminary tests show that the resampler (at 3% transition band, 96 dB
- * attenuation, 256 samples input buffer) achieves 9.8*n_cores Mflops when
+ * Preliminary tests show that the resampler (at 2% transition band, 144 dB
+ * attenuation, 256 samples input buffer) achieves 12.2*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
- * Intel Core i7-3770K processor-based system without overclocking. This
- * approximately translates to realtime resampling of 100*n_cores audio
+ * Intel Core i7-4770K processor-based system without overclocking. This
+ * approximately translates to realtime resampling of 125*n_cores audio
  * streams, at 100% CPU load.
  * 
  * \section notes Notes
@@ -93,13 +93,13 @@
  * 4X, 8X, 16X, etc. upsampling and downsampling).
  *
  * This library was tested for compatibility with GNU C++, Microsoft Visual
- * Studio and Intel C++ compilers, on 32- and 64-bit Windows, Mac OS X and
- * CentOS Linux.
+ * C++ and Intel C++ compilers, on 32- and 64-bit Windows, Mac OS X and CentOS
+ * Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
  * The memory footprint is quite modest ("double" type data):
  *
- *  * 1.5 MB of static memory for fractional delay filters
+ *  * 722 KB of static memory for fractional delay filters
  *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
@@ -137,7 +137,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.5
+ * \version 0.6
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -924,24 +924,29 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
 }
 
 /**
- * Function calculates coefficients used to calculate 4-point Hermite spline
- * function of 3rd order.
+ * Function calculates coefficients used to calculate 3rd order spline on the
+ * equidistant lattice, using 6 points.
  *
  * @param c Output coefficients buffer, length = 4.
+ * @param xm2 Point at x-2 position.
  * @param xm1 Point at x-1 position.
  * @param x0 Point at x position.
  * @param x1 Point at x+1 position.
  * @param x2 Point at x+2 position.
+ * @param x3 Point at x+3 position.
  */
 
 template< class T, class T2 >
-inline void calcHermiteCoeffs( T* c, const T2 xm1, const T2 x0, const T2 x1,
-	const T2 x2 )
+inline void calcSpline3Coeffs6( T* c, const T2 xm2, const T2 xm1, const T2 x0,
+	const T2 x1, const T2 x2, const T2 x3 )
 {
 	c[ 0 ] = x0;
-	c[ 1 ] = 0.5 * ( x1 - xm1 );
-	c[ 2 ] = xm1 - 2.5 * x0 + x1 + x1 - 0.5 * x2;
-	c[ 3 ] = 0.5 * ( x2 - xm1 ) + 1.5 * ( x0 - x1 );
+	c[ 1 ] = ( 11.0 * ( x1 - xm1 ) + 2.0 * ( xm2 - x2 )) / 14.0;
+	c[ 2 ] = ( 20.0 * ( xm1 + x1 ) + 2.0 * x3 - 4.0 * xm2 - 7.0 * x2 -
+		31.0 * x0 ) / 14.0;
+
+	c[ 3 ] = ( 17.0 * ( x0 - x1 ) + 9.0 * ( x2 - xm1 ) +
+		2.0 * ( xm2 - x3 )) / 14.0;
 }
 
 #if !defined( min )
@@ -975,6 +980,34 @@ inline T max( const T& v1, const T& v2 )
 }
 
 #endif // max
+
+/**
+ * Template function "clamps" (clips) the specified value so that it is not
+ * lesser than "minv", and not greater than "maxv".
+ *
+ * @param Value Value to clamp.
+ * @param minv Minimal allowed value.
+ * @param maxv Maximal allowed value.
+ * @return "Clamped" value.
+ */
+
+template< class T >
+inline T clampr( const T& Value, const T minv = 0, const T maxv = 1 )
+{
+	if( Value < minv )
+	{
+		return( minv );
+	}
+	else
+	if( Value > maxv )
+	{
+		return( maxv );
+	}
+	else
+	{
+		return( Value );
+	}
+}
 
 /**
  * @param x Value to square.

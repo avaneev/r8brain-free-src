@@ -25,9 +25,13 @@ CSyncObject CDSPFIRFilterCache :: StateSync;
 CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
 int CDSPFIRFilterCache :: FilterCount = 0;
 
+#if !R8B_FLTTEST
+
 template<>
-const CDSPFracDelayFilterBank< 38, 1280 >
-	CDSPFracInterpolator< 38, 1280, 9 > :: FilterBank =
-	CDSPFracDelayFilterBank< 38, 1280 >();
+const CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS >
+	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS, 9 > :: FilterBank =
+	CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS >();
+
+#endif // R8B_FLTTEST
 
 } // namespace r8b
