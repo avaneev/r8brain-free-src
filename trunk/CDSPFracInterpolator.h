@@ -22,22 +22,22 @@ namespace r8b {
  * \brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
- * fractional delay filters, expressed as 4-point Hermite spline coefficients
- * of 3rd order. The filters are windowed by one of the "Vaneev" windowing
- * functions. The FilterLen and FilterFracs parameters can be varied freely
- * without breaking the resampler.
+ * fractional delay filters, expressed as 3rd order spline coefficients. The
+ * filters are windowed by the "Vaneev" windowing function. The FilterLen and
+ * FilterFracs parameters can be varied freely without breaking the resampler.
  *
  * @param FilterLen Specifies the number of samples (taps) each fractional
  * delay filter should have. This must be an even value, the minimal value for
- * FilterLen is 4. To achieve a higher resampling precision, the oversampling
+ * FilterLen is 6. To achieve a higher resampling precision, the oversampling
  * should be used in the first place instead of using a higher FilterLen
  * value. The lower this value is the lower the signal-to-noise performance of
- * the interpolator will be.
- * @param FilterFracs The number of fractional delay positions to sample. This
- * do not have to be a high value since spline interpolation provides a good
- * match. 1024 covers the most demanding precision requirement. For image
- * resizing this value can be set to a much lower value (e.g. FilterLen=10,
- * FilterFracs=64).
+ * the interpolator will be. Each FilterLen decrease by 2 decreases SNR by
+ * approximately 12 to 14 decibel.
+ * @param FilterFracs The number of fractional delay positions to sample. For
+ * high signal-to-noise ratio this has to be a larger value. The larger the
+ * FilterLen is the more the FilterFracs should be. Approximate FilterLen to
+ * FilterFracs correspondence: <=14:22, 16:40, 18:70, 20:130, 22:180, 24:300,
+ * 26:450, 28:750, 30:1100, 32:1900, 34:3400, 36:4500, 38:5300.
  */
 
 template< int FilterLen, int FilterFracs >
@@ -46,62 +46,46 @@ class CDSPFracDelayFilterBank : public R8B_BASECLASS
 public:
 	CDSPFracDelayFilterBank()
 	{
-		R8BASSERT( FilterLen >= 4 );
+		R8BASSERT( FilterLen >= 6 );
 		R8BASSERT(( FilterLen & 1 ) == 0 );
 		R8BASSERT( FilterFracs > 0 );
 
-		CDSPSincFilterGen :: CWindowFunc WinFunc;
+		calculate();
+	}
 
-		if( FilterLen >= 38 )
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev38;
-		}
-		else
-		if( FilterLen >= 32 )
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev32;
-		}
-		else
-		if( FilterLen >= 24 )
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev24;
-		}
-		else
-		if( FilterLen >= 20 )
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev20;
-		}
-		else
-		if( FilterLen >= 14 )
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev14;
-		}
-		else
-		{
-			WinFunc = &CDSPSincFilterGen :: calcWindowVaneev10;
-		}
+	/**
+	 * Function calculates the filter bank.
+	 *
+	 * @param Params "Vaneev" windowing function's parameters. If NULL then
+	 * the built-in table values will be used.
+	 */
 
+	void calculate( const double* const Params = NULL )
+	{
 		CDSPSincFilterGen sinc;
 		sinc.Len2 = FilterLen / 2;
 
 		double* p = Filters;
+		const int pc2 = SplinePoints / 2;
 		int i;
 
-		for( i = -1; i <= FilterFracs + 2; i++ )
+		for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
 		{
 			sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
-			sinc.initFracVaneev();
-			sinc.generateFrac( p, 4, WinFunc );
+			sinc.initFracVaneev( FilterLen, Params );
+			sinc.generateFrac( p, 4, &CDSPSincFilterGen :: calcWindowVaneev );
 			normalizeFIRFilter( p, FilterLen, 1.0, 4 );
 			p += FilterLen4;
 		}
 
-		// Calculate Hermite spline interpolation coefficients.
+		// Calculate 3rd order spline interpolation coefficients.
 
 		p = Filters;
 		const int FuncPos2 = FilterLen4;
 		const int FuncPos3 = FilterLen4 * 2;
 		const int FuncPos4 = FilterLen4 * 3;
+		const int FuncPos5 = FilterLen4 * 4;
+		const int FuncPos6 = FilterLen4 * 5;
 
 		for( i = 0; i <= FilterFracs; i++ )
 		{
@@ -109,8 +93,8 @@ public:
 
 			while( l > 0 )
 			{
-				calcHermiteCoeffs( p, p[ 0 ], p[ FuncPos2 ], p[ FuncPos3 ],
-					p[ FuncPos4 ]);
+				calcSpline3Coeffs6( p, p[ 0 ], p[ FuncPos2 ], p[ FuncPos3 ],
+					p[ FuncPos4 ], p[ FuncPos5 ], p[ FuncPos6 ]);
 
 				p += 4;
 				l--;
@@ -131,11 +115,14 @@ public:
 	}
 
 private:
+	static const int SplinePoints = 6; ///< The number of points the spline is
+		///< based on.
+		///<
 	static const int FilterLen4 = FilterLen << 2; ///< = FilterLen * 4.
 		///<
-	double Filters[ FilterLen * 4 * ( FilterFracs + 4 )]; ///< Table of
-		///< fractional delay filters for all discrete fractional x = 0..1
-		///< sample positions, and 3rd order Hermite spline interpolation
+	double Filters[ FilterLen * 4 * ( FilterFracs + SplinePoints )]; ///<
+		///< Table of fractional delay filters for all discrete fractional
+		///< x = 0..1 sample positions, and 3rd order spline interpolation
 		///< coefficients.
 		///<
 };
@@ -147,8 +134,8 @@ private:
  * first puts the input signal into a ring buffer and then performs
  * interpolation. The interpolation is performed using sinc-based fractional
  * delay filters. These filters are contained in a bank, and for higher
- * precision they are interpolated between adjacent filters via 4-point
- * Hermite spline interpolation of 3rd order.
+ * precision they are interpolated between adjacent filters via 3rd order
+ * spline interpolation.
  *
  * While this class is used by the CDSPResampler class, it is not the only
  * possible application of this class. For example, this class with the
@@ -175,9 +162,10 @@ private:
  * @param FilterFracs The number of fractional delay positions to sample. See
  * the r8b::CDSPFracDelayFilterBank class for more details.
  * @param BufLenBits The length of the ring buffer, expressed as Nth power of
- * 2. This value can be reduced if it is known that short input buffers will
- * be passed to the interpolator. The minimum value of this parameter is 5,
- * and 1 << BufLenBits should be at least 3 times larger than the FilterLen.
+ * 2. This value can be reduced if it is known that only short input buffers
+ * will be passed to the interpolator. The minimum value of this parameter is
+ * 5, and 1 << BufLenBits should be at least 3 times larger than the
+ * FilterLen.
  */
 
 template< int FilterLen, int FilterFracs, int BufLenBits >
@@ -428,13 +416,20 @@ private:
 		///<
 	double InPosShift; ///< Interpolation position fractional shift.
 		///<
-	static const CDSPFracDelayFilterBank< FilterLen, FilterFracs >
-		FilterBank; ///< Static filter bank object.
-		///<
 
 	CDSPFracInterpolator()
 	{
 	}
+
+#if !R8B_FLTTEST
+	static const // Define filter bank object statically if no filter test
+		// takes place.
+#else
+public:
+#endif // R8B_FLTTEST
+	CDSPFracDelayFilterBank< FilterLen, FilterFracs > FilterBank; ///< Filter
+		///< bank object.
+		///<
 };
 
 } // namespace r8b

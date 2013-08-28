@@ -30,8 +30,22 @@ namespace r8b {
  *
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size.
+ *
+ * While this may seem impossible, in r8brain-free-src the decent quality
+ * full 16-bit audio resampling can be achieved by setting CInterpClass to
+ * "CDSPFracInterpolator< 14, 22, 9 >" and using ReqTransBand=3, ReqAtten=96.
+ * Such mode of operation is ultra fast: achieves 20 Mflops on a single core
+ * of Intel i7-4770K processor.
+ *
+ * @param CInterpClass Interpolator class that should be used by the
+ * resampler. The desired interpolation quality can be defined via the
+ * template parameters of the interpolator class. See
+ * r8b::CDSPFracInterpolator and r8b::CDSPFracDelayFilterBank for description
+ * of the template parameters.
  */
 
+template< class CInterpClass =
+	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS, 9 > >
 class CDSPResampler : public R8B_BASECLASS
 {
 	R8BNOCTOR( CDSPResampler );
@@ -241,8 +255,8 @@ public:
 			}
 		}
 
-		Interp = new CDSPFracInterpolator< 38, 1280, 9 >(
-			SrcSampleRate * SrcSRMult / SrcSRDiv, DstSampleRate, 0.0 );
+		Interp = new CInterpClass( SrcSampleRate * SrcSRMult / SrcSRDiv,
+			DstSampleRate, 0.0 );
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
@@ -337,6 +351,20 @@ public:
 		return( Interp -> process( ip, op, l ));
 	}
 
+	#if R8B_FLTTEST
+
+	/**
+	 * @return Interpolator object used by *this resampler. This function
+	 * returns NULL if no interpolator is in use.
+	 */
+
+	CInterpClass* getInterp() const
+	{
+		return( Interp );
+	}
+
+	#endif // R8B_FLTTEST
+
 private:
 	static const int ConvCountMax = 8; ///< 8 convolvers with the
 		///< built-in 2x up- or downsampling is enough for 256x up- or
@@ -347,10 +375,10 @@ private:
 	int ConvCount; ///< The number of objects defined in the Convs[] array.
 		///< Equals to 0 if sample rate conversion is not needed.
 		///<
-	CPtrKeeper< CDSPFracInterpolator< 38, 1280, 9 >* > Interp; ///< Fractional
-		///< interpolator object. Equals NULL if no fractional interpolation
-		///< is required meaning the "power of 2" resampling is performed or
-		///< no resampling is performed at all.
+	CPtrKeeper< CInterpClass* > Interp; ///< Fractional interpolator object.
+		///< Equals NULL if no fractional interpolation is required meaning
+		///< the "power of 2" resampling is performed or no resampling is
+		///< performed at all.
 		///<
 	CFixedBuffer< double > ConvBufs[ 2 ]; ///< Intermediate convolution
 		///< buffers to use, used only when at least 2x upsampling is

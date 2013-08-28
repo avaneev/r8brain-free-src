@@ -26,7 +26,7 @@ int main()
 
 	const int InBufCapacity = 2048;
 	CFixedBuffer< double > InBufs[ inf.ChannelCount ];
-	CPtrKeeper< CDSPResampler* > Resamps[ inf.ChannelCount ];
+	CPtrKeeper< CDSPResampler<>* > Resamps[ inf.ChannelCount ];
 
 	int i;
 
@@ -34,7 +34,7 @@ int main()
 	{
 		InBufs[ i ].alloc( InBufCapacity );
 
-		Resamps[ i ] = new CDSPResampler( inf.SampleRate, OutSampleRate,
+		Resamps[ i ] = new CDSPResampler<>( inf.SampleRate, OutSampleRate,
 			3, 96, InBufCapacity );
 	}
 

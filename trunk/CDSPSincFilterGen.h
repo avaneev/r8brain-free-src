@@ -133,26 +133,76 @@ public:
 
 	/**
 	 * This function is similar to the initFrac() function, but initializes
-	 * cosine wave generators for use with the calcWindowVaneevNN() windowing
-	 * functions. The generateFrac() function should be used to calculate the
-	 * filter, with the calcWindowVaneevNN() function as parameter.
+	 * cosine wave generators for use with the calcWindowVaneev() windowing
+	 * function. The generateFrac() function should be used to calculate the
+	 * filter, with the calcWindowVaneev() function as parameter.
+	 *
+	 * @param FilterLen Filter length in use, must be an even value, in the
+	 * range 6 to 38.
+	 * @param Params Externally-provides set of parameters. NULL - use table
+	 * values. Non-NULL value is usually provided by optimization algorithm.
 	 */
 
-	void initFracVaneev()
+	void initFracVaneev( const int FilterLen, const double* Params = NULL )
 	{
 		R8BASSERT( Len2 >= 2.0 );
 
 		fl2 = (int) ceil( Len2 );
 		KernelLen = fl2 + fl2;
 
-		const double step1 = 1.00 * M_PI / Len2;
+		// This set of parameters was obtained via probabilistic optimization.
+		// The number after @ shows the noise floor level for the given filter
+		// length. The signal-to-noise (SNR) ratio approximately equals noise
+		// floor plus 85. SNR can be also decreased by using a filter bank
+		// with suboptimal number of interpolated fractional delay filters:
+		// thus select FilterFracs with care.
+
+		static const double Coeffs[][ 4 ] = {
+			{ 0.78181357, 0.25515445, 0.14160659, 0.00377970 }, // 6 @ -138.4
+			{ 0.82842159, 0.46796048, 0.03723786, 0.01647440 }, // 8 @ -154.1
+			{ 0.87106048, 0.55487482, 0.11407443, 0.06108434 }, // 10 @ -167.6
+			{ 0.90233911, 0.62228911, 0.17793224, 0.09128849 }, // 12 @ -181.0
+			{ 0.92888330, 0.67854727, 0.18462272, 0.15750025 }, // 14 @ -194.5
+			{ 0.94714902, 0.71154551, 0.36654152, 0.01684227 }, // 16 @ -208.1
+			{ 0.95678003, 0.75499443, 0.40432469, 0.09098344 }, // 18 @ -223.1
+			{ 0.94601085, 0.78526426, 0.47076653, 0.10718288 }, // 20 @ -234.1
+			{ 0.95382623, 0.80840395, 0.50560712, 0.14820130 }, // 22 @ -248.4
+			{ 0.79587584, 0.92850223, 0.54364506, 0.17823490 }, // 24 @ -261.5
+			{ 0.81692363, 0.93690700, 0.56559066, 0.21066054 }, // 26 @ -273.0
+			{ 0.97006382, 0.85948381, 0.58057290, 0.24934339 }, // 28 @ -285.3
+			{ 0.97022013, 0.86906266, 0.59856588, 0.28601037 }, // 30 @ -297.6
+			{ 0.97374957, 0.88090262, 0.62906580, 0.29736763 }, // 32 @ -309.9
+			{ 0.81824544, 0.95632121, 0.67943518, 0.35354651 }, // 34 @ -325.4
+			{ 0.83224964, 0.96134546, 0.68783822, 0.37241201 }, // 36 @ -335.0
+			{ 0.60217397, 0.96734066, 0.76693619, 0.40644160 }, // 38 @ -347.0
+		};
+
+		double p[ 4 ];
+
+		if( Params == NULL )
+		{
+			Params = Coeffs[ FilterLen / 2 - 3 ];
+		}
+		else
+		{
+			p[ 0 ] = clampr( Params[ 0 ], -4.0, 4.0 );
+			p[ 1 ] = clampr( Params[ 1 ], -4.0, 4.0 );
+			p[ 2 ] = clampr( Params[ 2 ], -4.0, 4.0 );
+			p[ 3 ] = clampr( Params[ 3 ], -4.0, 4.0 );
+			Params = p;
+		}
+
+		const double step1 = Params[ 0 ] * M_PI / Len2;
 		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
 
-		const double step2 = 0.75 * M_PI / Len2;
+		const double step2 = Params[ 1 ] * M_PI / Len2;
 		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
 
-		const double step3 = 0.50 * M_PI / Len2;
+		const double step3 = Params[ 2 ] * M_PI / Len2;
 		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
+
+		const double step4 = Params[ 3 ] * M_PI / Len2;
+		w4.init( step4, 2.0, M_PI * 0.5 - step4 * fl2 + step4 * FracDelay );
 	}
 
 	/**
@@ -177,88 +227,19 @@ public:
 
 	/**
 	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of length 38 or longer. This windowing
-	 * function is suitable for fractional delay filters even better than the
-	 * "Hann^6" function.
+	 * the fractional delay filters. This windowing function, considering the
+	 * optimized parameters, is suitable for fractional delay filters even
+	 * better than the "Hann^6" function.
 	 */
 
-	double calcWindowVaneev38()
+	double calcWindowVaneev()
 	{
 		const double v0 = 0.5 + 0.5 * w1.gen();
 		const double v1 = 0.5 + 0.5 * w2.gen();
 		const double v2 = 0.5 + 0.5 * w3.gen();
+		const double v3 = 0.5 + 0.5 * w4.gen();
 
-		return( sqr( v0 ) * sqr( sqr( v1 )) * sqr( sqr( sqr( v2 ))));
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of length 32, 34 and 36.
-	 */
-
-	double calcWindowVaneev32()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-
-		return( sqr( v0 ) * sqr( sqr( v1 )) * sqr( sqr( v2 )));
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of lengths 24, 26, 28 and 30.
-	 */
-
-	double calcWindowVaneev24()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-
-		return( sqr( v0 ) * sqr( v1 ) * sqr( sqr( v2 )));
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of length 20 and 22.
-	 */
-
-	double calcWindowVaneev20()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-
-		return( v0 * sqr( v1 ) * sqr( sqr( v2 )));
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of lengths 14, 16 and 18.
-	 */
-
-	double calcWindowVaneev14()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-
-		return( v0 * sqr( v1 ) * v2 );
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters of length 10 and 12.
-	 */
-
-	double calcWindowVaneev10()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-
-		return( v0 * v1 * v2 );
+		return( v0 * sqr( v1 ) * sqr( sqr( v2 )) * sqr( sqr( sqr( v3 ))));
 	}
 
 	/**
@@ -501,6 +482,9 @@ private:
 	CSineGen w2; ///< Cosine wave 2 for windowing function.
 		///<
 	CSineGen w3; ///< Cosine wave 3 for windowing function.
+		///<
+	CSineGen w4; ///< Cosine wave 4 for windowing function. Initialized and
+		///< used only by the "Vaneev" windowing function.
 		///<
 };
 
