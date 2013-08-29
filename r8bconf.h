@@ -39,10 +39,12 @@
 	/**
 	 * This macro defines the default number of fractional delay filters that
 	 * are sampled by the filter bank. Macro is used by the r8b::CDSPResampler
-	 * class.
+	 * class. In order to get consistent results when resampling to/from
+	 * different sample rates, it is suggested to set this macro to a suitable
+	 * prime number.
 	 */
 
-	#define R8B_FLTFRACS 800
+	#define R8B_FLTFRACS 1361
 #endif // !defined( R8B_FLTFRACS )
 
 #if !defined( R8B_IPP )

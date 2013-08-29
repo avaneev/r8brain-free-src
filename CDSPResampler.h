@@ -33,8 +33,8 @@ namespace r8b {
  *
  * While this may seem impossible, in r8brain-free-src the decent quality
  * full 16-bit audio resampling can be achieved by setting CInterpClass to
- * "CDSPFracInterpolator< 14, 22, 9 >" and using ReqTransBand=3, ReqAtten=96.
- * Such mode of operation is ultra fast: achieves 20 Mflops on a single core
+ * "CDSPFracInterpolator< 14, 41, 9 >" and using ReqTransBand=3, ReqAtten=96.
+ * Such mode of operation is ultra fast: achieves 21 Mflops on a single core
  * of Intel i7-4770K processor.
  *
  * @param CInterpClass Interpolator class that should be used by the

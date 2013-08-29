@@ -28,9 +28,9 @@ int CDSPFIRFilterCache :: FilterCount = 0;
 #if !R8B_FLTTEST
 
 template<>
-const CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS >
+const CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >
 	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS, 9 > :: FilterBank =
-	CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS >();
+	CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >();
 
 #endif // R8B_FLTTEST
 

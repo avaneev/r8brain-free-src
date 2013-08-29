@@ -52,7 +52,7 @@
  * \section usage Usage Information
  *
  * The sample rate converter (resampler) is represented by the
- * r8b::CDSPResampler<> class, which is a single front-end class for the whole
+ * r8b::CDSPResampler class, which is a single front-end class for the whole
  * library. You do not basically need to use nor understand any other classes
  * beside this class.
  *
@@ -72,10 +72,10 @@
  * command from the library's directory.
  *
  * Preliminary tests show that the resampler (at 2% transition band, 144 dB
- * attenuation, 256 samples input buffer) achieves 12.2*n_cores Mflops when
+ * attenuation, 256 samples input buffer) achieves 14.7*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-4770K processor-based system without overclocking. This
- * approximately translates to realtime resampling of 125*n_cores audio
+ * approximately translates to realtime resampling of 150*n_cores audio
  * streams, at 100% CPU load.
  * 
  * \section notes Notes
@@ -99,12 +99,13 @@
  * All code is fully "inline", without the need to compile many source files.
  * The memory footprint is quite modest ("double" type data):
  *
- *  * 722 KB of static memory for fractional delay filters
+ *  * 920 KB of static memory for fractional delay filters
  *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
  *    smaller tables (128*8 bytes) for the "power of 2" resampling
- *  * convolver memory, per channel (N*8*5 bytes)
+ *  * convolver memory, per channel (N*8*5 bytes), plus Z=1 to 7 smaller
+ *    convolvers for the "power of 2" resampling (Z*128*8*5 bytes)
  *  * interpolator memory (8 KB per channel)
  *  * I/O buffers, per channel (proportional to the maximal input buffer
  *    length and source to destination sample rate ratio)
@@ -137,7 +138,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.6
+ * \version 0.7
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -925,28 +926,62 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
 
 /**
  * Function calculates coefficients used to calculate 3rd order spline on the
- * equidistant lattice, using 6 points.
+ * equidistant lattice, using 8 points.
  *
  * @param c Output coefficients buffer, length = 4.
+ * @param xm3 Point at x-3 position.
  * @param xm2 Point at x-2 position.
  * @param xm1 Point at x-1 position.
  * @param x0 Point at x position.
  * @param x1 Point at x+1 position.
  * @param x2 Point at x+2 position.
  * @param x3 Point at x+3 position.
+ * @param x4 Point at x+4 position.
  */
 
 template< class T, class T2 >
-inline void calcSpline3Coeffs6( T* c, const T2 xm2, const T2 xm1, const T2 x0,
-	const T2 x1, const T2 x2, const T2 x3 )
+inline void calcSpline3Coeffs8( T* c, const T2 xm3, const T2 xm2,
+	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
+	const T2 x4 )
 {
 	c[ 0 ] = x0;
-	c[ 1 ] = ( 11.0 * ( x1 - xm1 ) + 2.0 * ( xm2 - x2 )) / 14.0;
-	c[ 2 ] = ( 20.0 * ( xm1 + x1 ) + 2.0 * x3 - 4.0 * xm2 - 7.0 * x2 -
-		31.0 * x0 ) / 14.0;
+	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
+		3.0 * ( x3 - xm3 )) / 76.0;
 
-	c[ 3 ] = ( 17.0 * ( x0 - x1 ) + 9.0 * ( x2 - xm1 ) +
-		2.0 * ( xm2 - x3 )) / 14.0;
+	c[ 2 ] = ( 106.0 * ( xm1 + x1 ) + 10.0 * x3 + 6.0 * xm3 - 3.0 * x4 -
+		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) / 76.0;
+
+	c[ 3 ] = ( 91.0 * ( x0 - x1 ) + 45.0 * ( x2 - xm1 ) +
+		13.0 * ( xm2 - x3 ) + 3.0 * ( x4 - xm3 )) / 76.0;
+}
+
+/**
+ * Function calculates coefficients used to calculate 2rd order spline on the
+ * equidistant lattice, using 8 points. This function is based on the
+ * calcSpline3Coeffs8() function, but without the 3rd order coefficient.
+ *
+ * @param c Output coefficients buffer, length = 4.
+ * @param xm3 Point at x-3 position.
+ * @param xm2 Point at x-2 position.
+ * @param xm1 Point at x-1 position.
+ * @param x0 Point at x position.
+ * @param x1 Point at x+1 position.
+ * @param x2 Point at x+2 position.
+ * @param x3 Point at x+3 position.
+ * @param x4 Point at x+4 position.
+ */
+
+template< class T, class T2 >
+inline void calcSpline2Coeffs8( T* c, const T2 xm3, const T2 xm2,
+	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
+	const T2 x4 )
+{
+	c[ 0 ] = x0;
+	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
+		3.0 * ( x3 - xm3 )) / 76.0;
+
+	c[ 2 ] = ( 106.0 * ( xm1 + x1 ) + 10.0 * x3 + 6.0 * xm3 - 3.0 * x4 -
+		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) / 76.0;
 }
 
 #if !defined( min )
