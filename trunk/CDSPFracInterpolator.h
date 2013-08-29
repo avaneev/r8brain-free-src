@@ -22,9 +22,10 @@ namespace r8b {
  * \brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
- * fractional delay filters, expressed as 3rd order spline coefficients. The
- * filters are windowed by the "Vaneev" windowing function. The FilterLen and
- * FilterFracs parameters can be varied freely without breaking the resampler.
+ * fractional delay filters, expressed as 1st, 2nd or 3rd order spline
+ * interpolation coefficients. The filters are windowed by the "Vaneev"
+ * windowing function. The FilterLen and FilterFracs parameters can be varied
+ * freely without breaking the resampler.
  *
  * @param FilterLen Specifies the number of samples (taps) each fractional
  * delay filter should have. This must be an even value, the minimal value for
@@ -36,11 +37,20 @@ namespace r8b {
  * @param FilterFracs The number of fractional delay positions to sample. For
  * high signal-to-noise ratio this has to be a larger value. The larger the
  * FilterLen is the more the FilterFracs should be. Approximate FilterLen to
- * FilterFracs correspondence: <=14:22, 16:40, 18:70, 20:130, 22:180, 24:300,
- * 26:450, 28:750, 30:1100, 32:1900, 34:3400, 36:4500, 38:5300.
+ * FilterFracs correspondence (for 2nd order interpolation only): 6:5, 8:11,
+ * 10:17, 12:29, 14:41, 16:71, 18:127, 20:197, 22:337, 24:547, 26:853,
+ * 28:1361, 30:2267, 32:3701, 34:6607, 36:9511, 38:15511. The FilterFracs can
+ * be considerably reduced with 3rd order interpolation in use.
+ * @param ElementSize The size of each filter's tap, in "double" values. This
+ * parameter corresponds to the complexity of interpolation. 4 should be set
+ * for 3rd order, 3 for 2nd order, 2 for linear interpolation.
+ * @param InterpPoints The number of points the interpolation is based on.
+ * This value should not be confused with the ElementSize. Set to 2 for linear
+ * interpolation.
  */
 
-template< int FilterLen, int FilterFracs >
+template< int FilterLen, int FilterFracs, int ElementSize = 4,
+	int InterpPoints = 8 >
 class CDSPFracDelayFilterBank : public R8B_BASECLASS
 {
 public:
@@ -49,6 +59,8 @@ public:
 		R8BASSERT( FilterLen >= 6 );
 		R8BASSERT(( FilterLen & 1 ) == 0 );
 		R8BASSERT( FilterFracs > 0 );
+		R8BASSERT( ElementSize >= 2 && ElementSize <= 4 );
+		R8BASSERT( InterpPoints == 2 || InterpPoints == 8 );
 
 		calculate();
 	}
@@ -65,39 +77,71 @@ public:
 		CDSPSincFilterGen sinc;
 		sinc.Len2 = FilterLen / 2;
 
-		double* p = Filters;
-		const int pc2 = SplinePoints / 2;
+		double* p = Table;
+		const int pc2 = InterpPoints / 2;
 		int i;
 
 		for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
 		{
 			sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
 			sinc.initFracVaneev( FilterLen, Params );
-			sinc.generateFrac( p, 4, &CDSPSincFilterGen :: calcWindowVaneev );
-			normalizeFIRFilter( p, FilterLen, 1.0, 4 );
-			p += FilterLen4;
+			sinc.generateFrac( p, ElementSize,
+				&CDSPSincFilterGen :: calcWindowVaneev );
+
+			normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
+			p += FilterSize;
 		}
 
-		// Calculate 3rd order spline interpolation coefficients.
+		const int TablePos2 = FilterSize;
+		const int TablePos3 = FilterSize * 2;
+		const int TablePos4 = FilterSize * 3;
+		const int TablePos5 = FilterSize * 4;
+		const int TablePos6 = FilterSize * 5;
+		const int TablePos7 = FilterSize * 6;
+		const int TablePos8 = FilterSize * 7;
+		double* const TableEnd = Table + ( FilterFracs + 1 ) * FilterSize;
+		p = Table;
 
-		p = Filters;
-		const int FuncPos2 = FilterLen4;
-		const int FuncPos3 = FilterLen4 * 2;
-		const int FuncPos4 = FilterLen4 * 3;
-		const int FuncPos5 = FilterLen4 * 4;
-		const int FuncPos6 = FilterLen4 * 5;
-
-		for( i = 0; i <= FilterFracs; i++ )
+		if( InterpPoints == 8 )
 		{
-			int l = FilterLen;
-
-			while( l > 0 )
+			if( ElementSize == 3 )
 			{
-				calcSpline3Coeffs6( p, p[ 0 ], p[ FuncPos2 ], p[ FuncPos3 ],
-					p[ FuncPos4 ], p[ FuncPos5 ], p[ FuncPos6 ]);
+				// Calculate 2nd order spline interpolation coefficients using
+				// 8 points.
 
-				p += 4;
-				l--;
+				while( p < TableEnd )
+				{
+					calcSpline2Coeffs8( p, p[ 0 ], p[ TablePos2 ],
+						p[ TablePos3 ], p[ TablePos4 ], p[ TablePos5 ],
+						p[ TablePos6 ], p[ TablePos7 ], p[ TablePos8 ]);
+
+					p += ElementSize;
+				}
+			}
+			else
+			if( ElementSize == 4 )
+			{
+				// Calculate 3rd order spline interpolation coefficients using
+				// 8 points.
+
+				while( p < TableEnd )
+				{
+					calcSpline3Coeffs8( p, p[ 0 ], p[ TablePos2 ],
+						p[ TablePos3 ], p[ TablePos4 ], p[ TablePos5 ],
+						p[ TablePos6 ], p[ TablePos7 ], p[ TablePos8 ]);
+
+					p += ElementSize;
+				}
+			}
+		}
+		else
+		{
+			// Calculate linear interpolation coefficients.
+
+			while( p < TableEnd )
+			{
+				p[ 1 ] = p[ TablePos2 ] - p[ 0 ];
+				p += ElementSize;
 			}
 		}
 	}
@@ -111,19 +155,16 @@ public:
 	{
 		R8BASSERT( i >= 0 && i <= FilterFracs );
 
-		return( Filters[ i * FilterLen4 ]);
+		return( Table[ i * FilterSize ]);
 	}
 
 private:
-	static const int SplinePoints = 6; ///< The number of points the spline is
-		///< based on.
+	static const int FilterSize = FilterLen * ElementSize; ///< This constant
+		///< specifies the "size" of a single filter in "double" elements.
 		///<
-	static const int FilterLen4 = FilterLen << 2; ///< = FilterLen * 4.
-		///<
-	double Filters[ FilterLen * 4 * ( FilterFracs + SplinePoints )]; ///<
-		///< Table of fractional delay filters for all discrete fractional
-		///< x = 0..1 sample positions, and 3rd order spline interpolation
-		///< coefficients.
+	double Table[ FilterSize * ( FilterFracs + InterpPoints )]; ///< The
+		///< table of fractional delay filters for all discrete fractional
+		///< x = 0..1 sample positions, and interpolation coefficients.
 		///<
 };
 
@@ -134,8 +175,7 @@ private:
  * first puts the input signal into a ring buffer and then performs
  * interpolation. The interpolation is performed using sinc-based fractional
  * delay filters. These filters are contained in a bank, and for higher
- * precision they are interpolated between adjacent filters via 3rd order
- * spline interpolation.
+ * precision they are interpolated between adjacent filters.
  *
  * While this class is used by the CDSPResampler class, it is not the only
  * possible application of this class. For example, this class with the
@@ -149,8 +189,8 @@ private:
  *
  * VERY IMPORTANT: the interpolation step should not exceed FilterLen / 2 + 1
  * samples or the algorithm in its current form will fail. However, this
- * condition can be easily met if the input signal is downsampled first before
- * the interpolation is performed.
+ * condition can be easily met if the input signal is suitably downsampled
+ * first before the interpolation is performed.
  *
  * Please see the r8bbase.cpp file for the example of definition of the static
  * constant "filter bank" object for the given template parameters of this
@@ -335,9 +375,9 @@ public:
 
 				for( i = 0; i < FilterLen; i++ )
 				{
-					const int ii = i * 4;
+					const int ii = i * FilterElementSize;
 					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
-						ftp[ ii + 2 ] * x2 + ftp[ ii + 3 ] * x3 ) * rp[ i ];
+						ftp[ ii + 2 ] * x2 ) * rp[ i ];
 				}
 
 				*op = s;
@@ -371,6 +411,10 @@ public:
 	}
 
 private:
+	static const int FilterElementSize = 3; ///< The number of "doubles" a
+		///< single filter tap consists of (includes interpolation
+		///< coefficients).
+		///<
 	static const int FilterLenD2Minus1 = ( FilterLen >> 1 ) - 1; ///< =
 		///< ( FilterLen >> 1 ) - 1. This value also equals to filter's
 		///< latency in samples (taps).
@@ -427,8 +471,8 @@ private:
 #else
 public:
 #endif // R8B_FLTTEST
-	CDSPFracDelayFilterBank< FilterLen, FilterFracs > FilterBank; ///< Filter
-		///< bank object.
+	CDSPFracDelayFilterBank< FilterLen, FilterFracs,
+		FilterElementSize > FilterBank; ///< Filter bank object.
 		///<
 };
 
