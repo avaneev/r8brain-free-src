@@ -368,7 +368,6 @@ public:
 				x -= fti; // Coefficient for interpolation between adjacent
 					// fractional delay filters.
 				const double x2 = x * x;
-				const double x3 = x2 * x;
 				const double* const ftp = &FilterBank[ fti ];
 				const double* const rp = Buf + ReadPos;
 				double s = 0.0;
