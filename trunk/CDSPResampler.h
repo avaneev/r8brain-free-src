@@ -304,6 +304,16 @@ public:
 	}
 
 	/**
+	 * @return Interpolator object used by *this resampler. This function
+	 * returns NULL if no interpolator is in use.
+	 */
+
+	CInterpClass* getInterpolator() const
+	{
+		return( Interp );
+	}
+
+	/**
 	 * Function performs sample rate conversion.
 	 *
 	 * If the source and destination sample rates are equal, the resampler
@@ -350,20 +360,6 @@ public:
 
 		return( Interp -> process( ip, op, l ));
 	}
-
-	#if R8B_FLTTEST
-
-	/**
-	 * @return Interpolator object used by *this resampler. This function
-	 * returns NULL if no interpolator is in use.
-	 */
-
-	CInterpClass* getInterp() const
-	{
-		return( Interp );
-	}
-
-	#endif // R8B_FLTTEST
 
 private:
 	static const int ConvCountMax = 8; ///< 8 convolvers with the
