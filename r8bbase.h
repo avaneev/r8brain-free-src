@@ -23,18 +23,20 @@
  * were implemented in multi-platform C++ code, and have a high level of
  * optimality. The user can select the transition band/steepness of the
  * low-pass (reconstruction) filter, expressed as a percentage of the full
- * spectral bandwidth of the input signal (or the output signal if
+ * spectral bandwidth of the input signal (or the output signal if the
  * downsampling is performed), and the desired stop-band attenuation in
  * decibel.
  *
  * The structure of this library's objects is such that they can be frequently
- * created and destroyed in large applications with minimal performance impact
- * due to a high level of reusability of its most "initialization-expensive"
- * objects: the fast Fourier transform and FIR filter objects.
+ * created and destroyed in large applications with a minimal performance
+ * impact due to a high level of reusability of its most
+ * "initialization-expensive" objects: the fast Fourier transform and FIR
+ * filter objects.
  *
- * The algorithm at first produces 2X oversampled (relative to the destination
- * sample rate) signal and then performs interpolation using a bank of short
- * (28 taps) spline-interpolated sinc-based fractional delay filters. This
+ * The algorithm at first produces 2X oversampled (relative to the source
+ * sample rate, or the destination sample rate if the downsampling is
+ * performed) signal and then performs interpolation using a bank of short
+ * (28 taps) polynomial-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -45,9 +47,11 @@
  * mantissa) support. No explicit code for the "float" type is present in this
  * library. However, if the "double" type really represents the "float" type
  * (24-bit mantissa) in a given compiler, on a given system, the library won't
- * become broken, only the conversion quality may become degraded. The library
- * always uses the "sizeof( double )" operator to obtain "double" floating
- * point type's size in bytes.
+ * become broken, only the conversion quality may become degraded. This
+ * library always uses the "sizeof( double )" operator to obtain "double"
+ * floating point type's size in bytes. This library does not have
+ * dependencies beside the standard C library, the "windows.h" on Windows and
+ * the "pthread.h" on Mac OS X and Linux.
  *
  * \section usage Usage Information
  *
@@ -71,20 +75,20 @@
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
- * Preliminary tests show that the resampler (at 2% transition band, 144 dB
- * attenuation, 256 samples input buffer) achieves 14.7*n_cores Mflops when
+ * Preliminary tests show that the resampler (at 2% transition band, 150 dB
+ * attenuation, 256 samples input buffer) achieves 14.5*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-4770K processor-based system without overclocking. This
- * approximately translates to realtime resampling of 150*n_cores audio
+ * approximately translates to a real-time resampling of 150*n_cores audio
  * streams, at 100% CPU load.
  * 
  * \section notes Notes
  *
  * The transition band is specified as the normalized spectral space of the
- * input signal (or the output signal if downsampling is performed) between
- * filter's -3 dB point and the Nyquist frequency, and ranges from 0.5% to
- * 25%. Stop-band attenuation can be specified in the range 38 to 220 decibel
- * (with +/- 1 dB error).
+ * input signal (or the output signal if the downsampling is performed)
+ * between the low-pass filter's -3 dB point and the Nyquist frequency, and
+ * ranges from 0.5% to 25%. Stop-band attenuation can be specified in the
+ * range 38 to 220 decibel (with +/- 1 dB error).
  *
  * An extended transition band range from 25% to 45% is also available, but
  * its parameter errors are higher (+/- 3 dB attenuation error).
@@ -109,6 +113,12 @@
  *  * interpolator memory (8 KB per channel)
  *  * I/O buffers, per channel (proportional to the maximal input buffer
  *    length and source to destination sample rate ratio)
+ *
+ * \section users Users
+ *
+ * This library is used by:
+ *
+ *  * http://www.martinic.com/combov/ Combo Model V VSTi instrument
  *
  * \section license License
  *
@@ -138,7 +148,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.7
+ * \version 0.8
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -901,6 +911,9 @@ template< class T >
 inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
 	const int pstep = 1 )
 {
+	R8BASSERT( l > 0 );
+	R8BASSERT( pstep != 0 );
+
 	double s = 0.0;
 	T* pp = p;
 	int i = l;
@@ -925,8 +938,8 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
 }
 
 /**
- * Function calculates coefficients used to calculate 3rd order spline on the
- * equidistant lattice, using 8 points.
+ * Function calculates coefficients used to calculate 3rd order spline
+ * (polynomial) on the equidistant lattice, using 8 points.
  *
  * @param c Output coefficients buffer, length = 4.
  * @param xm3 Point at x-3 position.
@@ -956,11 +969,12 @@ inline void calcSpline3Coeffs8( T* c, const T2 xm3, const T2 xm2,
 }
 
 /**
- * Function calculates coefficients used to calculate 2rd order spline on the
- * equidistant lattice, using 8 points. This function is based on the
- * calcSpline3Coeffs8() function, but without the 3rd order coefficient.
+ * Function calculates coefficients used to calculate 2rd order spline
+ * (polynomial) on the equidistant lattice, using 8 points. This function is
+ * based on the calcSpline3Coeffs8() function, but without the 3rd order
+ * coefficient.
  *
- * @param c Output coefficients buffer, length = 4.
+ * @param c Output coefficients buffer, length = 3.
  * @param xm3 Point at x-3 position.
  * @param xm2 Point at x-2 position.
  * @param xm1 Point at x-1 position.

@@ -26,12 +26,10 @@ CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
 int CDSPFIRFilterCache :: FilterCount = 0;
 
 #if !R8B_FLTTEST
-
 template<>
 const CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >
 	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS, 9 > :: FilterBank =
 	CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >();
-
 #endif // R8B_FLTTEST
 
 } // namespace r8b

@@ -22,7 +22,7 @@ namespace r8b {
  * \brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
- * fractional delay filters, expressed as 1st, 2nd or 3rd order spline
+ * fractional delay filters, expressed as 1st, 2nd or 3rd order polynomial
  * interpolation coefficients. The filters are windowed by the "Vaneev"
  * windowing function. The FilterLen and FilterFracs parameters can be varied
  * freely without breaking the resampler.
@@ -33,10 +33,12 @@ namespace r8b {
  * should be used in the first place instead of using a higher FilterLen
  * value. The lower this value is the lower the signal-to-noise performance of
  * the interpolator will be. Each FilterLen decrease by 2 decreases SNR by
- * approximately 12 to 14 decibel.
+ * approximately 12 to 14 decibel. For reference, at FilterLen=28 and
+ * FilterFracs=1361) the SNR of the interpolation equals approximately 185
+ * decibel, at such SNR it is not reasonable to use ReqAtten above 185.
  * @param FilterFracs The number of fractional delay positions to sample. For
  * high signal-to-noise ratio this has to be a larger value. The larger the
- * FilterLen is the more the FilterFracs should be. Approximate FilterLen to
+ * FilterLen is the larger the FilterFracs should be. Approximate FilterLen to
  * FilterFracs correspondence (for 2nd order interpolation only): 6:5, 8:11,
  * 10:17, 12:29, 14:41, 16:71, 18:127, 20:197, 22:337, 24:547, 26:853,
  * 28:1361, 30:2267, 32:3701, 34:6607, 36:9511, 38:15511. The FilterFracs can
@@ -69,7 +71,7 @@ public:
 	 * Function calculates the filter bank.
 	 *
 	 * @param Params "Vaneev" windowing function's parameters. If NULL then
-	 * the built-in table values will be used.
+	 * the built-in table values for the current FilterLen will be used.
 	 */
 
 	void calculate( const double* const Params = NULL )
@@ -85,8 +87,8 @@ public:
 		{
 			sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
 			sinc.initFracVaneev( FilterLen, Params );
-			sinc.generateFrac( p, ElementSize,
-				&CDSPSincFilterGen :: calcWindowVaneev );
+			sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowVaneev,
+				ElementSize );
 
 			normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
 			p += FilterSize;
@@ -106,8 +108,8 @@ public:
 		{
 			if( ElementSize == 3 )
 			{
-				// Calculate 2nd order spline interpolation coefficients using
-				// 8 points.
+				// Calculate 2nd order spline (polynomial) interpolation
+				// coefficients using 8 points.
 
 				while( p < TableEnd )
 				{
@@ -121,8 +123,8 @@ public:
 			else
 			if( ElementSize == 4 )
 			{
-				// Calculate 3rd order spline interpolation coefficients using
-				// 8 points.
+				// Calculate 3rd order spline (polynomial) interpolation
+				// coefficients using 8 points.
 
 				while( p < TableEnd )
 				{
@@ -179,9 +181,9 @@ private:
  *
  * While this class is used by the CDSPResampler class, it is not the only
  * possible application of this class. For example, this class with the
- * FilterLen template parameter as low as 16 can be used for real-time "pitch"
+ * FilterLen template parameter as low as 14 can be used for real-time "pitch"
  * changes and resampling in soft-synths given a suitable oversampling and
- * dynamic low-pass filtering is performed on a prior step.
+ * dynamic low-pass filtering is performed at a prior step.
  *
  * To increase sample timing precision, this class uses "resettable counter"
  * approach. This gives less than "1 per 100 billion" sample timing error when
@@ -223,7 +225,8 @@ public:
 	 * @param aDstSampleRate Destination sample rate.
 	 * @param aInitFracPos Initial fractional position, in samples, in the
 	 * range [0; 1). A non-zero value can be specified to remove the
-	 * fractional delay introduced by a minimum-phase filter.
+	 * fractional delay introduced by a minimum-phase filter. This value is
+	 * usually equal to the CDSPBlockConvolver.getLatencyFrac() value.
 	 */
 
 	CDSPFracInterpolator( const double aSrcSampleRate,
@@ -372,11 +375,21 @@ public:
 				const double* const rp = Buf + ReadPos;
 				double s = 0.0;
 
+			#if R8B_FLTTEST
+				const double x3 = x2 * x;
+			#endif // R8B_FLTTEST
+
 				for( i = 0; i < FilterLen; i++ )
 				{
 					const int ii = i * FilterElementSize;
+
+				#if !R8B_FLTTEST
 					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
 						ftp[ ii + 2 ] * x2 ) * rp[ i ];
+				#else // !R8B_FLTTEST
+					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
+						ftp[ ii + 2 ] * x2 + ftp[ ii + 3 ] * x3 ) * rp[ i ];
+				#endif // !R8B_FLTTEST
 				}
 
 				*op = s;
@@ -410,10 +423,19 @@ public:
 	}
 
 private:
+#if !R8B_FLTTEST
 	static const int FilterElementSize = 3; ///< The number of "doubles" a
 		///< single filter tap consists of (includes interpolation
 		///< coefficients).
 		///<
+#else // !R8B_FLTTEST
+	static const int FilterElementSize = 4; ///< The number of "doubles" a
+		///< single filter tap consists of (includes interpolation
+		///< coefficients). During filter testing a higher precision
+		///< interpolation is used.
+		///<
+#endif // !R8B_FLTTEST
+
 	static const int FilterLenD2Minus1 = ( FilterLen >> 1 ) - 1; ///< =
 		///< ( FilterLen >> 1 ) - 1. This value also equals to filter's
 		///< latency in samples (taps).
@@ -467,9 +489,9 @@ private:
 #if !R8B_FLTTEST
 	static const // Define filter bank object statically if no filter test
 		// takes place.
-#else
+#else // !R8B_FLTTEST
 public:
-#endif // R8B_FLTTEST
+#endif // !R8B_FLTTEST
 	CDSPFracDelayFilterBank< FilterLen, FilterFracs,
 		FilterElementSize > FilterBank; ///< Filter bank object.
 		///<

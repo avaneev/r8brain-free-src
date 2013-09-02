@@ -33,7 +33,7 @@ namespace r8b {
  *
  * While this may seem impossible, in r8brain-free-src the decent quality
  * full 16-bit audio resampling can be achieved by setting CInterpClass to
- * "CDSPFracInterpolator< 14, 41, 9 >" and using ReqTransBand=3, ReqAtten=96.
+ * "CDSPFracInterpolator< 14, 41, 9 >" and using ReqTransBand=3, ReqAtten=100.
  * Such mode of operation is ultra fast: achieves 21 Mflops on a single core
  * of Intel i7-4770K processor.
  *
@@ -59,24 +59,25 @@ public:
 	 * output" delay. However, the filter length has only a minor influence on
 	 * the overall resampling speed.
 	 *
-	 * In most cases ReqTransBand=3 and ReqAtten=96 can be used with good
-	 * results. When resampling impulse responses, the ReqAtten=70 can be
-	 * used. For full dynamic range 24-bit audio (e.g. for storage purposes)
-	 * the ReqAtten=144 may be used, but as a rule ReqAtten above 100 is
-	 * beyond human perception. When upsampling 88200 or 96000 audio to higher
-	 * sample rates the ReqTransBand can be considerably increased, up to 20.
+	 * In most cases ReqTransBand=3 and ReqAtten=100 can be used with good
+	 * results: this produces full dynamic range 16-bit audio. For full
+	 * dynamic range 24-bit audio (e.g. for storage purposes) the ReqAtten=150
+	 * may be used. For comparison purposes the ReqAtten=185 may be used.
+	 * However, as a rule ReqAtten above 100 is beyond human perception. When
+	 * upsampling 88200 or 96000 audio to higher sample rates the ReqTransBand
+	 * can be considerably increased, up to 20.
 	 *
 	 * It should be noted that ReqAtten specifies the minimal difference
 	 * between the loudest input signal component and the produced aliasing
-	 * artifacts during resampling. For example, if ReqAtten=96 was specified
+	 * artifacts during resampling. For example, if ReqAtten=100 was specified
 	 * when performing 2x upsampling, the analysis of the resulting signal may
 	 * display high-frequency components which are quieter than the loudest
-	 * part of the input signal by only 96 decibel. The high-frequency part
+	 * part of the input signal by only 100 decibel. The high-frequency part
 	 * won't become "magically" completely silent after resampling. You have
 	 * to specify higher ReqAtten values if you need a totally clean
 	 * high-frequency content. On the other hand, it may not be reasonable to
 	 * have a high-frequency content cleaner than the input signal itself: if
-	 * the input signal is 16-bit, setting ReqAtten to 144 will make its
+	 * the input signal is 16-bit, setting ReqAtten to 150 will make its
 	 * high-frequency content 24-bit, but the original part of the signal will
 	 * remain 16-bit.
 	 *
@@ -139,6 +140,7 @@ public:
 		int SrcSRDiv = 1;
 		int MaxOutLen = MaxInLen;
 		int ConvBufCapacities[ 2 ];
+		double PrevLatencyFrac = 0.0;
 
 		if( DstSampleRate * 2 > SrcSampleRate )
 		{
@@ -150,11 +152,12 @@ public:
 
 			Convs[ 0 ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten, ReqPhase ), rsmUpsample2X );
+				ReqAtten, ReqPhase ), rsmUpsample2X, 0.0 );
 
 			ConvCount = 1;
 			MaxOutLen = Convs[ 0 ] -> getMaxOutLen( MaxOutLen );
 			ConvBufCapacities[ 0 ] = MaxOutLen;
+			PrevLatencyFrac = Convs[ 0 ] -> getLatencyFrac();
 
 			// Find if the destination to source sample rate ratio is
 			// a "power of 2" value.
@@ -193,10 +196,12 @@ public:
 
 					Convs[ i ] = new CDSPBlockConvolver(
 						CDSPFIRFilterCache :: getLPFilter( 0.5, tb,
-						ReqAtten, ReqPhase ), rsmUpsample2X );
+						ReqAtten, ReqPhase ), rsmUpsample2X,
+						PrevLatencyFrac );
 
 					MaxOutLen = Convs[ i ] -> getMaxOutLen( MaxOutLen );
 					ConvBufCapacities[ i & 1 ] = MaxOutLen;
+					PrevLatencyFrac = Convs[ i ] -> getLatencyFrac();
 				}
 
 				ConvBufs[ 0 ].alloc( ConvBufCapacities[ 0 ]);
@@ -230,9 +235,10 @@ public:
 
 				Convs[ ConvCount ] = new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
-					ReqPhase ), rsmDownsample2X );
+					ReqPhase ), rsmDownsample2X, PrevLatencyFrac );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
+				PrevLatencyFrac = Convs[ ConvCount ] -> getLatencyFrac();
 				ConvCount++;
 
 				R8BASSERT( ConvCount < ConvCountMax );
@@ -244,9 +250,10 @@ public:
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten, ReqPhase ), rsm );
+				ReqAtten, ReqPhase ), rsm, PrevLatencyFrac );
 
 			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
+			PrevLatencyFrac = Convs[ ConvCount ] -> getLatencyFrac();
 			ConvCount++;
 
 			if( rsm == rsmDownsample2X )
@@ -256,7 +263,7 @@ public:
 		}
 
 		Interp = new CInterpClass( SrcSampleRate * SrcSRMult / SrcSRDiv,
-			DstSampleRate, 0.0 );
+			DstSampleRate, PrevLatencyFrac );
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
