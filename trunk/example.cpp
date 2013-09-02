@@ -35,7 +35,7 @@ int main()
 		InBufs[ i ].alloc( InBufCapacity );
 
 		Resamps[ i ] = new CDSPResampler<>( inf.SampleRate, OutSampleRate,
-			3, 96, InBufCapacity );
+			2, 150, InBufCapacity );
 	}
 
 	long long int ol = inf.SampleCount * OutSampleRate / inf.SampleRate;

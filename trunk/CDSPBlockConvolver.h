@@ -60,10 +60,15 @@ public:
 	 * should meet alias-free resampling requirements if resampling is used:
 	 * the normalized low-pass frequency of the filter should be equal to 0.5
 	 * or lower.
+	 * @param PrevLatencyFrac Latency, in samples (>=0), which was left in the
+	 * output signal by a previous convolver. This value is usually non-zero
+	 * if the minimum-phase filters are in use. This value is always zero if
+	 * the linear-phase filters are in use.
 	 */
 
 	CDSPBlockConvolver( CDSPFIRFilter& aFilter,
-		const EDSPResamplingMode aResamplingMode )
+		const EDSPResamplingMode aResamplingMode,
+		const double PrevLatencyFrac = 0.0 )
 		: Filter( &aFilter )
 		, ffto( Filter -> getBlockLenBits() + 1 )
 		, ResamplingMode( aResamplingMode )
@@ -71,6 +76,20 @@ public:
 		, BlockLen( 1 << Filter -> getBlockLenBits() )
 		, Latency( BlockLen + Filter -> getLatency() )
 	{
+		R8BASSERT( PrevLatencyFrac >= 0.0 && PrevLatencyFrac < 0.0 );
+
+		LatencyFrac = Filter -> getLatencyFrac() +
+			PrevLatencyFrac * ( UpShift + 1 );
+
+		const int lt = (int) LatencyFrac;
+		Latency += lt;
+		LatencyFrac -= lt;
+
+		if( ResamplingMode == rsmDownsample2X )
+		{
+			LatencyFrac *= 0.5;
+		}
+
 		const int bs = BlockLen * (int) sizeof( double );
 
 		PrevInput.alloc( bs );
@@ -87,6 +106,16 @@ public:
 	~CDSPBlockConvolver()
 	{
 		Filter -> unref();
+	}
+
+	/**
+	 * @return Fractional latency, in samples, which is present in the output
+	 * signal. This value is always zero if linear-phase filters are in use.
+	 */
+
+	double getLatencyFrac() const
+	{
+		return( LatencyFrac );
 	}
 
 	/**
@@ -244,7 +273,10 @@ private:
 		///<
 	int BlockLen; ///< Block length, in samples.
 		///<
-	int Latency; ///< Processing and filter kernel's latency.
+	int Latency; ///< Processing and filter kernel's latency, in samples.
+		///<
+	double LatencyFrac; ///< Fractional latency, in samples, that is left in
+		///< the output signal.
 		///<
 	CFixedBuffer< double > PrevInput; ///< Previous input data,
 		///< capacity = BlockLen.
