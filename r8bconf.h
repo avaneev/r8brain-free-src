@@ -2,9 +2,9 @@
 //$ nocpp
 
 /**
- * \file r8bconf.h
+ * @file r8bconf.h
  *
- * \brief The "configuration" inclusion file you can modify.
+ * @brief The "configuration" inclusion file you can modify.
  *
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.

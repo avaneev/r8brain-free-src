@@ -1,9 +1,9 @@
 //$ nobt
 
 /**
- * \file r8bbase.h
+ * @file r8bbase.h
  *
- * \brief The "base" inclusion file with basic classes and functions.
+ * @brief The "base" inclusion file with basic classes and functions.
  *
  * This is the "base" inclusion file for the "r8brain-free-src" sample rate
  * converter. This inclusion file contains implementations of several small
@@ -12,20 +12,20 @@
  * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
  * See the "License.txt" file for license.
  *
- * \mainpage
+ * @mainpage
  *
- * \section intro_sec Introduction
+ * @section intro_sec Introduction
  *
- * Open source high-quality professional audio sample rate converter (SRC)
- * library. Features routines for SRC, both up- and downsampling, to/from any
- * sample rate, including non-integer sample rates: it can be also used for
- * conversion to/from SACD sample rate and even go beyond that. SRC routines
- * were implemented in multi-platform C++ code, and have a high level of
- * optimality. The user can select the transition band/steepness of the
- * low-pass (reconstruction) filter, expressed as a percentage of the full
- * spectral bandwidth of the input signal (or the output signal if the
- * downsampling is performed), and the desired stop-band attenuation in
- * decibel.
+ * Open source (under the MIT license) high-quality professional audio sample
+ * rate converter (SRC) library. Features routines for SRC, both up- and
+ * downsampling, to/from any sample rate, including non-integer sample rates:
+ * it can be also used for conversion to/from SACD sample rate and even go
+ * beyond that. SRC routines were implemented in multi-platform C++ code, and
+ * have a high level of optimality. The user can select the transition
+ * band/steepness of the low-pass (reconstruction) filter, expressed as a
+ * percentage of the full spectral bandwidth of the input signal (or the
+ * output signal if the downsampling is performed), and the desired stop-band
+ * attenuation in decibel.
  *
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with a minimal performance
@@ -41,7 +41,7 @@
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
  *
- * \section requirements Requirements
+ * @section requirements Requirements
  *
  * C++ compiler and system with the "double" floating point type (53-bit
  * mantissa) support. No explicit code for the "float" type is present in this
@@ -53,7 +53,7 @@
  * dependencies beside the standard C library, the "windows.h" on Windows and
  * the "pthread.h" on Mac OS X and Linux.
  *
- * \section usage Usage Information
+ * @section usage Usage Information
  *
  * The sample rate converter (resampler) is represented by the
  * r8b::CDSPResampler class, which is a single front-end class for the whole
@@ -82,7 +82,7 @@
  * approximately translates to a real-time resampling of 150*n_cores audio
  * streams, at 100% CPU load.
  * 
- * \section notes Notes
+ * @section notes Notes
  *
  * The transition band is specified as the normalized spectral space of the
  * input signal (or the output signal if the downsampling is performed)
@@ -114,13 +114,13 @@
  *  * I/O buffers, per channel (proportional to the maximal input buffer
  *    length and source to destination sample rate ratio)
  *
- * \section users Users
+ * @section users Users
  *
  * This library is used by:
  *
  *  * http://www.martinic.com/combov/ Combo Model V VSTi instrument
  *
- * \section license License
+ * @section license License
  *
  * The MIT License (MIT)
  * 
@@ -148,7 +148,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * \version 0.8
+ * @version 0.8
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -166,7 +166,7 @@
 #endif // R8B_WIN
 
 /**
- * \brief The "r8brain-free-src" library namespace.
+ * @brief The "r8brain-free-src" library namespace.
  *
  * The "r8brain-free-src" sample rate converter library namespace.
  */
@@ -216,7 +216,7 @@ namespace r8b {
 		ClassName& operator = ( const ClassName& ) { return( *this ); }
 
 /**
- * \brief The default base class for objects created on heap.
+ * @brief The default base class for objects created on heap.
  *
  * Class that implements "new" and "delete" operators that use standard
  * malloc() and free() functions.
@@ -280,7 +280,7 @@ public:
 };
 
 /**
- * \brief The default base class for objects that allocate blocks of memory.
+ * @brief The default base class for objects that allocate blocks of memory.
  *
  * Memory buffer allocator that uses "stdlib" standard memory functions.
  */
@@ -326,7 +326,7 @@ public:
 };
 
 /**
- * \brief Templated memory buffer class for element buffers of fixed capacity.
+ * @brief Templated memory buffer class for element buffers of fixed capacity.
  *
  * Fixed memory buffer object. Supports allocation of a fixed amount of
  * memory. Does not store buffer's capacity - the user should know the actual
@@ -425,7 +425,7 @@ private:
 };
 
 /**
- * \brief Pointer-to-object "keeper" class with automatic deletion.
+ * @brief Pointer-to-object "keeper" class with automatic deletion.
  *
  * An auxiliary class that can be used for keeping a pointer to object that
  * should be deleted together with the "keeper" by calling object's "delete"
@@ -524,7 +524,7 @@ private:
 };
 
 /**
- * \brief Multi-threaded synchronization object class.
+ * @brief Multi-threaded synchronization object class.
  *
  * This class uses standard OS thread-locking (mutex) mechanism which is
  * fairly efficient in most cases.
@@ -600,7 +600,7 @@ private:
 };
 
 /**
- * \brief A "keeper" class for CSyncObject-based synchronization.
+ * @brief A "keeper" class for CSyncObject-based synchronization.
  *
  * Sync keeper class. The object of this class can be used as auto-init and
  * auto-deinit object for calling the acquire() and release() functions of an
@@ -676,7 +676,7 @@ protected:
 #define R8BSYNC__( SyncObject, id ) CSyncKeeper SyncKeeper##id( SyncObject )
 
 /**
- * \brief Sine signal generator class.
+ * @brief Sine signal generator class.
  *
  * Class implements sine signal generator with optional biasing.
  */
@@ -941,7 +941,7 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
  * Function calculates coefficients used to calculate 3rd order spline
  * (polynomial) on the equidistant lattice, using 8 points.
  *
- * @param c Output coefficients buffer, length = 4.
+ * @param[out] c Output coefficients buffer, length = 4.
  * @param xm3 Point at x-3 position.
  * @param xm2 Point at x-2 position.
  * @param xm1 Point at x-1 position.
@@ -953,7 +953,7 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
  */
 
 template< class T, class T2 >
-inline void calcSpline3Coeffs8( T* c, const T2 xm3, const T2 xm2,
+inline void calcSpline3p8Coeffs( T* c, const T2 xm3, const T2 xm2,
 	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
 	const T2 x4 )
 {
@@ -974,7 +974,7 @@ inline void calcSpline3Coeffs8( T* c, const T2 xm3, const T2 xm2,
  * based on the calcSpline3Coeffs8() function, but without the 3rd order
  * coefficient.
  *
- * @param c Output coefficients buffer, length = 3.
+ * @param[out] c Output coefficients buffer, length = 3.
  * @param xm3 Point at x-3 position.
  * @param xm2 Point at x-2 position.
  * @param xm1 Point at x-1 position.
@@ -986,7 +986,7 @@ inline void calcSpline3Coeffs8( T* c, const T2 xm3, const T2 xm2,
  */
 
 template< class T, class T2 >
-inline void calcSpline2Coeffs8( T* c, const T2 xm3, const T2 xm2,
+inline void calcSpline2p8Coeffs( T* c, const T2 xm3, const T2 xm2,
 	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
 	const T2 x4 )
 {

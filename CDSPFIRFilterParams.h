@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPFIRFilterParams.h
+ * @file CDSPFIRFilterParams.h
  *
- * \brief FIR filter parameter storage and calculator class.
+ * @brief FIR filter parameter storage and calculator class.
  *
  * This file includes low-pass FIR filter parameter storage and calculator
  * class, used by the r8b::CDSPFIRFilter class.
@@ -20,7 +20,7 @@
 namespace r8b {
 
 /**
- * \brief FIR filter parameter storage and calculator class.
+ * @brief FIR filter parameter storage and calculator class.
  *
  * This class provides storage and calculation functions for a set of
  * "standardized" filter parameters used to build a low-pass FIR filter. These

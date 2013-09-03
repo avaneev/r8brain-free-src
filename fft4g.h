@@ -2,8 +2,9 @@
 //$ nocpp
 
 /**
- * \file fft4g.h
- * \brief Wrapper class for Takuya OOURA's FFT functions.
+ * @file fft4g.h
+ *
+ * @brief Wrapper class for Takuya OOURA's FFT functions.
  *
  * Functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
  * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
@@ -295,7 +296,7 @@ Appendix :
 namespace r8b {
 
 /**
- * \brief A wrapper class around Takuya OOURA's FFT functions.
+ * @brief A wrapper class around Takuya OOURA's FFT functions.
  *
  * A wrapper class around fft4g.c file's FFT functions by Takuya OOURA.
  * Provides static private functions for use by the CDSPRealFFT class.

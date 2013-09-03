@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPBlockConvolver.h
+ * @file CDSPBlockConvolver.h
  *
- * \brief Single-block overlap-save convolution processor class.
+ * @brief Single-block overlap-save convolution processor class.
  *
  * This file includes single-block overlap-save convolution processor class.
  *
@@ -30,7 +30,7 @@ enum EDSPResamplingMode
 };
 
 /**
- * \brief Single-block overlap-save convolution processing class.
+ * @brief Single-block overlap-save convolution processing class.
  *
  * Class that implements single-block overlap-save convolution processing. The
  * length of a single FFT block used depends on the length of the filter

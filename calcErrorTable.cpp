@@ -1,7 +1,7 @@
 /**
- * \file calcErrorTable.cpp
+ * @file calcErrorTable.cpp
  *
- * \brief Utility program that calculates parameter error table.
+ * @brief Utility program that calculates parameter error table.
  *
  * This utility program calculates tabbed parameter error table for the whole
  * range of transition bands and stop-band attenuations. The error is

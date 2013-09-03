@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPFracInterpolator.h
+ * @file CDSPFracInterpolator.h
  *
- * \brief Fractional delay interpolator and filter bank classes.
+ * @brief Fractional delay interpolator and filter bank classes.
  *
  * This file includes fractional delay interpolator class.
  *
@@ -19,7 +19,7 @@
 namespace r8b {
 
 /**
- * \brief Sinc function-based fractional delay filter bank class.
+ * @brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
  * fractional delay filters, expressed as 1st, 2nd or 3rd order polynomial
@@ -113,7 +113,7 @@ public:
 
 				while( p < TableEnd )
 				{
-					calcSpline2Coeffs8( p, p[ 0 ], p[ TablePos2 ],
+					calcSpline2p8Coeffs( p, p[ 0 ], p[ TablePos2 ],
 						p[ TablePos3 ], p[ TablePos4 ], p[ TablePos5 ],
 						p[ TablePos6 ], p[ TablePos7 ], p[ TablePos8 ]);
 
@@ -128,7 +128,7 @@ public:
 
 				while( p < TableEnd )
 				{
-					calcSpline3Coeffs8( p, p[ 0 ], p[ TablePos2 ],
+					calcSpline3p8Coeffs( p, p[ 0 ], p[ TablePos2 ],
 						p[ TablePos3 ], p[ TablePos4 ], p[ TablePos5 ],
 						p[ TablePos6 ], p[ TablePos7 ], p[ TablePos8 ]);
 
@@ -171,7 +171,7 @@ private:
 };
 
 /**
- * \brief Fractional delay filter-based interpolator class.
+ * @brief Fractional delay filter-based interpolator class.
  *
  * Class implements the fractional delay interpolator. This implementation at
  * first puts the input signal into a ring buffer and then performs

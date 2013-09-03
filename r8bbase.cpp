@@ -1,7 +1,7 @@
 /**
- * \file r8bbase.cpp
+ * @file r8bbase.cpp
  *
- * \brief C++ file that should be compiled and included into your application.
+ * @brief C++ file that should be compiled and included into your application.
  *
  * This is a single library file that should be compiled and included into the
  * project that uses the "r8brain-free-src" sample rate converter. This file
@@ -30,6 +30,6 @@ template<>
 const CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >
 	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS, 9 > :: FilterBank =
 	CDSPFracDelayFilterBank< R8B_FLTLEN, R8B_FLTFRACS, 3 >();
-#endif // R8B_FLTTEST
+#endif // !R8B_FLTTEST
 
 } // namespace r8b
