@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPResampler.h
+ * @file CDSPResampler.h
  *
- * \brief The master sample rate converter (resampler) class.
+ * @brief The master sample rate converter (resampler) class.
  *
  * This file includes the master sample rate converter (resampler) class that
  * combines all elements of this library into a single front-end class.
@@ -21,7 +21,7 @@
 namespace r8b {
 
 /**
- * \brief The master sample rate converter (resampler) class.
+ * @brief The master sample rate converter (resampler) class.
  *
  * This class can be considered the "master" sample rate converter (resampler)
  * class since it combines all functionality of this library into a single

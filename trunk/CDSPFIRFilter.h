@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPFIRFilter.h
+ * @file CDSPFIRFilter.h
  *
- * \brief FIR filter generator and filter cache classes.
+ * @brief FIR filter generator and filter cache classes.
  *
  * This file includes low-pass FIR filter generator and filter cache.
  *
@@ -36,12 +36,12 @@ enum EDSPFilterPhaseResponse
 		///< limits which may skew both the -3 dB point and attenuation of the
 		///< filter being transformed: as it was measured, the skew happens
 		///< purely at random, and in most cases it is within tolerable range.
-		///< In a small (%1) random subset of cases the skew is bigger and
+		///< In a small (1%) random subset of cases the skew is bigger and
 		///< cannot be predicted.
 };
 
 /**
- * \brief Calculation and storage class for FIR filters.
+ * @brief Calculation and storage class for FIR filters.
  *
  * Class that implements calculation and storing of a FIR filter (currently
  * contains low-pass filter calculation routines designed for sample rate
@@ -246,7 +246,7 @@ private:
 };
 
 /**
- * \brief FIR filter cache class.
+ * @brief FIR filter cache class.
  *
  * Class that implements cache for calculated FIR filters. The required FIR
  * filter should be obtained via the getLPFilter() static function.

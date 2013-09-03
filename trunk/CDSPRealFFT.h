@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPRealFFT.h
+ * @file CDSPRealFFT.h
  *
- * \brief Real-valued FFT transform class.
+ * @brief Real-valued FFT transform class.
  *
  * This file includes FFT object implementation. All created FFT objects are
  * kept in a global list after use for future reusal. Such approach minimizes
@@ -25,7 +25,7 @@
 namespace r8b {
 
 /**
- * \brief Real-valued FFT transform class.
+ * @brief Real-valued FFT transform class.
  *
  * Class implements a wrapper for real-valued discrete fast Fourier transform
  * functions. The object of this class can only be obtained via the
@@ -378,7 +378,7 @@ private:
 };
 
 /**
- * \brief A "keeper" class for real-valued FFT transform objects.
+ * @brief A "keeper" class for real-valued FFT transform objects.
  *
  * Class implements "keeper" functionality for handling CDSPRealFFT objects.
  * The allocated FFT objects are placed on the global static list of objects

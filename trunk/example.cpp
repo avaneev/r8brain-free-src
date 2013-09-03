@@ -1,7 +1,7 @@
 /**
- * \file example.cpp
+ * @file example.cpp
  *
- * \brief An example C++ file that demonstrates resampler's usage.
+ * @brief An example C++ file that demonstrates resampler's usage.
  *
  * This is an example file which you won't be able to compile as it includes
  * some undisclosed program code. Please consider this example as a

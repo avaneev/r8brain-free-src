@@ -1,9 +1,9 @@
 //$ nocpp
 
 /**
- * \file CDSPSincFilterGen.h
+ * @file CDSPSincFilterGen.h
  *
- * \brief Sinc function-based FIR filter generator class.
+ * @brief Sinc function-based FIR filter generator class.
  *
  * This file includes the CDSPSincFilterGen class implementation that
  * generates FIR filters.
@@ -20,7 +20,7 @@
 namespace r8b {
 
 /**
- * \brief Sinc function-based FIR filter generator class.
+ * @brief Sinc function-based FIR filter generator class.
  *
  * Structure that holds state used to perform generation of sinc functions of
  * various types, windowed by the Blackman window by default (but the
