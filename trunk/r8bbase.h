@@ -81,7 +81,19 @@
  * Intel Core i7-4770K processor-based system without overclocking. This
  * approximately translates to a real-time resampling of 150*n_cores audio
  * streams, at 100% CPU load.
- * 
+ *
+ * @section realtime Real-time Applications
+ *
+ * The resampler class of this library was designed as asynchronous processor:
+ * it may produce any number of output samples, depending on the input sample
+ * data length and the resampling parameters. The resampler must be fed with
+ * the input sample data until enough output sample data was produced, with
+ * any excess output samples used before feeding the resampler with more input
+ * data. A "relief" factor here is that the resampler removes the initial
+ * processing latency automatically, and that after initial moments of
+ * processing the output becomes steady, with only minor output sample data
+ * length fluctuations.
+ *
  * @section notes Notes
  *
  * The transition band is specified as the normalized spectral space of the
@@ -101,9 +113,9 @@
  * Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
- * The memory footprint is quite modest ("double" type data):
+ * The memory footprint is quite modest (8-byte "double" type data):
  *
- *  * 920 KB of static memory for fractional delay filters
+ *  * 920 KB of static memory for the fractional delay filters
  *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
@@ -112,7 +124,7 @@
  *    convolvers for the "power of 2" resampling (Z*128*8*5 bytes)
  *  * interpolator memory (8 KB per channel)
  *  * I/O buffers, per channel (proportional to the maximal input buffer
- *    length and source to destination sample rate ratio)
+ *    length and the source to destination sample rate ratio)
  *
  * @section users Users
  *
