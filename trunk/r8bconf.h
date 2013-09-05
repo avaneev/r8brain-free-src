@@ -20,10 +20,8 @@
 	#define R8B_WIN 1
 #elif defined( __APPLE__ )
 	#define R8B_MAC 1
-#elif defined( __linux__ )
-	#define R8B_LNX 1
 #else
-	#error r8brain-free-src: unknown platform
+	#define R8B_LNX 1 // Assume Linux (Unix) platform by default.
 #endif
 
 #if !defined( R8B_FLTLEN )

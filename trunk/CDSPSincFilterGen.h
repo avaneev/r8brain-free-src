@@ -165,7 +165,7 @@ public:
 			{ 0.90233911, 0.62228911, 0.17793224, 0.09128849 }, // 12 @ 94.67
 			{ 0.92827344, 0.67928146, 0.18506467, 0.15682281 }, // 14 @ 108.44
 			{ 0.94714902, 0.71154551, 0.36654152, 0.01684227 }, // 16 @ 121.78
-			{ 0.95764714, 0.75444030, 0.40353054, 0.09199478 }, // 18 @ 136.92
+			{ 0.95738584, 0.75487070, 0.40376698, 0.09118909 }, // 18 @ 136.96
 			{ 0.94515247, 0.78611177, 0.47023918, 0.10753907 }, // 20 @ 147.86
 			{ 0.95415054, 0.80837403, 0.50606780, 0.14824214 }, // 22 @ 162.08
 			{ 0.79522327, 0.92805771, 0.54353064, 0.17844054 }, // 24 @ 175.20
@@ -305,8 +305,7 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	template< class T >
-	void generateBand( T* op,
+	void generateBand( double* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		int t = -fl2;
@@ -339,8 +338,7 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	template< class T >
-	void generateBandPow( T* op, const double p,
+	void generateBandPow( double* op, const double p,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		R8BASSERT( p > 0.0 );
@@ -376,12 +374,11 @@ public:
 	 * @param wfunc Windowing function to use.
 	 */
 
-	template< class T >
-	void generateHilbert( T* op,
+	void generateHilbert( double* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		static const double fvalues[ 2 ] = { 0.0, -2.0 };
-		T* op2 = op + fl2 + fl2;
+		double* op2 = op + fl2 + fl2;
 		int t = -fl2;
 
 		while( t < 0 )
@@ -405,8 +402,7 @@ public:
 	 * @param opinc Output buffer increment, in "op" elements.
 	 */
 
-	template< class T >
-	void generateFrac( T* op,
+	void generateFrac( double* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman,
 		const int opinc = 1 )
 	{

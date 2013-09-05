@@ -45,13 +45,15 @@
  *
  * C++ compiler and system with the "double" floating point type (53-bit
  * mantissa) support. No explicit code for the "float" type is present in this
- * library. However, if the "double" type really represents the "float" type
- * (24-bit mantissa) in a given compiler, on a given system, the library won't
- * become broken, only the conversion quality may become degraded. This
- * library always uses the "sizeof( double )" operator to obtain "double"
- * floating point type's size in bytes. This library does not have
- * dependencies beside the standard C library, the "windows.h" on Windows and
- * the "pthread.h" on Mac OS X and Linux.
+ * library, because as practice has shown the "float" code performed
+ * considerably slower on a modern processor, at least in this library.
+ * However, if the "double" type really represents the "float" type (24-bit
+ * mantissa) in a given compiler, on a given system, the library won't become
+ * broken, only the conversion quality may become degraded. This library
+ * always uses the "sizeof( double )" operator to obtain "double" floating
+ * point type's size in bytes. This library does not have dependencies beside
+ * the standard C library, the "windows.h" on Windows and the "pthread.h" on
+ * Mac OS X and Linux.
  *
  * @section usage Usage Information
  *
@@ -811,9 +813,8 @@ inline int getBitOccupancy( const int v )
  * @param[out] im0 Resulting imaginary part of the complex frequency response.
  */
 
-template< class T >
-inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
-	double& re0, double& im0 )
+inline void calcFIRFilterResponse( const double* flt, int fltlen,
+	const double th, double& re0, double& im0 )
 {
 	double svalue1 = 0.0;
 	double svalue2 = sin( -th );
@@ -857,8 +858,7 @@ inline void calcFIRFilterResponse( const T* flt, int fltlen, const double th,
  * samples.
  */
 
-template< class T >
-inline void calcFIRFilterResponseAndGroupDelay( const T* const flt,
+inline void calcFIRFilterResponseAndGroupDelay( const double* const flt,
 	const int fltlen, const double th, double& re, double& im, double& gd )
 {
 	// Calculate response at "th".
@@ -919,15 +919,14 @@ inline void calcFIRFilterResponseAndGroupDelay( const T* const flt,
  * @param pstep "p" array step.
  */
 
-template< class T >
-inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
-	const int pstep = 1 )
+inline void normalizeFIRFilter( double* const p, const int l,
+	const double DCGain, const int pstep = 1 )
 {
 	R8BASSERT( l > 0 );
 	R8BASSERT( pstep != 0 );
 
 	double s = 0.0;
-	T* pp = p;
+	double* pp = p;
 	int i = l;
 
 	while( i > 0 )
@@ -964,10 +963,9 @@ inline void normalizeFIRFilter( T* const p, const int l, const double DCGain,
  * @param x4 Point at x+4 position.
  */
 
-template< class T, class T2 >
-inline void calcSpline3p8Coeffs( T* c, const T2 xm3, const T2 xm2,
-	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
-	const T2 x4 )
+inline void calcSpline3p8Coeffs( double* c, const double xm3,
+	const double xm2, const double xm1, const double x0, const double x1,
+	const double x2, const double x3, const double x4 )
 {
 	c[ 0 ] = x0;
 	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
@@ -997,10 +995,9 @@ inline void calcSpline3p8Coeffs( T* c, const T2 xm3, const T2 xm2,
  * @param x4 Point at x+4 position.
  */
 
-template< class T, class T2 >
-inline void calcSpline2p8Coeffs( T* c, const T2 xm3, const T2 xm2,
-	const T2 xm1, const T2 x0, const T2 x1, const T2 x2, const T2 x3,
-	const T2 x4 )
+inline void calcSpline2p8Coeffs( double* c, const double xm3,
+	const double xm2, const double xm1, const double x0, const double x1,
+	const double x2, const double x3, const double x4 )
 {
 	c[ 0 ] = x0;
 	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
@@ -1043,8 +1040,8 @@ inline T max( const T& v1, const T& v2 )
 #endif // max
 
 /**
- * Template function "clamps" (clips) the specified value so that it is not
- * lesser than "minv", and not greater than "maxv".
+ * Function "clamps" (clips) the specified value so that it is not lesser than
+ * "minv", and not greater than "maxv".
  *
  * @param Value Value to clamp.
  * @param minv Minimal allowed value.
@@ -1052,8 +1049,8 @@ inline T max( const T& v1, const T& v2 )
  * @return "Clamped" value.
  */
 
-template< class T >
-inline T clampr( const T& Value, const T minv = 0, const T maxv = 1 )
+inline double clampr( const double Value, const double minv,
+	const double maxv )
 {
 	if( Value < minv )
 	{
@@ -1075,8 +1072,7 @@ inline T clampr( const T& Value, const T minv = 0, const T maxv = 1 )
  * @return Squared value of the argument.
  */
 
-template< class T >
-inline T sqr( const T x )
+inline double sqr( const double x )
 {
 	return( x * x );
 }
@@ -1087,8 +1083,7 @@ inline T sqr( const T x )
  * @return Returns pow() function's value with input value's sign check.
  */
 
-template< class T >
-inline T pows( const T v, const T p )
+inline double pows( const double v, const double p )
 {
 	return( v < 0.0 ? -pow( -v, p ) : pow( v, p ));
 }
@@ -1098,8 +1093,7 @@ inline T pows( const T v, const T p )
  * @return Calculated single-argument Gaussian function of the input value.
  */
 
-template< class T >
-inline T gauss( const T v )
+inline double gauss( const double v )
 {
 	return( exp( -( v * v )));
 }
@@ -1109,8 +1103,7 @@ inline T gauss( const T v )
  * @return Calculated inverse hyperbolic sine of the input value.
  */
 
-template< class T >
-inline T asinh( const T v )
+inline double asinh( const double v )
 {
 	return( log( v + sqrt( v * v + 1.0 )));
 }

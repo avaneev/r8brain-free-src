@@ -134,28 +134,25 @@ public:
 	void multiplyBlocks( const double* const ip1, const double* const ip2,
 		double* const op ) const
 	{
-		#if R8B_IPP
+	#if R8B_IPP
 
-			ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op,
-				Len );
+		ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op, Len );
 
-		#else // R8B_IPP
+	#else // R8B_IPP
 
-			op[ 0 ] = ip1[ 0 ] * ip2[ 0 ];
-			op[ 1 ] = ip1[ 1 ] * ip2[ 1 ];
+		op[ 0 ] = ip1[ 0 ] * ip2[ 0 ];
+		op[ 1 ] = ip1[ 1 ] * ip2[ 1 ];
 
-			int i = 2;
+		int i = 2;
 
-			while( i < Len )
-			{
-				op[ i ] = ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
-				op[ i + 1 ] =
-					ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
+		while( i < Len )
+		{
+			op[ i ] = ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
+			op[ i + 1 ] = ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
+			i += 2;
+		}
 
-				i += 2;
-			}
-
-		#endif // R8B_IPP
+	#endif // R8B_IPP
 	}
 
 	/**
@@ -174,26 +171,24 @@ public:
 		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
 
-		#if R8B_IPP
+	#if R8B_IPP
 
-			ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
-				(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
-				( Len >> 1 ) - 1 );
+		ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
+			(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
+			( Len >> 1 ) - 1 );
 
-		#else // R8B_IPP
+	#else // R8B_IPP
 
-			int i = 2;
+		int i = 2;
 
-			while( i < Len )
-			{
-				op[ i ] += ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
-				op[ i + 1 ] +=
-					ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
+		while( i < Len )
+		{
+			op[ i ] += ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
+			op[ i + 1 ] += ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
+			i += 2;
+		}
 
-				i += 2;
-			}
-
-		#endif // R8B_IPP
+	#endif // R8B_IPP
 	}
 
 	/**

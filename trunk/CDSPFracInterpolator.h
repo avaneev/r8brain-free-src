@@ -51,8 +51,7 @@ namespace r8b {
  * interpolation.
  */
 
-template< int FilterLen, int FilterFracs, int ElementSize = 4,
-	int InterpPoints = 8 >
+template< int FilterLen, int FilterFracs, int ElementSize, int InterpPoints >
 class CDSPFracDelayFilterBank : public R8B_BASECLASS
 {
 public:
@@ -194,10 +193,6 @@ private:
  * condition can be easily met if the input signal is suitably downsampled
  * first before the interpolation is performed.
  *
- * Please see the r8bbase.cpp file for the example of definition of the static
- * constant "filter bank" object for the given template parameters of this
- * class.
- *
  * @param FilterLen Specifies the number of samples (taps) each fractional
  * delay filter should have. See the r8b::CDSPFracDelayFilterBank class for
  * more details.
@@ -257,7 +252,7 @@ public:
 	/**
 	 * @param MaxInLen The number of samples planned to process at once, at
 	 * most.
-	 * @return The minimal length of the output buffer required when
+	 * @return The maximal length of the output buffer required when
 	 * processing the "MaxInLen" number of input samples.
 	 */
 
@@ -374,6 +369,7 @@ public:
 				const double* const ftp = &FilterBank[ fti ];
 				const double* const rp = Buf + ReadPos;
 				double s = 0.0;
+				int ii = 0;
 
 			#if R8B_FLTTEST
 				const double x3 = x2 * x;
@@ -381,8 +377,6 @@ public:
 
 				for( i = 0; i < FilterLen; i++ )
 				{
-					const int ii = i * FilterElementSize;
-
 				#if !R8B_FLTTEST
 					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
 						ftp[ ii + 2 ] * x2 ) * rp[ i ];
@@ -390,6 +384,8 @@ public:
 					s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
 						ftp[ ii + 2 ] * x2 + ftp[ ii + 3 ] * x3 ) * rp[ i ];
 				#endif // !R8B_FLTTEST
+
+					ii += FilterElementSize;
 				}
 
 				*op = s;
@@ -493,9 +489,19 @@ private:
 public:
 #endif // !R8B_FLTTEST
 	CDSPFracDelayFilterBank< FilterLen, FilterFracs,
-		FilterElementSize > FilterBank; ///< Filter bank object.
+		FilterElementSize, 8 > FilterBank; ///< Filter bank object.
 		///<
 };
+
+// ---------------------------------------------------------------------------
+
+#if !R8B_FLTTEST
+template< int FilterLen, int FilterFracs, int BufLenBits >
+const CDSPFracDelayFilterBank< FilterLen, FilterFracs, 3, 8 >
+	CDSPFracInterpolator< FilterLen, FilterFracs, BufLenBits > :: FilterBank;
+#endif // !R8B_FLTTEST
+
+// ---------------------------------------------------------------------------
 
 } // namespace r8b
 

@@ -307,7 +307,8 @@ class ooura_fft
 friend class CDSPRealFFT;
 
 private:
-template< class FPType >
+typedef double FPType;
+
 static void cdft(int n, int isgn, FPType *a, int *ip, FPType *w)
 {
     if (n > (ip[0] << 2)) {
@@ -326,7 +327,6 @@ static void cdft(int n, int isgn, FPType *a, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void rdft(int n, int isgn, FPType *a, int *ip, FPType *w)
 {
     int nw, nc;
@@ -366,7 +366,6 @@ static void rdft(int n, int isgn, FPType *a, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void ddct(int n, int isgn, FPType *a, int *ip, FPType *w)
 {
     int j, nw, nc;
@@ -417,7 +416,6 @@ static void ddct(int n, int isgn, FPType *a, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void ddst(int n, int isgn, FPType *a, int *ip, FPType *w)
 {
     int j, nw, nc;
@@ -468,7 +466,6 @@ static void ddst(int n, int isgn, FPType *a, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void dfct(int n, FPType *a, FPType *t, int *ip, FPType *w)
 {
     int j, k, l, m, mh, nw, nc;
@@ -558,7 +555,6 @@ static void dfct(int n, FPType *a, FPType *t, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void dfst(int n, FPType *a, FPType *t, int *ip, FPType *w)
 {
     int j, k, l, m, mh, nw, nc;
@@ -639,11 +635,8 @@ static void dfst(int n, FPType *a, FPType *t, int *ip, FPType *w)
     a[0] = 0;
 }
 
-
 /* -------- initializing routines -------- */
 
-
-template< class FPType >
 static void makewt(int nw, int *ip, FPType *w)
 {
     int j, nwh;
@@ -672,7 +665,6 @@ static void makewt(int nw, int *ip, FPType *w)
     }
 }
 
-template< class FPType >
 static void makect(int nc, int *ip, FPType *c)
 {
     int j, nch;
@@ -691,10 +683,8 @@ static void makect(int nc, int *ip, FPType *c)
     }
 }
 
-
 /* -------- child routines -------- */
 
-template< class FPType >
 static void bitrv2(int n, int *ip, FPType *a)
 {
     int j, j1, k, k1, l, m, m2;
@@ -794,8 +784,7 @@ static void bitrv2(int n, int *ip, FPType *a)
     }
 }
 
-template< class FPType >
-static void bitrv2conj(int n, const int *ip, FPType *a)
+static void bitrv2conj(int n, int *ip, FPType *a)
 {
     int j, j1, k, k1, l, m, m2;
     double xr, xi, yr, yi;
@@ -903,7 +892,6 @@ static void bitrv2conj(int n, const int *ip, FPType *a)
     }
 }
 
-template< class FPType >
 static void cftfsub(int n, FPType *a, const FPType *w)
 {
     int j, j1, j2, j3, l;
@@ -953,7 +941,6 @@ static void cftfsub(int n, FPType *a, const FPType *w)
     }
 }
 
-template< class FPType >
 static void cftbsub(int n, FPType *a, const FPType *w)
 {
     int j, j1, j2, j3, l;
@@ -1003,7 +990,6 @@ static void cftbsub(int n, FPType *a, const FPType *w)
     }
 }
 
-template< class FPType >
 static void cft1st(int n, FPType *a, const FPType *w)
 {
     int j, k1, k2;
@@ -1108,7 +1094,6 @@ static void cft1st(int n, FPType *a, const FPType *w)
     }
 }
 
-template< class FPType >
 static void cftmdl(int n, int l, FPType *a, const FPType *w)
 {
     int j, j1, j2, j3, k, k1, k2, m, m2;
@@ -1235,7 +1220,6 @@ static void cftmdl(int n, int l, FPType *a, const FPType *w)
     }
 }
 
-template< class FPType >
 static void rftfsub(int n, FPType *a, int nc, const FPType *c)
 {
     int j, k, kk, ks, m;
@@ -1260,7 +1244,6 @@ static void rftfsub(int n, FPType *a, int nc, const FPType *c)
     }
 }
 
-template< class FPType >
 static void rftbsub(int n, FPType *a, int nc, const FPType *c)
 {
     int j, k, kk, ks, m;
@@ -1287,7 +1270,6 @@ static void rftbsub(int n, FPType *a, int nc, const FPType *c)
     a[m + 1] = -a[m + 1];
 }
 
-template< class FPType >
 static void dctsub(int n, FPType *a, int nc, const FPType *c)
 {
     int j, k, kk, ks, m;
@@ -1308,7 +1290,6 @@ static void dctsub(int n, FPType *a, int nc, const FPType *c)
     a[m] *= c[0];
 }
 
-template< class FPType >
 static void dstsub(int n, FPType *a, int nc, const FPType *c)
 {
     int j, k, kk, ks, m;

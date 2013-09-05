@@ -303,10 +303,10 @@ public:
 		const EDSPFilterPhaseResponse ReqPhase )
 	{
 		R8BASSERT( ReqNormFreq >= 0.0 && ReqNormFreq <= 1.0 );
-		R8BASSERT( ReqTransBand >= CDSPFIRFilter::getLPMinTransBand() );
-		R8BASSERT( ReqTransBand <= CDSPFIRFilter::getLPMaxTransBand() );
-		R8BASSERT( ReqAtten >= CDSPFIRFilter::getLPMinAtten() );
-		R8BASSERT( ReqAtten <= CDSPFIRFilter::getLPMaxAtten() );
+		R8BASSERT( ReqTransBand >= CDSPFIRFilter :: getLPMinTransBand() );
+		R8BASSERT( ReqTransBand <= CDSPFIRFilter :: getLPMaxTransBand() );
+		R8BASSERT( ReqAtten >= CDSPFIRFilter :: getLPMinAtten() );
+		R8BASSERT( ReqAtten <= CDSPFIRFilter :: getLPMaxAtten() );
 
 		R8BSYNC( StateSync );
 
