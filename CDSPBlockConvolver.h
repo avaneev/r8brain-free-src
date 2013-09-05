@@ -132,7 +132,7 @@ public:
 	/**
 	 * @param MaxInLen The number of samples planned to process at once, at
 	 * most.
-	 * @return The minimal length of the output buffer required when
+	 * @return The maximal length of the output buffer required when
 	 * processing the "MaxInLen" number of input samples.
 	 */
 

@@ -331,7 +331,10 @@ public:
 	 * @param l The number of samples available in the input buffer.
 	 * @param[out] op0 This variable receives the pointer to the resampled
 	 * data. This pointer may point to the address within the "ip" input
-	 * buffer, or to *this object's internal buffer.
+	 * buffer, or to *this object's internal buffer. In real-time applications
+	 * it is suggested to pass this pointer to the next output audio block and
+	 * consume any data left from the previous output audio block first before
+	 * calling the process() function again.
 	 * @return The number of samples available in the "op0" output buffer.
 	 */
 
