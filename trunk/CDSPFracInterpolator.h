@@ -42,7 +42,9 @@ namespace r8b {
  * FilterFracs correspondence (for 2nd order interpolation only): 6:5, 8:11,
  * 10:17, 12:29, 14:41, 16:71, 18:127, 20:197, 22:337, 24:547, 26:853,
  * 28:1361, 30:2267, 32:3701, 34:6607, 36:9511, 38:15511. The FilterFracs can
- * be considerably reduced with 3rd order interpolation in use.
+ * be considerably reduced with 3rd order interpolation in use. In order to
+ * get consistent results when resampling to/from different sample rates, it
+ * is suggested to set this parameter to a suitable prime number.
  * @param ElementSize The size of each filter's tap, in "double" values. This
  * parameter corresponds to the complexity of interpolation. 4 should be set
  * for 3rd order, 3 for 2nd order, 2 for linear interpolation.
@@ -240,16 +242,6 @@ public:
 	}
 
 	/**
-	 * @return The number of samples that should be passed to *this object
-	 * before the actual output starts.
-	 */
-
-	int getInLenBeforeOutStart() const
-	{
-		return( FilterLenD2Plus1 );
-	}
-
-	/**
 	 * @param MaxInLen The number of samples planned to process at once, at
 	 * most.
 	 * @return The maximal length of the output buffer required when
@@ -432,12 +424,14 @@ private:
 		///<
 #endif // !R8B_FLTTEST
 
-	static const int FilterLenD2Minus1 = ( FilterLen >> 1 ) - 1; ///< =
-		///< ( FilterLen >> 1 ) - 1. This value also equals to filter's
-		///< latency in samples (taps).
+	static const int FilterLenD2 = FilterLen >> 1; ///< = FilterLen / 2.
 		///<
-	static const int FilterLenD2Plus1 = ( FilterLen >> 1 ) + 1; ///< =
-		///< ( FilterLen >> 1 ) + 1.
+	static const int FilterLenD2Minus1 = FilterLenD2 - 1; ///< =
+		///< FilterLen / 2 - 1. This value also equals to filter's latency in
+		///< samples (taps).
+		///<
+	static const int FilterLenD2Plus1 = FilterLenD2 + 1; ///< =
+		///< FilterLen / 2 + 1.
 		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
 		///< buffer. The actual length is twice as long to allow "beyond max

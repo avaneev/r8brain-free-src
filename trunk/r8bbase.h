@@ -77,8 +77,8 @@
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
- * Preliminary tests show that the resampler (at 2% transition band, 150 dB
- * attenuation, 256 samples input buffer) achieves 14.5*n_cores Mflops when
+ * Preliminary tests show that the resampler (at 2% transition band, 146 dB
+ * attenuation, 256 samples input buffer) achieves 14.8*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-4770K processor-based system without overclocking. This
  * approximately translates to a real-time resampling of 150*n_cores audio
@@ -162,7 +162,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 0.8
+ * @version 0.9
  */
 
 #ifndef R8BBASE_INCLUDED

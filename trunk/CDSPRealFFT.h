@@ -95,7 +95,7 @@ public:
 
 	#else // R8B_IPP
 
-		ooura_fft :: rdft( Len, 1, p, ip.getPtr(), w.getPtr() );
+		ooura_fft :: rdft( Len, 1, p, wi.getPtr(), wd.getPtr() );
 
 	#endif // R8B_IPP
 	}
@@ -115,7 +115,7 @@ public:
 
 	#else // R8B_IPP
 
-		ooura_fft :: rdft( Len, -1, p, ip.getPtr(), w.getPtr() );
+		ooura_fft :: rdft( Len, -1, p, wi.getPtr(), wd.getPtr() );
 
 	#endif // R8B_IPP
 	}
@@ -278,9 +278,9 @@ private:
 		CFixedBuffer< unsigned char > WorkBuffer; ///< Working buffer.
 			///<
 	#else // R8B_IPP
-		CFixedBuffer< int > ip; ///< Working buffer (ints).
+		CFixedBuffer< int > wi; ///< Working buffer (ints).
 			///<
-		CFixedBuffer< double > w; ///< Working buffer (doubles).
+		CFixedBuffer< double > wd; ///< Working buffer (doubles).
 			///<
 	#endif // R8B_IPP
 
@@ -359,9 +359,9 @@ private:
 
 	#else // R8B_IPP
 
-		ip.alloc( (int) ceil( 2.0 + sqrt( (double) ( Len >> 1 ))));
-		ip[ 0 ] = 0;
-		w.alloc( Len >> 1 );
+		wi.alloc( (int) ceil( 2.0 + sqrt( (double) ( Len >> 1 ))));
+		wi[ 0 ] = 0;
+		wd.alloc( Len >> 1 );
 
 	#endif // R8B_IPP
 	}

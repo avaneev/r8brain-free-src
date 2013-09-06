@@ -24,9 +24,9 @@ int main()
 	outf.SampleRate = OutSampleRate;
 	outf.saveFile( "AudioOut.wav" );
 
-	const int InBufCapacity = 2048;
+	const int InBufCapacity = 1024;
 	CFixedBuffer< double > InBufs[ inf.ChannelCount ];
-	CPtrKeeper< CDSPResampler<>* > Resamps[ inf.ChannelCount ];
+	CPtrKeeper< CDSPResampler24* > Resamps[ inf.ChannelCount ];
 
 	int i;
 
@@ -34,8 +34,8 @@ int main()
 	{
 		InBufs[ i ].alloc( InBufCapacity );
 
-		Resamps[ i ] = new CDSPResampler<>( inf.SampleRate, OutSampleRate,
-			2, 150, InBufCapacity );
+		Resamps[ i ] = new CDSPResampler24( inf.SampleRate, OutSampleRate,
+			InBufCapacity );
 	}
 
 	long long int ol = inf.SampleCount * OutSampleRate / inf.SampleRate;
