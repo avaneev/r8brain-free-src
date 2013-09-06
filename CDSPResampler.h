@@ -29,13 +29,14 @@ namespace r8b {
  * including non-integer sample rates.
  *
  * Note that objects of this class can be constructed on the stack as it has a
- * small member data size.
+ * small member data size. The default template parameters of this class are
+ * suited for 32-bit fixed point resampling and so the ReqAtten is set to 194
+ * by default.
  *
- * While this may seem impossible, in r8brain-free-src the decent quality
- * full 16-bit audio resampling can be achieved by setting CInterpClass to
- * "CDSPFracInterpolator< 14, 41, 9 >" and using ReqTransBand=3, ReqAtten=100.
- * Such mode of operation is ultra fast: achieves 21 Mflops on a single core
- * of Intel i7-4770K processor.
+ * Use the CDSPResampler16 class for 16-bit resampling.
+ *
+ * Use the CDSPResampler24 class for 24-bit resampling (including 32-bit
+ * floating point).
  *
  * @param CInterpClass Interpolator class that should be used by the
  * resampler. The desired interpolation quality can be defined via the
@@ -91,6 +92,12 @@ public:
 	 * samples long. So, when doing the "power of 2" upsampling it is highly
 	 * recommended to do it in small steps, e.g. no more than 256 samples at
 	 * once (also set MaxInLen to 256).
+	 * @param MaxInLen The maximal planned length of the input buffer (in
+	 * samples) that will be passed to the resampler. The resampler relies on
+	 * this value as it allocates intermediate buffers. Input buffers longer
+	 * than this value should never be supplied to the resampler. Note that
+	 * the resampler may use the input buffer itself for intermediate sample
+	 * data storage.
 	 * @param ReqTransBand Required transition band, in percent of the
 	 * spectral space of the input signal (or the output signal if
 	 * downsampling is performed) between filter's -3 dB point and the Nyquist
@@ -101,14 +108,6 @@ public:
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive.
-	 * @param MaxInLen The maximal planned length of the input buffer (in
-	 * samples) that will be passed to the resampler. The resampler relies on
-	 * this value as it allocates intermediate buffers. Input buffers longer
-	 * than this value should never be supplied to the resampler. Note that
-	 * the resampler may use the input buffer itself for intermediate sample
-	 * data storage.
-	 * @param UsePower2 "True" if the "power of 2" resampling optimization
-	 * should be used when possible.
 	 * @param ReqPhase Required filter's phase response. Note that this
 	 * setting does not affect interpolator's phase response which is always
 	 * linear-phase. Also note that if the "power of 2" resampling was engaged
@@ -116,15 +115,18 @@ public:
 	 * stream may become fractionally delayed by up to 1 sample, depending on
 	 * the minimum-phase filter's actual fractional delay. If the output
 	 * stream should always start at "time zero" offset with minimum-phase
-	 * filters the UserPower2 should be set to "false". Linear-phase filters
+	 * filters the UsePower2 should be set to "false". Linear-phase filters
 	 * do not have fractional delay.
+	 * @param UsePower2 "True" if the "power of 2" resampling optimization
+	 * should be used when possible.
 	 * @see CDSPFIRFilterCache::getLPFilter()
 	 */
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
-		const double ReqTransBand, const double ReqAtten, const int MaxInLen,
-		const bool UsePower2 = true,
-		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase )
+		const int MaxInLen, const double ReqTransBand = 2.0,
+		const double ReqAtten = 194.0,
+		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase,
+		const bool UsePower2 = true )
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -400,6 +402,68 @@ private:
 		///<
 
 	CDSPResampler()
+	{
+	}
+};
+
+/**
+ * @brief The resampler class for 16-bit resampling.
+ *
+ * This class defines resampling parameters suitable for 16-bit resampling,
+ * using linear-phase low-pass filter. See the r8b::CDSPResampler class for
+ * details.
+ */
+
+class CDSPResampler16 :
+	public CDSPResampler< CDSPFracInterpolator< 14, 41, 9 > >
+{
+public:
+	/**
+	 * Constructor initializes the 16-bit resampler. See the
+	 * r8b::CDSPResampler class for details.
+	 *
+	 * @param SrcSampleRate Source signal sample rate.
+	 * @param DstSampleRate Destination signal sample rate.
+	 * @param MaxInLen The maximal planned length of the input buffer (in
+	 * samples) that will be passed to the resampler.
+	 * @param ReqTransBand Required transition band, in percent.
+	 */
+
+	CDSPResampler16( const double SrcSampleRate, const double DstSampleRate,
+		const int MaxInLen, const double ReqTransBand = 2.0 )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
+			98.0, fprLinearPhase, true )
+	{
+	}
+};
+
+/**
+ * @brief The resampler class for 24-bit resampling.
+ *
+ * This class defines resampling parameters suitable for 24-bit resampling
+ * (including 32-bit floating point), using linear-phase low-pass filter. See
+ * the r8b::CDSPResampler class for details.
+ */
+
+class CDSPResampler24 :
+	public CDSPResampler< CDSPFracInterpolator< 20, 197, 9 > >
+{
+public:
+	/**
+	 * Constructor initializes the 24-bit resampler (including 32-bit floating
+	 * point). See the r8b::CDSPResampler class for details.
+	 *
+	 * @param SrcSampleRate Source signal sample rate.
+	 * @param DstSampleRate Destination signal sample rate.
+	 * @param MaxInLen The maximal planned length of the input buffer (in
+	 * samples) that will be passed to the resampler.
+	 * @param ReqTransBand Required transition band, in percent.
+	 */
+
+	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
+		const int MaxInLen, const double ReqTransBand = 2.0 )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
+			146.0, fprLinearPhase, true )
 	{
 	}
 };
