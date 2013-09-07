@@ -45,7 +45,7 @@
  *
  * C++ compiler and system with the "double" floating point type (53-bit
  * mantissa) support. No explicit code for the "float" type is present in this
- * library, because as practice has shown the "float" code performed
+ * library, because as practice has shown the "float"-based code performs
  * considerably slower on a modern processor, at least in this library.
  * However, if the "double" type really represents the "float" type (24-bit
  * mantissa) in a given compiler, on a given system, the library won't become

@@ -30,8 +30,8 @@ namespace r8b {
  *
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size. The default template parameters of this class are
- * suited for 32-bit fixed point resampling and so the ReqAtten is set to 194
- * by default.
+ * suited for 32-bit fixed point resampling (not to be confused with 32-bit
+ * floatint point) and so the ReqAtten is set to 194 by default.
  *
  * Use the CDSPResampler16 class for 16-bit resampling.
  *
@@ -431,8 +431,9 @@ public:
 
 	CDSPResampler16( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
-			98.0, fprLinearPhase, true )
+		: CDSPResampler< CDSPFracInterpolator< 14, 41, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 98.0, fprLinearPhase,
+			true )
 	{
 	}
 };
@@ -462,8 +463,9 @@ public:
 
 	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
-			146.0, fprLinearPhase, true )
+		: CDSPResampler< CDSPFracInterpolator< 20, 197, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 146.0, fprLinearPhase,
+			true )
 	{
 	}
 };
