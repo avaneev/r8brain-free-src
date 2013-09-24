@@ -3,6 +3,7 @@ PROJECT_BRIEF          = "High-quality pro audio sample rate converter library"
 PROJECT_LOGO           = ./other/icon.png
 OUTPUT_DIRECTORY       = ./
 BRIEF_MEMBER_DESC      = NO
+SHORT_NAMES            = YES
 TAB_SIZE               = 4
 OPTIMIZE_OUTPUT_FOR_C  = NO
 INLINE_INFO            = NO

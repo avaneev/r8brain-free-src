@@ -36,7 +36,7 @@
  * The algorithm at first produces 2X oversampled (relative to the source
  * sample rate, or the destination sample rate if the downsampling is
  * performed) signal and then performs interpolation using a bank of short
- * (28 taps) polynomial-interpolated sinc-based fractional delay filters. This
+ * (26 taps) polynomial-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -77,11 +77,12 @@
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
- * Preliminary tests show that the resampler (at 2% transition band, 146 dB
- * attenuation, 256 samples input buffer) achieves 14.8*n_cores Mflops when
+ * Preliminary tests show that the resampler at 32-bit floating point
+ * resolution (24-bit mantissa precision, 2% transition band, 145 dB
+ * attenuation, 256 samples input buffer) achieves 17.4*n_cores Mflops when
  * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
  * Intel Core i7-4770K processor-based system without overclocking. This
- * approximately translates to a real-time resampling of 150*n_cores audio
+ * approximately translates to a real-time resampling of 180*n_cores audio
  * streams, at 100% CPU load.
  *
  * @section realtime Real-time Applications
@@ -101,11 +102,8 @@
  * The transition band is specified as the normalized spectral space of the
  * input signal (or the output signal if the downsampling is performed)
  * between the low-pass filter's -3 dB point and the Nyquist frequency, and
- * ranges from 0.5% to 25%. Stop-band attenuation can be specified in the
- * range 38 to 220 decibel (with +/- 1 dB error).
- *
- * An extended transition band range from 25% to 45% is also available, but
- * its parameter errors are higher (+/- 3 dB attenuation error).
+ * ranges from 0.5% to 45%. Stop-band attenuation can be specified in the
+ * range 50 to 217 decibel (translates to 8- to 36-bit precision).
  *
  * This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
  * 4X, 8X, 16X, etc. upsampling and downsampling).
@@ -117,7 +115,7 @@
  * All code is fully "inline", without the need to compile many source files.
  * The memory footprint is quite modest (8-byte "double" type data):
  *
- *  * 920 KB of static memory for the fractional delay filters
+ *  * 660 KB of static memory for the fractional delay filters
  *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
@@ -162,7 +160,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 0.9
+ * @version 1.0
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -847,7 +845,7 @@ inline void calcFIRFilterResponse( const double* flt, int fltlen,
 /**
  * Function calculates frequency response and group delay of the specified FIR
  * filter at the specified circular frequency. The group delay is calculated
- * by evaluating the filter's response at close sideband frequencies of "th".
+ * by evaluating the filter's response at close side-band frequencies of "th".
  *
  * @param flt FIR filter's coefficients.
  * @param fltlen Number of coefficients (taps) in the filter.
@@ -1106,6 +1104,34 @@ inline double gauss( const double v )
 inline double asinh( const double v )
 {
 	return( log( v + sqrt( v * v + 1.0 )));
+}
+
+/**
+ * @param x Input value (suggested to be below 350).
+ * @return Calculated zero-th order modified Bessel function of the first kind
+ * of the input value.
+ */
+
+inline double besselI0( const double x )
+{
+	const double I0epsilon = 2.220446e-16;
+	const double sqrhx = x * x * 0.25;
+	double sum = 1.0;
+	double u = 1.0;
+	double n = 1.0;
+
+	while( true )
+	{
+		u = u * sqrhx / ( n * n );
+		sum += u;
+
+		if( u < I0epsilon * sum )
+		{
+			return( sum );
+		}
+
+		n++;
+	}
 }
 
 } // namespace r8b
