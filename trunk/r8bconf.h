@@ -30,7 +30,7 @@
 	 * used by the r8b::CDSPResampler class.
 	 */
 
-	#define R8B_FLTLEN 26
+	#define R8B_FLTLEN 28
 #endif // !defined( R8B_FLTLEN )
 
 #if !defined( R8B_FLTFRACS )
@@ -42,7 +42,7 @@
 	 * prime number.
 	 */
 
-	#define R8B_FLTFRACS 1051
+	#define R8B_FLTFRACS 1733
 #endif // !defined( R8B_FLTFRACS )
 
 #if !defined( R8B_IPP )

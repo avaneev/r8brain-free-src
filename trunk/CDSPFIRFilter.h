@@ -100,7 +100,7 @@ public:
 
 	static double getLPMaxAtten()
 	{
-		return( 217.0 );
+		return( 218.0 );
 	}
 
 	/**

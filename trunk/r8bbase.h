@@ -36,7 +36,7 @@
  * The algorithm at first produces 2X oversampled (relative to the source
  * sample rate, or the destination sample rate if the downsampling is
  * performed) signal and then performs interpolation using a bank of short
- * (26 taps) polynomial-interpolated sinc-based fractional delay filters. This
+ * (28 taps) polynomial-interpolated sinc-based fractional delay filters. This
  * puts the algorithm into the league of the fastest among the most precise
  * SRC algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -77,13 +77,11 @@
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
  *
- * Preliminary tests show that the resampler at 32-bit floating point
- * resolution (24-bit mantissa precision, 2% transition band, 145 dB
- * attenuation, 256 samples input buffer) achieves 17.4*n_cores Mflops when
- * converting 1 channel of audio from 44100 to 96000 sample rate, on a typical
- * Intel Core i7-4770K processor-based system without overclocking. This
- * approximately translates to a real-time resampling of 180*n_cores audio
- * streams, at 100% CPU load.
+ * Preliminary tests show that the r8b::CDSPResampler24 resampler class
+ * achieves 15.6*n_cores Mflops when converting 1 channel of audio from 44100
+ * to 96000 sample rate, on a typical Intel Core i7-4770K processor-based
+ * system without overclocking. This approximately translates to a real-time
+ * resampling of 160*n_cores audio streams, at 100% CPU load.
  *
  * @section realtime Real-time Applications
  *
@@ -103,7 +101,7 @@
  * input signal (or the output signal if the downsampling is performed)
  * between the low-pass filter's -3 dB point and the Nyquist frequency, and
  * ranges from 0.5% to 45%. Stop-band attenuation can be specified in the
- * range 50 to 217 decibel (translates to 8- to 36-bit precision).
+ * range 50 to 218 decibel.
  *
  * This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
  * 4X, 8X, 16X, etc. upsampling and downsampling).
@@ -115,7 +113,7 @@
  * All code is fully "inline", without the need to compile many source files.
  * The memory footprint is quite modest (8-byte "double" type data):
  *
- *  * 660 KB of static memory for the fractional delay filters
+ *  * 1.2 MB of static memory for the fractional delay filters
  *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
  *    usually in the range 256 to 2048)
  *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
@@ -160,7 +158,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.0
+ * @version 1.1
  */
 
 #ifndef R8BBASE_INCLUDED
