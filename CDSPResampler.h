@@ -440,7 +440,7 @@ public:
  */
 
 class CDSPResampler16IR :
-	public CDSPResampler< CDSPFracInterpolator< 12, 41, 9 > >
+	public CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >
 {
 public:
 	/**
@@ -456,8 +456,8 @@ public:
 
 	CDSPResampler16IR( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 12, 41, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 95.36, fprLinearPhase,
+		: CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 109.56, fprLinearPhase,
 			true )
 	{
 	}
