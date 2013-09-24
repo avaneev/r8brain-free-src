@@ -37,6 +37,8 @@ namespace r8b {
  * Use the CDSPResampler24 class for 24-bit resampling (including 32-bit
  * floating point resampling).
  *
+ * Use the CDSPResampler16IR class for 16-bit impulse response resampling.
+ *
  * @param CInterpClass Interpolator class that should be used by the
  * resampler. The desired interpolation quality can be defined via the
  * template parameters of the interpolator class. See
@@ -423,6 +425,39 @@ public:
 		const int MaxInLen, const double ReqTransBand = 2.0 )
 		: CDSPResampler< CDSPFracInterpolator< 18, 137, 9 > >( SrcSampleRate,
 			DstSampleRate, MaxInLen, ReqTransBand, 136.45, fprLinearPhase,
+			true )
+	{
+	}
+};
+
+/**
+ * @brief The resampler class for 16-bit impulse response resampling.
+ *
+ * This class defines resampling parameters suitable for 16-bit impulse
+ * response resampling, using linear-phase low-pass filter. Impulse responses
+ * usually do not feature stationary signal components and thus need resampler
+ * with a less SNR. See the r8b::CDSPResampler class for details.
+ */
+
+class CDSPResampler16IR :
+	public CDSPResampler< CDSPFracInterpolator< 12, 41, 9 > >
+{
+public:
+	/**
+	 * Constructor initializes the 16-bit impulse response resampler. See the
+	 * r8b::CDSPResampler class for details.
+	 *
+	 * @param SrcSampleRate Source signal sample rate.
+	 * @param DstSampleRate Destination signal sample rate.
+	 * @param MaxInLen The maximal planned length of the input buffer (in
+	 * samples) that will be passed to the resampler.
+	 * @param ReqTransBand Required transition band, in percent.
+	 */
+
+	CDSPResampler16IR( const double SrcSampleRate, const double DstSampleRate,
+		const int MaxInLen, const double ReqTransBand = 2.0 )
+		: CDSPResampler< CDSPFracInterpolator< 12, 41, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 95.36, fprLinearPhase,
 			true )
 	{
 	}
