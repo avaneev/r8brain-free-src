@@ -30,9 +30,7 @@ namespace r8b {
  *
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size. The default template parameters of this class are
- * suited for 32-bit fixed point resampling (not to be confused with 32-bit
- * floating point with 24-bit mantissa) and so the ReqAtten is set to 192.66
- * by default.
+ * suited for 27-bit fixed point resampling.
  *
  * Use the CDSPResampler16 class for 16-bit resampling.
  *
@@ -60,14 +58,6 @@ public:
 	 * reduces the filter length, this in turn reduces the "input before
 	 * output" delay. However, the filter length has only a minor influence on
 	 * the overall resampling speed.
-	 *
-	 * In most cases ReqTransBand=2 and ReqAtten=97 can be used with good
-	 * results: this produces full dynamic range 16-bit audio. For full
-	 * dynamic range 24-bit audio (e.g. for storage purposes) the ReqAtten=145
-	 * may be used. For comparison purposes the ReqAtten=193 may be used.
-	 * However, as a rule ReqAtten above 100 is beyond human perception. When
-	 * upsampling 88200 or 96000 audio to higher sample rates the ReqTransBand
-	 * can be considerably increased, up to 20.
 	 *
 	 * It should be noted that the ReqAtten specifies the minimal difference
 	 * between the loudest input signal component and the produced aliasing
@@ -103,7 +93,9 @@ public:
 	 * spectral space of the input signal (or the output signal if
 	 * downsampling is performed) between filter's -3 dB point and the Nyquist
 	 * frequency. The range is from CDSPFIRFilter::getLPMinTransBand() to
-	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive.
+	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive. When upsampling 88200 or
+	 * 96000 audio to a higher sample rates the ReqTransBand can be
+	 * considerably increased, up to 30.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive. The actual attenuation may be 0.40-4.41 dB higher.
@@ -123,7 +115,7 @@ public:
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0,
-		const double ReqAtten = 192.66,
+		const double ReqAtten = 206.69,
 		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase,
 		const bool UsePower2 = true )
 	{
@@ -413,7 +405,7 @@ private:
  */
 
 class CDSPResampler16 :
-	public CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >
+	public CDSPResampler< CDSPFracInterpolator< 18, 137, 9 > >
 {
 public:
 	/**
@@ -429,8 +421,8 @@ public:
 
 	CDSPResampler16( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 96.33, fprLinearPhase,
+		: CDSPResampler< CDSPFracInterpolator< 18, 137, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 136.45, fprLinearPhase,
 			true )
 	{
 	}
@@ -445,7 +437,7 @@ public:
  */
 
 class CDSPResampler24 :
-	public CDSPResampler< CDSPFracInterpolator< 20, 211, 9 > >
+	public CDSPResampler< CDSPFracInterpolator< 24, 673, 9 > >
 {
 public:
 	/**
@@ -461,8 +453,8 @@ public:
 
 	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 20, 211, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 144.50, fprLinearPhase,
+		: CDSPResampler< CDSPFracInterpolator< 24, 673, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 180.0, fprLinearPhase,
 			true )
 	{
 	}

@@ -33,10 +33,7 @@ namespace r8b {
  * precision, the oversampling should be used in the first place instead of
  * using a higher FilterLen value. The lower this value is the lower the
  * signal-to-noise performance of the interpolator will be. Each FilterLen
- * decrease by 2 decreases SNR by approximately 12 to 14 decibel. For
- * reference, at FilterLen=26 and FilterFracs=1051) the SNR of the
- * interpolation approximately equals 193 decibel, at such SNR it is not
- * reasonable to use ReqAtten above 193.
+ * decrease by 2 decreases SNR by approximately 12 to 14 decibel.
  * @param FilterFracs The number of fractional delay positions to sample. For
  * a high signal-to-noise ratio this has to be a larger value. The larger the
  * FilterLen is the larger the FilterFracs should be. Approximate FilterLen to
