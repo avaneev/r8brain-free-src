@@ -23,28 +23,29 @@ namespace r8b {
  *
  * Class implements storage and initialization of a bank of sinc-based
  * fractional delay filters, expressed as 1st, 2nd or 3rd order polynomial
- * interpolation coefficients. The filters are windowed by the "Vaneev"
- * windowing function. The FilterLen and FilterFracs parameters can be varied
- * freely without breaking the resampler.
+ * interpolation coefficients. The filters are windowed by either the "Vaneev"
+ * or "Kaiser" power-raised window function. The FilterLen and FilterFracs
+ * parameters can be varied freely without breaking the resampler.
  *
  * @param FilterLen Specifies the number of samples (taps) each fractional
  * delay filter should have. This must be an even value, the minimal value for
- * FilterLen is 6. To achieve a higher resampling precision, the oversampling
- * should be used in the first place instead of using a higher FilterLen
- * value. The lower this value is the lower the signal-to-noise performance of
- * the interpolator will be. Each FilterLen decrease by 2 decreases SNR by
- * approximately 12 to 14 decibel. For reference, at FilterLen=28 and
- * FilterFracs=1361) the SNR of the interpolation equals approximately 185
- * decibel, at such SNR it is not reasonable to use ReqAtten above 185.
+ * FilterLen is 6, the maximal value is 30. To achieve a higher resampling
+ * precision, the oversampling should be used in the first place instead of
+ * using a higher FilterLen value. The lower this value is the lower the
+ * signal-to-noise performance of the interpolator will be. Each FilterLen
+ * decrease by 2 decreases SNR by approximately 12 to 14 decibel. For
+ * reference, at FilterLen=26 and FilterFracs=1051) the SNR of the
+ * interpolation approximately equals 193 decibel, at such SNR it is not
+ * reasonable to use ReqAtten above 193.
  * @param FilterFracs The number of fractional delay positions to sample. For
- * high signal-to-noise ratio this has to be a larger value. The larger the
+ * a high signal-to-noise ratio this has to be a larger value. The larger the
  * FilterLen is the larger the FilterFracs should be. Approximate FilterLen to
- * FilterFracs correspondence (for 2nd order interpolation only): 6:5, 8:11,
- * 10:17, 12:29, 14:41, 16:71, 18:127, 20:197, 22:337, 24:547, 26:853,
- * 28:1361, 30:2267, 32:3701, 34:6607, 36:9511, 38:15511. The FilterFracs can
- * be considerably reduced with 3rd order interpolation in use. In order to
- * get consistent results when resampling to/from different sample rates, it
- * is suggested to set this parameter to a suitable prime number.
+ * FilterFracs correspondence (for 2nd order interpolation only): 6:11, 8:17,
+ * 10:23, 12:41, 14:67, 16:97, 18:137, 20:211, 22:353, 24:673, 26:1051,
+ * 28:1733, 30:2833. The FilterFracs can be considerably reduced with 3rd
+ * order interpolation in use. In order to get consistent results when
+ * resampling to/from different sample rates, it is suggested to set this
+ * parameter to a suitable prime number.
  * @param ElementSize The size of each filter's tap, in "double" values. This
  * parameter corresponds to the complexity of interpolation. 4 should be set
  * for 3rd order, 3 for 2nd order, 2 for linear interpolation.
@@ -60,6 +61,7 @@ public:
 	CDSPFracDelayFilterBank()
 	{
 		R8BASSERT( FilterLen >= 6 );
+		R8BASSERT( FilterLen <= 30 );
 		R8BASSERT(( FilterLen & 1 ) == 0 );
 		R8BASSERT( FilterFracs > 0 );
 		R8BASSERT( ElementSize >= 2 && ElementSize <= 4 );
@@ -71,8 +73,8 @@ public:
 	/**
 	 * Function calculates the filter bank.
 	 *
-	 * @param Params "Vaneev" windowing function's parameters. If NULL then
-	 * the built-in table values for the current FilterLen will be used.
+	 * @param Params Window function's parameters. If NULL then the built-in
+	 * table values for the current FilterLen will be used.
 	 */
 
 	void calculate( const double* const Params = NULL )
@@ -84,15 +86,31 @@ public:
 		const int pc2 = InterpPoints / 2;
 		int i;
 
-		for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
+		if( FilterLen <= 20 )
 		{
-			sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
-			sinc.initFracVaneev( FilterLen, Params );
-			sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowVaneev,
-				ElementSize );
+			for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
+			{
+				sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
+				sinc.initFrac( CDSPSincFilterGen :: wftVaneev, Params );
+				sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowVaneev,
+					ElementSize );
 
-			normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
-			p += FilterSize;
+				normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
+				p += FilterSize;
+			}
+		}
+		else
+		{
+			for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
+			{
+				sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
+				sinc.initFrac( CDSPSincFilterGen :: wftKaiser, Params, true );
+				sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowKaiser,
+					ElementSize );
+
+				normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
+				p += FilterSize;
+			}
 		}
 
 		const int TablePos2 = FilterSize;
@@ -180,12 +198,6 @@ private:
  * delay filters. These filters are contained in a bank, and for higher
  * precision they are interpolated between adjacent filters.
  *
- * While this class is used by the CDSPResampler class, it is not the only
- * possible application of this class. For example, this class with the
- * FilterLen template parameter as low as 14 can be used for real-time "pitch"
- * changes and resampling in soft-synths given a suitable oversampling and
- * dynamic low-pass filtering is performed at a prior step.
- *
  * To increase sample timing precision, this class uses "resettable counter"
  * approach. This gives less than "1 per 100 billion" sample timing error when
  * converting 44100 to 48000 sample rate.
@@ -264,7 +276,7 @@ public:
 	 * It can be a useful approach to construct *this object passing the
 	 * maximal possible destination sample rate to the constructor, obtaining
 	 * the getMaxOutLen() value and then setting the destination sample rate
-	 * to whatever value is needed.
+	 * to whatever lower value is needed.
 	 *
 	 * It is advisable to change the sample rate in small increments, and as
 	 * rarely as possible: e.g. every several samples.
@@ -316,8 +328,7 @@ public:
 	 * for the given "l". This buffer can be equal to "ip" only if the
 	 * getMaxOutLen( l ) function's returned value is lesser than "l".
 	 * @param l The number of samples available in the input sample buffer.
-	 * @return The number of output samples written to the "op" buffer. The
-	 * output latency is equal to FilterLenD2Plus1 samples.
+	 * @return The number of output samples written to the "op0" buffer.
 	 */
 
 	int process( const double* ip, double* const op0, int l )

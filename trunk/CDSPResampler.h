@@ -31,12 +31,13 @@ namespace r8b {
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size. The default template parameters of this class are
  * suited for 32-bit fixed point resampling (not to be confused with 32-bit
- * floatint point) and so the ReqAtten is set to 194 by default.
+ * floating point with 24-bit mantissa) and so the ReqAtten is set to 192.66
+ * by default.
  *
  * Use the CDSPResampler16 class for 16-bit resampling.
  *
  * Use the CDSPResampler24 class for 24-bit resampling (including 32-bit
- * floating point).
+ * floating point resampling).
  *
  * @param CInterpClass Interpolator class that should be used by the
  * resampler. The desired interpolation quality can be defined via the
@@ -60,22 +61,22 @@ public:
 	 * output" delay. However, the filter length has only a minor influence on
 	 * the overall resampling speed.
 	 *
-	 * In most cases ReqTransBand=3 and ReqAtten=100 can be used with good
+	 * In most cases ReqTransBand=2 and ReqAtten=97 can be used with good
 	 * results: this produces full dynamic range 16-bit audio. For full
-	 * dynamic range 24-bit audio (e.g. for storage purposes) the ReqAtten=150
-	 * may be used. For comparison purposes the ReqAtten=185 may be used.
+	 * dynamic range 24-bit audio (e.g. for storage purposes) the ReqAtten=145
+	 * may be used. For comparison purposes the ReqAtten=193 may be used.
 	 * However, as a rule ReqAtten above 100 is beyond human perception. When
 	 * upsampling 88200 or 96000 audio to higher sample rates the ReqTransBand
 	 * can be considerably increased, up to 20.
 	 *
-	 * It should be noted that ReqAtten specifies the minimal difference
+	 * It should be noted that the ReqAtten specifies the minimal difference
 	 * between the loudest input signal component and the produced aliasing
 	 * artifacts during resampling. For example, if ReqAtten=100 was specified
 	 * when performing 2x upsampling, the analysis of the resulting signal may
 	 * display high-frequency components which are quieter than the loudest
-	 * part of the input signal by only 100 decibel. The high-frequency part
-	 * won't become "magically" completely silent after resampling. You have
-	 * to specify higher ReqAtten values if you need a totally clean
+	 * part of the input signal by only 100 decibel meaning the high-frequency
+	 * part did not become "magically" completely silent after resampling. You
+	 * have to specify a higher ReqAtten value if you need a totally clean
 	 * high-frequency content. On the other hand, it may not be reasonable to
 	 * have a high-frequency content cleaner than the input signal itself: if
 	 * the input signal is 16-bit, setting ReqAtten to 150 will make its
@@ -91,7 +92,7 @@ public:
 	 * by a factor of 16 requires an intermediate buffer MaxInLen*(16+8)
 	 * samples long. So, when doing the "power of 2" upsampling it is highly
 	 * recommended to do it in small steps, e.g. no more than 256 samples at
-	 * once (also set MaxInLen to 256).
+	 * once (also set the MaxInLen to 256).
 	 * @param MaxInLen The maximal planned length of the input buffer (in
 	 * samples) that will be passed to the resampler. The resampler relies on
 	 * this value as it allocates intermediate buffers. Input buffers longer
@@ -102,12 +103,10 @@ public:
 	 * spectral space of the input signal (or the output signal if
 	 * downsampling is performed) between filter's -3 dB point and the Nyquist
 	 * frequency. The range is from CDSPFIRFilter::getLPMinTransBand() to
-	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive. Transition bands
-	 * between 25% and 45% should be considered "coarse" as they have a higher
-	 * error in both the -3 dB point position and attenuation.
+	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
-	 * inclusive.
+	 * inclusive. The actual attenuation may be 0.40-4.41 dB higher.
 	 * @param ReqPhase Required filter's phase response. Note that this
 	 * setting does not affect interpolator's phase response which is always
 	 * linear-phase. Also note that if the "power of 2" resampling was engaged
@@ -124,7 +123,7 @@ public:
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0,
-		const double ReqAtten = 194.0,
+		const double ReqAtten = 192.66,
 		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase,
 		const bool UsePower2 = true )
 	{
@@ -194,12 +193,11 @@ public:
 
 				for( i = 1; i < UseConvCount; i++ )
 				{
-					const double tb = ( i >= 2 ? 48 : 34 );
+					const double tb = ( i >= 2 ? 45.0 : 34.0 );
 
 					Convs[ i ] = new CDSPBlockConvolver(
-						CDSPFIRFilterCache :: getLPFilter( 0.5, tb,
-						ReqAtten, ReqPhase ), rsmUpsample2X,
-						PrevLatencyFrac );
+						CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
+						ReqPhase ), rsmUpsample2X, PrevLatencyFrac );
 
 					MaxOutLen = Convs[ i ] -> getMaxOutLen( MaxOutLen );
 					ConvBufCapacities[ i & 1 ] = MaxOutLen;
@@ -233,7 +231,7 @@ public:
 				// this step.
 
 				const double tb =
-					( CheckSR * SrcSRDiv <= SrcSampleRate ? 48 : 34 );
+					( CheckSR * SrcSRDiv <= SrcSampleRate ? 45.0 : 34.0 );
 
 				Convs[ ConvCount ] = new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
@@ -332,7 +330,7 @@ public:
 	 * this function.
 	 * @param l The number of samples available in the input buffer.
 	 * @param[out] op0 This variable receives the pointer to the resampled
-	 * data. This pointer may point to the address within the "ip" input
+	 * data. This pointer may point to the address within the "ip0" input
 	 * buffer, or to *this object's internal buffer. In real-time applications
 	 * it is suggested to pass this pointer to the next output audio block and
 	 * consume any data left from the previous output audio block first before
@@ -415,7 +413,7 @@ private:
  */
 
 class CDSPResampler16 :
-	public CDSPResampler< CDSPFracInterpolator< 14, 41, 9 > >
+	public CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >
 {
 public:
 	/**
@@ -431,8 +429,8 @@ public:
 
 	CDSPResampler16( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 14, 41, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 98.0, fprLinearPhase,
+		: CDSPResampler< CDSPFracInterpolator< 14, 67, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 96.33, fprLinearPhase,
 			true )
 	{
 	}
@@ -442,12 +440,12 @@ public:
  * @brief The resampler class for 24-bit resampling.
  *
  * This class defines resampling parameters suitable for 24-bit resampling
- * (including 32-bit floating point), using linear-phase low-pass filter. See
- * the r8b::CDSPResampler class for details.
+ * (including 32-bit floating point resampling), using linear-phase low-pass
+ * filter. See the r8b::CDSPResampler class for details.
  */
 
 class CDSPResampler24 :
-	public CDSPResampler< CDSPFracInterpolator< 20, 197, 9 > >
+	public CDSPResampler< CDSPFracInterpolator< 20, 211, 9 > >
 {
 public:
 	/**
@@ -463,8 +461,8 @@ public:
 
 	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 20, 197, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 146.0, fprLinearPhase,
+		: CDSPResampler< CDSPFracInterpolator< 20, 211, 9 > >( SrcSampleRate,
+			DstSampleRate, MaxInLen, ReqTransBand, 144.50, fprLinearPhase,
 			true )
 	{
 	}

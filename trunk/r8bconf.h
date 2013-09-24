@@ -20,9 +20,9 @@
 	#define R8B_WIN 1
 #elif defined( __APPLE__ )
 	#define R8B_MAC 1
-#else
+#else // defined( __APPLE__ )
 	#define R8B_LNX 1 // Assume Linux (Unix) platform by default.
-#endif
+#endif // defined( __APPLE__ )
 
 #if !defined( R8B_FLTLEN )
 	/**
@@ -30,7 +30,7 @@
 	 * used by the r8b::CDSPResampler class.
 	 */
 
-	#define R8B_FLTLEN 28
+	#define R8B_FLTLEN 26
 #endif // !defined( R8B_FLTLEN )
 
 #if !defined( R8B_FLTFRACS )
@@ -42,7 +42,7 @@
 	 * prime number.
 	 */
 
-	#define R8B_FLTFRACS 1361
+	#define R8B_FLTFRACS 1051
 #endif // !defined( R8B_FLTFRACS )
 
 #if !defined( R8B_IPP )

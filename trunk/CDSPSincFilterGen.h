@@ -1,3 +1,4 @@
+//$ nobt
 //$ nocpp
 
 /**
@@ -23,8 +24,8 @@ namespace r8b {
  * @brief Sinc function-based FIR filter generator class.
  *
  * Structure that holds state used to perform generation of sinc functions of
- * various types, windowed by the Blackman window by default (but the
- * windowing function can be changed if necessary).
+ * various types, windowed by the Blackman window by default (but the window
+ * function can be changed if necessary).
  */
 
 class CDSPSincFilterGen
@@ -34,19 +35,6 @@ public:
 		///< a fractional value). Final physical kernel length will be
 		///< provided in the KernelLen variable. Len2 should be >= 2.
 		///<
-	double Freq1; ///< Required corner circular frequency 1 [0; pi]. Used only
-		///< in the generateBand() function.
-		///<
-	double Freq2; ///< Required corner circular frequency 2 [0; pi]. Used only
-		///< in the generateBand() function. The range [Freq1; Freq2] defines
-		///< a pass band for the generateBand() function.
-		///<
-	double FracDelay; ///< Fractional delay in the range [0; 1], used only
-		///< by the generateFrac() function. Note that the FracDelay parameter
-		///< is actually inversed. At 0.0 value it produces 1 sample delay
-		///< (with latency equal to fl2), at 1.0 value it produces 0 sample
-		///< delay (with latency equal to fl2 - 1).
-		///<
 	int KernelLen; ///< Resulting length of the filter kernel, this variable
 		///< is set after the call to one of the "init" functions.
 		///<
@@ -55,56 +43,131 @@ public:
 		///< the call to one of the "init" functions.
 		///<
 
-	typedef double( CDSPSincFilterGen :: *CWindowFunc )(); ///< Windowing
-		///< function pointer type.
+	union
+	{
+		struct
+		{
+			double Freq1; ///< Required corner circular frequency 1 [0; pi].
+				///< Used only in the generateBand() function.
+				///<
+			double Freq2; ///< Required corner circular frequency 2 [0; pi].
+				///< Used only in the generateBand() function. The range
+				///< [Freq1; Freq2] defines a pass band for the generateBand()
+				///< function.
+				///<
+		};
+
+		struct
+		{
+			double FracDelay; ///< Fractional delay in the range [0; 1], used
+				///< only in the generateFrac() function. Note that the
+				///< FracDelay parameter is actually inversed. At 0.0 value it
+				///< produces 1 sample delay (with the latency equal to fl2),
+				///< at 1.0 value it produces 0 sample delay (with the latency
+				///< equal to fl2 - 1).
+				///<
+		};
+	};
+
+	/**
+	 * Window function type.
+	 */
+
+	enum EWindowFunctionType
+	{
+		wftCosine, ///< Generalized cosine window function. No parameters
+			///< required. The "Power" parameter is optional.
+			///<
+		wftKaiser, ///< Kaiser window function. Requires the "Beta" parameter.
+			///< The "Power" parameter is optional.
+			///<
+		wftGaussian, ///< Gaussian window function. Requires the "Sigma"
+			///< parameter. The "Power" parameter is optional.
+			///<
+		wftVaneev ///< Vaneev window function, mainly used for short
+			///< fractional delay filters, requires 4 cosine width parameters,
+			///< plus the "Power" parameter which is mandatory.
+			///< 
+	};
+
+	typedef double( CDSPSincFilterGen :: *CWindowFunc )(); ///< Window
+		///< calculation function pointer type.
 		///<
 
 	/**
-	 * Function initializes *this structure for generation of band-limited
-	 * sinc filter kernel. The generateBand() or generateBandPow() functions
-	 * should be used to calculate the filter.
+	 * Function initializes *this structure for generation of a window
+	 * function, odd-sized.
+	 *
+	 * @param WinType Window function type.
+	 * @param Params Window function's parameters. If NULL, the table values
+	 * may be used.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function. If "true", the power factor should be specified as the
+	 * last value in the Params array. If Params is NULL, the table or default
+	 * value of -1.0 (off) will be used.
 	 */
 
-	void initBand()
+	void initWindow( const EWindowFunctionType WinType = wftCosine,
+		const double* const Params = NULL, const bool UsePower = false )
 	{
 		R8BASSERT( Len2 >= 2.0 );
 
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
-		f1.init( Freq1, 2.0, -Freq1 * fl2 );
-		f2.init( Freq2, 2.0, -Freq2 * fl2 );
 
-		const double step1 = M_PI / Len2;
-		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 );
+		setWindow( WinType, Params, UsePower, true );
+	}
 
-		const double step2 = M_2PI / Len2;
-		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 );
+	/**
+	 * Function initializes *this structure for generation of band-limited
+	 * sinc filter kernel. The generateBand() or generateBandPow() functions
+	 * should be used to calculate the filter.
+	 *
+	 * @param WinType Window function type.
+	 * @param Params Window function's parameters. If NULL, the table values
+	 * may be used.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function. If "true", the power factor should be specified as the
+	 * last value in the Params array. If Params is NULL, the table or default
+	 * value of -1.0 (off) will be used.
+	 */
 
-		const double step3 = M_3PI / Len2;
-		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 );
+	void initBand( const EWindowFunctionType WinType = wftCosine,
+		const double* const Params = NULL, const bool UsePower = false )
+	{
+		R8BASSERT( Len2 >= 2.0 );
+
+		fl2 = (int) floor( Len2 );
+		KernelLen = fl2 + fl2 + 1;
+		f1.init( Freq1, 2.0, 0.0 );
+		f2.init( Freq2, 2.0, 0.0 );
+
+		setWindow( WinType, Params, UsePower, true );
 	}
 
 	/**
 	 * Function initializes *this structure for Hilbert transformation filter
 	 * calculation. Freq1 and Freq2 variables are not used.
 	 * The generateHilbert() function should be used to calculate the filter.
+	 *
+	 * @param WinType Window function type.
+	 * @param Params Window function's parameters. If NULL, the table values
+	 * may be used.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function. If "true", the power factor should be specified as the
+	 * last value in the Params array. If Params is NULL, the table or default
+	 * value of -1.0 (off) will be used.
 	 */
 
-	void initHilbert()
+	void initHilbert( const EWindowFunctionType WinType = wftCosine,
+		const double* const Params = NULL, const bool UsePower = false )
 	{
 		R8BASSERT( Len2 >= 2.0 );
 
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
 
-		const double step1 = M_PI / Len2;
-		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 );
-
-		const double step2 = M_2PI / Len2;
-		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 );
-
-		const double step3 = M_3PI / Len2;
-		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 );
+		setWindow( WinType, Params, UsePower, true );
 	}
 
 	/**
@@ -112,102 +175,29 @@ public:
 	 * fractional delay sinc filter kernel. Freq1 and Freq2 variables are not
 	 * used. The generateFrac() function should be used to calculate the
 	 * filter.
-	 */
-
-	void initFrac()
-	{
-		R8BASSERT( Len2 >= 2.0 );
-
-		fl2 = (int) ceil( Len2 );
-		KernelLen = fl2 + fl2;
-
-		const double step1 = M_PI / Len2;
-		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
-
-		const double step2 = M_2PI / Len2;
-		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
-
-		const double step3 = M_3PI / Len2;
-		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
-	}
-
-	/**
-	 * This function is similar to the initFrac() function, but initializes
-	 * cosine wave generators for use with the calcWindowVaneev() windowing
-	 * function. The generateFrac() function should be used to calculate the
-	 * filter, with the calcWindowVaneev() function as parameter.
 	 *
-	 * @param FilterLen Filter length in use, must be an even value, in the
-	 * range 6 to 38.
-	 * @param Params Externally-provides set of parameters. NULL - use table
-	 * values. Non-NULL value is usually provided by optimization algorithm.
+	 * @param WinType Window function type.
+	 * @param Params Window function's parameters. If NULL, the table values
+	 * may be used.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function. If "true", the power factor should be specified as the
+	 * last value in the Params array. If Params is NULL, the table or default
+	 * value of -1.0 (off) will be used.
 	 */
 
-	void initFracVaneev( const int FilterLen, const double* Params = NULL )
+	void initFrac( const EWindowFunctionType WinType = wftCosine,
+		const double* const Params = NULL, const bool UsePower = false )
 	{
 		R8BASSERT( Len2 >= 2.0 );
-		R8BASSERT( FilterLen >= 6 && FilterLen <= 38 );
 
 		fl2 = (int) ceil( Len2 );
 		KernelLen = fl2 + fl2;
 
-		// This set of parameters was obtained via probabilistic optimization.
-		// The number after @ shows the approximate signal-to-noise (SNR)
-		// ratio of the fractional delay filter of the given length. SNR can
-		// be also decreased by using a filter bank with a suboptimal number
-		// of interpolated fractional delay filters: thus FilterFracs should
-		// be selected with care.
-
-		static const double Coeffs[][ 4 ] = {
-			{ 0.78181357, 0.25515445, 0.14160659, 0.00377970 }, // 6 @ 52.03
-			{ 0.82842159, 0.46796048, 0.03723786, 0.01647440 }, // 8 @ 67.71
-			{ 0.87106048, 0.55487482, 0.11407443, 0.06108434 }, // 10 @ 81.26
-			{ 0.90233911, 0.62228911, 0.17793224, 0.09128849 }, // 12 @ 94.67
-			{ 0.92827344, 0.67928146, 0.18506467, 0.15682281 }, // 14 @ 108.44
-			{ 0.94705459, 0.71139588, 0.36718105, 0.01326848 }, // 16 @ 121.87
-			{ 0.95738584, 0.75487070, 0.40376698, 0.09118909 }, // 18 @ 136.96
-			{ 0.94515247, 0.78611177, 0.47023918, 0.10753907 }, // 20 @ 147.86
-			{ 0.95415054, 0.80837403, 0.50606780, 0.14824214 }, // 22 @ 162.08
-			{ 0.79522327, 0.92805771, 0.54353064, 0.17844054 }, // 24 @ 175.20
-			{ 0.96847593, 0.83511595, 0.56732297, 0.21510544 }, // 26 @ 189.41
-			{ 0.96901504, 0.85795109, 0.57843751, 0.25070613 }, // 28 @ 199.28
-			{ 0.97022013, 0.86906266, 0.59856588, 0.28601037 }, // 30 @ 211.26
-			{ 0.97374957, 0.88090262, 0.62906580, 0.29736763 }, // 32 @ 223.52
-			{ 0.81824544, 0.95632121, 0.67943518, 0.35354651 }, // 34 @ 239.02
-			{ 0.83224964, 0.96134546, 0.68783822, 0.37241201 }, // 36 @ 248.62
-			{ 0.60217397, 0.96734066, 0.76693619, 0.40644160 }, // 38 @ 260.62
-		};
-
-		double p[ 4 ];
-
-		if( Params == NULL )
-		{
-			Params = Coeffs[ FilterLen / 2 - 3 ];
-		}
-		else
-		{
-			p[ 0 ] = clampr( Params[ 0 ], -4.0, 4.0 );
-			p[ 1 ] = clampr( Params[ 1 ], -4.0, 4.0 );
-			p[ 2 ] = clampr( Params[ 2 ], -4.0, 4.0 );
-			p[ 3 ] = clampr( Params[ 3 ], -4.0, 4.0 );
-			Params = p;
-		}
-
-		const double step1 = Params[ 0 ] * M_PI / Len2;
-		w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
-
-		const double step2 = Params[ 1 ] * M_PI / Len2;
-		w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
-
-		const double step3 = Params[ 2 ] * M_PI / Len2;
-		w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
-
-		const double step4 = Params[ 3 ] * M_PI / Len2;
-		w4.init( step4, 2.0, M_PI * 0.5 - step4 * fl2 + step4 * FracDelay );
+		setWindow( WinType, Params, UsePower, false, FracDelay );
 	}
 
 	/**
-	 * @return The next "Hann" windowing function coefficient.
+	 * @return The next "Hann" window function coefficient.
 	 */
 
 	double calcWindowHann()
@@ -216,35 +206,7 @@ public:
 	}
 
 	/**
-	 * @return The next "Hann raised to power 6" windowing function
-	 * coefficient. This windowing function is suitable for fractional delay
-	 * filters.
-	 */
-
-	double calcWindowHann6()
-	{
-		return( sqr( sqr( sqr( calcWindowHann() ))));
-	}
-
-	/**
-	 * @return The next "Vaneev" windowing function coefficient, for use with
-	 * the fractional delay filters. This windowing function, considering the
-	 * optimized parameters, is suitable for fractional delay filters even
-	 * better than the "Hann^6" function.
-	 */
-
-	double calcWindowVaneev()
-	{
-		const double v0 = 0.5 + 0.5 * w1.gen();
-		const double v1 = 0.5 + 0.5 * w2.gen();
-		const double v2 = 0.5 + 0.5 * w3.gen();
-		const double v3 = 0.5 + 0.5 * w4.gen();
-
-		return( v0 * sqr( v1 ) * sqr( sqr( v2 )) * sqr( sqr( sqr( v3 ))));
-	}
-
-	/**
-	 * @return The next "Hamming" windowing function coefficient.
+	 * @return The next "Hamming" window function coefficient.
 	 */
 
 	double calcWindowHamming()
@@ -253,7 +215,7 @@ public:
 	}
 
 	/**
-	 * @return The next "Blackman" windowing function coefficient.
+	 * @return The next "Blackman" window function coefficient.
 	 */
 
 	double calcWindowBlackman()
@@ -262,7 +224,7 @@ public:
 	}
 
 	/**
-	 * @return The next "Nuttall" windowing function coefficient.
+	 * @return The next "Nuttall" window function coefficient.
 	 */
 
 	double calcWindowNuttall()
@@ -272,23 +234,7 @@ public:
 	}
 
 	/**
-	 * @return The next "Nuttall squared" windowing function coefficient. This
-	 * window is good for high dynamic range spectral analysis.
-	 */
-
-	double calcWindowNuttall2()
-	{
-		return( sqr( calcWindowNuttall() ));
-	}
-
-	/**
-	 * @return The next "Blackman-Nuttall" windowing function coefficient.
-	 * This (together with the "Nuttall") windowing function provides quite
-	 * short filters for the given transition band and stop-band attenuation,
-	 * 10-20% shorter than the Blackman windowing function. However, the
-	 * aliased components if the filter is used for resampling are stronger
-	 * than what "Blackman" function offers (-55 dB in "Blackman" vs -30 dB
-	 * in "Nuttall" vs -5 dB in "Blackman-Nuttall").
+	 * @return The next "Blackman-Nuttall" window function coefficient.
 	 */
 
 	double calcWindowBlackmanNuttall()
@@ -298,72 +244,148 @@ public:
 	}
 
 	/**
-	 * Function calculates band-limited windowed sinc function-based filter
-	 * kernel.
-	 *
-	 * @param[out] op Output buffer, length = KernelLen.
-	 * @param wfunc Windowing function to use.
+	 * @return The next "Kaiser" window function coefficient.
 	 */
 
-	void generateBand( double* op,
-		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
+	double calcWindowKaiser()
 	{
-		int t = -fl2;
+		const double n = 1.0 - sqr( wn / Len2 + KaiserLen2Frac );
+		wn++;
 
-		while( t < 0 )
+		if( n < 0.0 )
 		{
-			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / t / M_PI;
-			op++;
-			t++;
+			return( 0.0 );
 		}
 
-		f1.gen();
-		f2.gen();
-		*op = ( Freq2 - Freq1 ) * ( *this.*wfunc )() / M_PI;
+		return( besselI0( KaiserBeta * sqrt( n )) / KaiserDiv );
+	}
 
-		while( t < fl2 )
+	/**
+	 * @return The next "Gaussian" window function coefficient.
+	 */
+
+	double calcWindowGaussian()
+	{
+		const double f = exp( -0.5 * sqr( wn / GaussianSigma +
+			GaussianSigmaFrac ));
+
+		wn++;
+
+		return( f );
+	}
+
+	/**
+	 * @return The next "Vaneev" windowing function coefficient, for use with
+	 * the fractional delay filters.
+	 */
+
+	double calcWindowVaneev()
+	{
+		const double v1 = 0.5 + 0.5 * w1.gen();
+		const double v2 = 0.5 + 0.5 * w2.gen();
+		const double v3 = 0.5 + 0.5 * w3.gen();
+		const double v4 = 0.5 + 0.5 * w4.gen();
+
+		return( v1 * sqr( v2 ) * sqr( sqr( v3 )) * sqr( sqr( sqr( v4 ))));
+	}
+
+	/**
+	 * Function calculates window function only.
+	 *
+	 * @param[out] op Output buffer, length = KernelLen.
+	 * @param wfunc Window calculation function to use.
+	 */
+
+	template< class T >
+	void generateWindow( T* op,
+		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
+	{
+		op += fl2;
+		T* op2 = op;
+
+		int l = fl2;
+
+		if( Power < 0.0 )
 		{
-			t++;
-			op++;
-			*op = ( f2.gen() - f1.gen() ) * ( *this.*wfunc )() / t / M_PI;
+			*op = ( *this.*wfunc )();
+
+			while( l > 0 )
+			{
+				const double v = ( *this.*wfunc )();
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = v;
+				l--;
+			}
+		}
+		else
+		{
+			*op = pows(( *this.*wfunc )(), Power );
+
+			while( l > 0 )
+			{
+				const double v = pows(( *this.*wfunc )(), Power );
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = v;
+				l--;
+			}
 		}
 	}
 
 	/**
 	 * Function calculates band-limited windowed sinc function-based filter
-	 * kernel, with the window raised to the specified power.
+	 * kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
-	 * @param p Power factor.
-	 * @param wfunc Windowing function to use.
+	 * @param wfunc Window calculation function to use.
 	 */
 
-	void generateBandPow( double* op, const double p,
+	template< class T >
+	void generateBand( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
-		R8BASSERT( p > 0.0 );
-
-		int t = -fl2;
-
-		while( t < 0 )
-		{
-			*op = ( f2.gen() - f1.gen() ) * pows( ( *this.*wfunc )(), p ) /
-				t / M_PI;
-
-			op++;
-			t++;
-		}
-
+		op += fl2;
+		T* op2 = op;
 		f1.gen();
 		f2.gen();
-		*op = ( Freq2 - Freq1 ) * pows( ( *this.*wfunc )(), p ) / M_PI;
+		int t = 1;
 
-		while( t < fl2 )
+		if( Power < 0.0 )
 		{
-			t++;
-			op++;
-			*op = ( f2.gen() - f1.gen() ) * pows( ( *this.*wfunc )(), p ) /
-				t / M_PI;
+			*op = ( Freq2 - Freq1 ) * ( *this.*wfunc )() / M_PI;
+
+			while( t <= fl2 )
+			{
+				const double v = ( f2.gen() - f1.gen() ) *
+					( *this.*wfunc )() / t / M_PI;
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = v;
+				t++;
+			}
+		}
+		else
+		{
+			*op = ( Freq2 - Freq1 ) * pows(( *this.*wfunc )(), Power ) / M_PI;
+
+			while( t <= fl2 )
+			{
+				const double v = ( f2.gen() - f1.gen() ) *
+					pows(( *this.*wfunc )(), Power ) / t / M_PI;
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = v;
+				t++;
+			}
 		}
 	}
 
@@ -371,38 +393,62 @@ public:
 	 * Function calculates windowed Hilbert transformer filter kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
-	 * @param wfunc Windowing function to use.
+	 * @param wfunc Window calculation function to use.
 	 */
 
-	void generateHilbert( double* op,
+	template< class T >
+	void generateHilbert( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
-		static const double fvalues[ 2 ] = { 0.0, -2.0 };
-		double* op2 = op + fl2 + fl2;
-		int t = -fl2;
+		static const double fvalues[ 2 ] = { 0.0, 2.0 };
+		op += fl2;
+		T* op2 = op;
 
-		while( t < 0 )
-		{
-			const double v = fvalues[ t & 1 ] * ( *this.*wfunc )() / t / M_PI;
-			*op = v;
-			op++;
-			*op2 = -v;
-			op2--;
-			t++;
-		}
-
+		( *this.*wfunc )();
 		*op = 0.0;
+
+		int t = 1;
+
+		if( Power < 0.0 )
+		{
+			while( t <= fl2 )
+			{
+				const double v = fvalues[ t & 1 ] *
+					( *this.*wfunc )() / t / M_PI;
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = -v;
+				t++;
+			}
+		}
+		else
+		{
+			while( t <= fl2 )
+			{
+				const double v = fvalues[ t & 1 ] *
+					pows( ( *this.*wfunc )(), Power ) / t / M_PI;
+
+				op++;
+				op2--;
+				*op = v;
+				*op2 = -v;
+				t++;
+			}
+		}
 	}
 
 	/**
 	 * Function calculates windowed fractional delay filter kernel.
 	 *
 	 * @param[out] op Output buffer, length = KernelLen.
-	 * @param wfunc Windowing function to use.
+	 * @param wfunc Window calculation function to use.
 	 * @param opinc Output buffer increment, in "op" elements.
 	 */
 
-	void generateFrac( double* op,
+	template< class T >
+	void generateFrac( T* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman,
 		const int opinc = 1 )
 	{
@@ -425,47 +471,354 @@ public:
 		int mt = ( FracDelay >= 1.0 - 1e-13 && FracDelay <= 1.0 + 1e-13 ?
 			-1 : 0 );
 
-		while( t < mt )
+		if( Power < 0.0 )
 		{
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) / M_PI;
+			while( t < mt )
+			{
+				*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) /
+					M_PI;
+
+				op += opinc;
+				t++;
+			}
+
+			double ut = t + FracDelay;
+			*op = ( fabs( ut ) <= 1e-13 ? ( *this.*wfunc )() :
+				f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI );
+
+			mt = fl2 - 2;
+
+			while( t < mt )
+			{
+				op += opinc;
+				t++;
+				*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) /
+					M_PI;
+			}
+
 			op += opinc;
 			t++;
+			ut = t + FracDelay;
+			*op = ( ut > Len2 ? 0.0 :
+				f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI );
 		}
-
-		double ut = t + FracDelay;
-		*op = ( fabs( ut ) <= 1e-13 ? ( *this.*wfunc )() :
-			f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI );
-
-		mt = fl2 - 2;
-
-		while( t < mt )
+		else
 		{
+			while( t < mt )
+			{
+				*op = f[ t & 1 ] * pows( ( *this.*wfunc )(), Power ) /
+					( t + FracDelay ) / M_PI;
+
+				op += opinc;
+				t++;
+			}
+
+			double ut = t + FracDelay;
+			*op = ( fabs( ut ) <= 1e-13 ? pows( ( *this.*wfunc )(), Power ) :
+				f[ t & 1 ] * pows( ( *this.*wfunc )(), Power ) / ut / M_PI );
+
+			mt = fl2 - 2;
+
+			while( t < mt )
+			{
+				op += opinc;
+				t++;
+				*op = f[ t & 1 ] * pows( ( *this.*wfunc )(), Power ) /
+					( t + FracDelay ) / M_PI;
+			}
+
 			op += opinc;
 			t++;
-			*op = f[ t & 1 ] * ( *this.*wfunc )() / ( t + FracDelay ) / M_PI;
+			ut = t + FracDelay;
+			*op = ( ut > Len2 ? 0.0 :
+				f[ t & 1 ] * pows( ( *this.*wfunc )(), Power ) / ut / M_PI );
 		}
-
-		op += opinc;
-		t++;
-		ut = t + FracDelay;
-		*op = ( ut > Len2 ? 0.0 :
-			f[ t & 1 ] * ( *this.*wfunc )() / ut / M_PI );
 	}
 
 private:
-	CSineGen f1; ///< Sine function 1.
+	double Power; ///< The power factor used to raise the window function.
+		///< Equals a negative value if the power factor should not be used.
 		///<
-	CSineGen f2; ///< Sine function 2.
+	CSineGen f1; ///< Sine function 1. Used in the generateBand() function.
 		///<
-	CSineGen w1; ///< Cosine wave 1 for windowing function.
+	CSineGen f2; ///< Sine function 2. Used in the generateBand() function.
 		///<
-	CSineGen w2; ///< Cosine wave 2 for windowing function.
+	int wn; ///< Window function integer position. 0 - center of the window
+		///< function. This variable may not be used by some window functions.
 		///<
-	CSineGen w3; ///< Cosine wave 3 for windowing function.
-		///<
-	CSineGen w4; ///< Cosine wave 4 for windowing function. Initialized and
-		///< used only by the "Vaneev" windowing function.
-		///<
+
+	union
+	{
+		struct
+		{
+			CSineGen w1; ///< Cosine wave 1 for window function.
+				///<
+			CSineGen w2; ///< Cosine wave 2 for window function.
+				///<
+			CSineGen w3; ///< Cosine wave 3 for window function.
+				///<
+			CSineGen w4; ///< Cosine wave 4 for window function.
+				///<
+		};
+
+		struct
+		{
+			double KaiserBeta; ///< Kaiser window function's "Beta"
+				///< coefficient.
+				///<
+			double KaiserDiv; ///< Kaiser window function's divisor.
+				///<
+			double KaiserLen2Frac; ///< Equals FracDelay / Len2.
+				///<
+		};
+
+		struct
+		{
+			double GaussianSigma; ///< Gaussian window function's "Sigma"
+				///< coefficient.
+				///<
+			double GaussianSigmaFrac; ///< Equals FracDelay / GaussianSigma.
+				///<
+		};
+	};
+
+	/**
+	 * @param FilterLen2 Half filter length in samples (taps).
+	 * @return The Kaiser power-raised window function parameters for the
+	 * specified filter length.
+	 */
+
+	static const double* getKaiserParams( const int FilterLen2 )
+	{
+		R8BASSERT( FilterLen2 >= 3 && FilterLen2 <= 15 );
+
+		static const double Coeffs[][ 2 ] = {
+			{ 3.41547411, 1.41275111 }, // 6 @ 51.38
+			{ 3.72300147, 1.75212634 }, // 8 @ 67.60
+			{ 4.34839223, 1.85801372 }, // 10 @ 79.86
+			{ 4.90860405, 1.97194591 }, // 12 @ 93.29
+			{ 5.17430411, 2.20609617 }, // 14 @ 106.74
+			{ 21.08445389, 0.59684098 }, // 16 @ 119.71
+			{ 9.14552738, 1.57619894 }, // 18 @ 134.53
+			{ 22.02344341, 0.71669064 }, // 20 @ 148.44
+			{ 16.41763757, 1.05884118 }, // 22 @ 164.61
+			{ 12.42929204, 1.53042797 }, // 24 @ 179.93
+			{ 9.84861210, 2.09912671 }, // 26 @ 194.15
+			{ 9.78043385, 2.28002273 }, // 28 @ 206.69
+			{ 10.44071807, 2.28811131 }, // 30 @ 218.09
+		};
+
+		return( Coeffs[ FilterLen2 - 3 ]);
+	}
+
+	/**
+	 * Function initializes Kaiser window function calculation. The FracDelay
+	 * variable should be initialized when using this window function.
+	 *
+	 * @param Params Function parameters. If NULL, the table values will be
+	 * used. If not NULL, the first parameter should specify the "Beta" value.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function.
+	 * @param IsCentered "True" if centered window should be used. This
+	 * parameter usually equals to "false" for fractional delay filters only.
+	 */
+
+	void setWindowKaiser( const double* Params, const bool UsePower,
+		const bool IsCentered )
+	{
+		wn = ( IsCentered ? 0 : -fl2 );
+
+		if( Params == NULL )
+		{
+			Params = getKaiserParams( fl2 );
+			KaiserBeta = Params[ 0 ];
+			Power = ( UsePower ? Params[ 1 ] : -1.0 );
+		}
+		else
+		{
+			KaiserBeta = clampr( Params[ 0 ], 1.0, 350.0 );
+			Power = ( UsePower ? fabs( Params[ 1 ]) : -1.0 );
+		}
+
+		KaiserDiv = besselI0( KaiserBeta );
+		KaiserLen2Frac = FracDelay / Len2;
+	}
+
+	/**
+	 * Function initializes Gaussian window function calculation. The FracDelay
+	 * variable should be initialized when using this window function.
+	 *
+	 * @param Params Function parameters. If NULL, the table values will be
+	 * used. If not NULL, the first parameter should specify the "Sigma"
+	 * value.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function.
+	 * @param IsCentered "True" if centered window should be used. This
+	 * parameter usually equals to "false" for fractional delay filters only.
+	 */
+
+	void setWindowGaussian( const double* Params, const bool UsePower,
+		const bool IsCentered )
+	{
+		wn = ( IsCentered ? 0 : -fl2 );
+
+		if( Params == NULL )
+		{
+			GaussianSigma = 1.0;
+			Power = -1.0;
+		}
+		else
+		{
+			GaussianSigma = clampr( fabs( Params[ 0 ]), 1e-1, 100.0 );
+			Power = ( UsePower ? fabs( Params[ 1 ]) : -1.0 );
+		}
+
+		GaussianSigma *= Len2;
+		GaussianSigmaFrac = FracDelay / GaussianSigma;
+	}
+
+	/**
+	 * Function initializes "Vaneev" window function calculation.
+	 *
+	 * @param Params Function parameters. If NULL, the table values will be
+	 * used. If not NULL, the first 4 parameters should specify the cosine
+	 * multipliers while the fifth parameter should specify the "Power" value.
+	 * @param IsCentered "True" if centered window should be used. This
+	 * parameter usually equals to "false" for fractional delay filters only.
+	 */
+
+	void setWindowVaneev( const double* Params, const bool IsCentered )
+	{
+		R8BASSERT( fl2 >= 3 && fl2 <= 15 );
+
+		// This set of parameters was obtained via probabilistic optimization.
+		// The number after @ shows the approximate (+/- 1 dB) signal-to-noise
+		// ratio for the given filter. SNR can be also decreased by using a
+		// filter bank with suboptimal number of sampled fractional delay
+		// filters: thus the FilterFracs should be selected with care.
+
+		static const double Coeffs[][ 5 ] = {
+			{ 0.359261, 0.661540, 0.792648, 0.318979, 0.188450 }, // 6 @ 51.91
+			{ 0.816908, 0.394100, 0.015466, 0.020679, 1.151430 }, // 8 @ 67.87
+			{ 0.708166, 0.853947, 0.254236, 0.211643, 0.561896 }, // 10 @ 81.54
+			{ 0.562542, 0.326156, 0.883757, 0.469442, 0.328627 }, // 12 @ 95.36
+			{ 0.412878, 0.453571, 0.896702, 0.486984, 0.369426 }, // 14 @ 109.56
+			{ 0.564575, 0.924860, 0.585518, 0.159674, 0.675339 }, // 16 @ 122.53
+			{ 0.279305, 0.948988, 0.703359, 0.320802, 0.591025 }, // 18 @ 136.45
+			{ 0.126208, 0.949932, 0.702099, 0.347474, 0.644292 }, // 20 @ 150.52
+			{ 0.835959, 0.950408, 0.641276, 0.308560, 0.696927 }, // 22 @ 163.41
+			{ 0.412529, 0.962367, 0.748954, 0.416692, 0.659961 }, // 24 @ 174.32
+			{ 0.985675, 0.889071, 0.656528, 0.345859, 0.772658 }, // 26 @ 191.26
+			{ 0.645268, 0.677293, 0.918137, 0.439725, 0.683327 }, // 28 @ 195.77
+			{ 0.653103, 0.667234, 0.917511, 0.439567, 0.736514 }, // 30 @ 207.04
+		};
+
+		double p[ 4 ];
+
+		if( Params == NULL )
+		{
+			Params = Coeffs[ fl2 - 3 ];
+			Power = Params[ 4 ];
+		}
+		else
+		{
+			p[ 0 ] = clampr( Params[ 0 ], -4.0, 4.0 );
+			p[ 1 ] = clampr( Params[ 1 ], -4.0, 4.0 );
+			p[ 2 ] = clampr( Params[ 2 ], -4.0, 4.0 );
+			p[ 3 ] = clampr( Params[ 3 ], -4.0, 4.0 );
+			Power = fabs( Params[ 4 ]);
+			Params = p;
+		}
+
+		if( IsCentered )
+		{
+			w1.init( Params[ 0 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
+			w2.init( Params[ 1 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
+			w3.init( Params[ 2 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
+			w4.init( Params[ 3 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
+		}
+		else
+		{
+			const double step1 = Params[ 0 ] * M_PI / Len2;
+			w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 +
+				step1 * FracDelay );
+
+			const double step2 = Params[ 1 ] * M_PI / Len2;
+			w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 +
+				step2 * FracDelay );
+
+			const double step3 = Params[ 2 ] * M_PI / Len2;
+			w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 +
+				step3 * FracDelay );
+
+			const double step4 = Params[ 3 ] * M_PI / Len2;
+			w4.init( step4, 2.0, M_PI * 0.5 - step4 * fl2 +
+				step4 * FracDelay );
+		}
+	}
+
+	/**
+	 * Function initializes calculation of window function of the specified
+	 * type.
+	 *
+	 * @param WinType Window function type.
+	 * @param Params Window function's parameters. If NULL, the table values
+	 * may be used.
+	 * @param UsePower "True" if the power factor should be used to raise the
+	 * window function. If "true", the power factor should be specified as the
+	 * last value in the Params array. If Params is NULL, the table or default
+	 * value of -1.0 (off) will be used.
+	 * @param IsCentered "True" if centered window should be used. This
+	 * parameter usually equals to "false" for fractional delay filters only.
+	 * @param UseFracDelay Fractional delay to use.
+	 */
+
+	void setWindow( const EWindowFunctionType WinType,
+		const double* const Params, const bool UsePower,
+		const bool IsCentered, const double UseFracDelay = 0.0 )
+	{
+		FracDelay = UseFracDelay;
+
+		if( WinType == wftCosine )
+		{
+			if( IsCentered )
+			{
+				w1.init( M_PI / Len2, 2.0, M_PI * 0.5 );
+				w2.init( M_2PI / Len2, 2.0, M_PI * 0.5 );
+				w3.init( M_3PI / Len2, 2.0, M_PI * 0.5 );
+			}
+			else
+			{
+				const double step1 = M_PI / Len2;
+				w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 +
+					step1 * FracDelay );
+
+				const double step2 = M_2PI / Len2;
+				w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 +
+					step2 * FracDelay );
+
+				const double step3 = M_3PI / Len2;
+				w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 +
+					step3 * FracDelay );
+			}
+
+			Power = ( UsePower && Params != NULL ? Params[ 0 ] : -1.0 );
+		}
+		else
+		if( WinType == wftKaiser )
+		{
+			setWindowKaiser( Params, UsePower, IsCentered );
+		}
+		else
+		if( WinType == wftGaussian )
+		{
+			setWindowGaussian( Params, UsePower, IsCentered );
+		}
+		else
+		{
+			setWindowVaneev( Params, IsCentered );
+		}
+	}
 };
 
 } // namespace r8b

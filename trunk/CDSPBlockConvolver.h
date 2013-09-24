@@ -38,7 +38,7 @@ enum EDSPResamplingMode
  *
  * The rationale behind "single-block" processing is that increasing the FFT
  * block length by 2 is more efficient than performing convolution at the same
- * FFT block length using two blocks.
+ * FFT block length but using two blocks.
  *
  * This class also implements a built-in resampling (2X up or 2X down) which
  * simplifies the overall resampling objects topology.
@@ -110,7 +110,7 @@ public:
 
 	/**
 	 * @return Fractional latency, in samples, which is present in the output
-	 * signal. This value is always zero if linear-phase filters are in use.
+	 * signal. This value is always zero if a linear-phase filter is in use.
 	 */
 
 	double getLatencyFrac() const

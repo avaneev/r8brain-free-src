@@ -553,16 +553,16 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	// in the "ip2" buffer.
 
 	ip2[ 0 ] = ip[ 0 ];
-	ip[ 0 ] = log( fabs( ip[ 0 ]));
+	ip[ 0 ] = log( fabs( ip[ 0 ]) + 1e-50 );
 	ip2[ Len2 ] = ip[ 1 ];
-	ip[ 1 ] = log( fabs( ip[ 1 ]));
+	ip[ 1 ] = log( fabs( ip[ 1 ]) + 1e-50 );
 
 	for( i = 1; i < Len2; i++ )
 	{
 		ip2[ i ] = sqrt( ip[ i * 2 ] * ip[ i * 2 ] +
 			ip[ i * 2 + 1 ] * ip[ i * 2 + 1 ]);
 
-		ip[ i * 2 ] = log( ip2[ i ]);
+		ip[ i * 2 ] = log( ip2[ i ] + 1e-50 );
 		ip[ i * 2 + 1 ] = 0.0;
 	}
 
