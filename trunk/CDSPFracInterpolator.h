@@ -187,7 +187,7 @@ private:
 };
 
 /**
- * @brief Fractional delay filter-based interpolator class.
+ * @brief Fractional delay filter bank-based interpolator class.
  *
  * Class implements the fractional delay interpolator. This implementation at
  * first puts the input signal into a ring buffer and then performs
@@ -248,6 +248,16 @@ public:
 		R8BASSERT(( 1 << BufLenBits ) >= FilterLen * 3 );
 
 		clear();
+	}
+
+	/**
+	 * @return The number of samples that should be passed to *this object
+	 * before the actual output starts.
+	 */
+
+	int getInLenBeforeOutStart() const
+	{
+		return( FilterLenD2 );
 	}
 
 	/**

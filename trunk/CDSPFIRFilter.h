@@ -507,7 +507,7 @@ public:
 	 * Function calculates or returns reference to a previously calculated
 	 * (cached) low-pass FIR filter. Note that the real transition band and
 	 * attenuation achieved by the filter varies with the magnitude of the
-	 * required attenuation.
+	 * required attenuation, and are never 100% exact.
 	 *
 	 * @param ReqNormFreq Required normalized frequency, in the range 0 to 1,
 	 * inclusive. This is the point after which the stop-band spans.
