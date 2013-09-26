@@ -95,6 +95,10 @@
  * processing the output becomes steady, with only minor output sample data
  * length fluctuations.
  *
+ * Note that the r8b::CDSPResampler::getInLenBeforeOutStart() function can be
+ * used to estimate the number of input samples that should be provided to the
+ * resampler before the actual output starts.
+ *
  * @section notes Notes
  *
  * The transition band is specified as the normalized spectral space of the
@@ -158,7 +162,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.1
+ * @version 1.2
  */
 
 #ifndef R8BBASE_INCLUDED

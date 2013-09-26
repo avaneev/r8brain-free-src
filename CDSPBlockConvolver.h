@@ -119,6 +119,29 @@ public:
 	}
 
 	/**
+	 * @param NextInLen The number of input samples required before the output
+	 * starts on the next resampling step.
+	 * @return The cumulative number of samples that should be passed to *this
+	 * object before the actual output starts. This value includes latencies
+	 * induced by the convolver, filter, and the next resampling step.
+	 */
+
+	int getInLenBeforeOutStart( const int NextInLen ) const
+	{
+		if( ResamplingMode == rsmNone )
+		{
+			return( Latency + NextInLen );
+		}
+
+		if( ResamplingMode == rsmDownsample2X )
+		{
+			return( Latency + NextInLen * 2 );
+		}
+
+		return(( Latency + NextInLen ) / 2 );
+	}
+
+	/**
 	 * @param MaxInLen The number of samples planned to process at once, at
 	 * most.
 	 * @return The maximal length of the output buffer required when

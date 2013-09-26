@@ -102,7 +102,7 @@
 	 * the same time.
 	 */
 
-	#define R8B_FILTER_CACHE_MAX 64
+	#define R8B_FILTER_CACHE_MAX 96
 #endif // !defined( R8B_FILTER_CACHE_MAX )
 
 #if !defined( R8B_FLTTEST )

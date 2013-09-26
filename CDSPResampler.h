@@ -111,7 +111,9 @@ public:
 	 * filters the UsePower2 should be set to "false". Linear-phase filters
 	 * do not have fractional delay.
 	 * @param UsePower2 "True" if the "power of 2" resampling optimization
-	 * should be used when possible.
+	 * should be used when possible. This value should be set to "false" if
+	 * the access to interpolator is needed in any case (also the source and
+	 * destination sample rates should not be equal).
 	 * @see CDSPFIRFilterCache::getLPFilter()
 	 */
 
@@ -278,6 +280,34 @@ public:
 	}
 
 	/**
+	 * @return The number of samples that should be passed to *this object
+	 * before the actual output starts.
+	 */
+
+	int getInLenBeforeOutStart() const
+	{
+		int l = ( Interp == NULL ? 0 : Interp -> getInLenBeforeOutStart() );
+		int i;
+
+		for( i = ConvCount - 1; i >= 0; i-- )
+		{
+			l = Convs[ i ] -> getInLenBeforeOutStart( l );
+		}
+
+		return( l );
+	}
+
+	/**
+	 * @return Interpolator object used by *this resampler. This function
+	 * returns NULL if no interpolator is in use.
+	 */
+
+	CInterpClass* getInterpolator() const
+	{
+		return( Interp );
+	}
+
+	/**
 	 * Function clears (resets) the state of *this object and returns it to
 	 * the state after construction. All input data accumulated in the
 	 * internal buffer so far will be discarded.
@@ -302,16 +332,6 @@ public:
 		{
 			Interp -> clear();
 		}
-	}
-
-	/**
-	 * @return Interpolator object used by *this resampler. This function
-	 * returns NULL if no interpolator is in use.
-	 */
-
-	CInterpClass* getInterpolator() const
-	{
-		return( Interp );
 	}
 
 	/**
