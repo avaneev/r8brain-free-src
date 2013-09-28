@@ -521,7 +521,7 @@ public:
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive. Note that the actual stop-band attenuation of the resulting
-	 * filter may be 0.40-4.41 dB higher.
+	 * filter may be 0.40-4.46 dB higher.
 	 * @return A reference to a new or a previously calculated low-pass FIR
 	 * filter object with the required characteristics. A reference count is
 	 * incremented in the returned filter object which should be released

@@ -105,7 +105,7 @@
  * input signal (or the output signal if the downsampling is performed)
  * between the low-pass filter's -3 dB point and the Nyquist frequency, and
  * ranges from 0.5% to 45%. Stop-band attenuation can be specified in the
- * range 50 to 218 decibel.
+ * range 49 to 218 decibel.
  *
  * This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
  * 4X, 8X, 16X, etc. upsampling and downsampling).
@@ -162,7 +162,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.2
+ * @version 1.3
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -1111,29 +1111,29 @@ inline double asinh( const double v )
 /**
  * @param x Input value (suggested to be below 350).
  * @return Calculated zero-th order modified Bessel function of the first kind
- * of the input value.
+ * of the input value. Approximate value.
  */
 
 inline double besselI0( const double x )
 {
-	const double I0epsilon = 2.220446e-16;
-	const double sqrhx = x * x * 0.25;
-	double sum = 1.0;
-	double u = 1.0;
-	double n = 1.0;
+	const double ax = fabs( x );
+	double y;
 
-	while( true )
+	if( ax < 3.75 )
 	{
-		u = u * sqrhx / ( n * n );
-		sum += u;
+		y = x / 3.75;
+		y *= y;
 
-		if( u < I0epsilon * sum )
-		{
-			return( sum );
-		}
-
-		n++;
+		return( 1.0 + y * ( 3.5156229 + y * ( 3.0899424 + y * ( 1.2067492 +
+			y * ( 0.2659732 + y * ( 0.360768e-1 + y * 0.45813e-2 ))))));
 	}
+
+	y = 3.75 / ax;
+
+	return( exp( ax ) / sqrt( ax ) * ( 0.39894228 + y * ( 0.1328592e-1 +
+		y * ( 0.225319e-2 + y * ( -0.157565e-2 + y * ( 0.916281e-2 +
+		y * ( -0.2057706e-1 + y * ( 0.2635537e-1 + y * ( -0.1647633e-1 +
+		y * 0.392377e-2 )))))))));
 }
 
 } // namespace r8b
