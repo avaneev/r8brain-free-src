@@ -100,7 +100,7 @@ public:
 	 * considerably increased, up to 30.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
-	 * inclusive. The actual attenuation may be 0.40-4.41 dB higher.
+	 * inclusive. The actual attenuation may be 0.40-4.46 dB higher.
 	 * @param ReqPhase Required filter's phase response. Note that this
 	 * setting does not affect interpolator's phase response which is always
 	 * linear-phase. Also note that if the "power of 2" resampling was engaged
