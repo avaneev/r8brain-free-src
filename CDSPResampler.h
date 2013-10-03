@@ -97,10 +97,20 @@ public:
 	 * frequency. The range is from CDSPFIRFilter::getLPMinTransBand() to
 	 * CDSPFIRFilter::getLPMaxTransBand(), inclusive. When upsampling 88200 or
 	 * 96000 audio to a higher sample rates the ReqTransBand can be
-	 * considerably increased, up to 30.
+	 * considerably increased, up to 30. The selection of ReqTransBand depends
+	 * on the level of desire to preserve the high-frequency content. While
+	 * values 0.5 to 2 are extremely "greedy" settings, not necessary in most
+	 * cases, values 2 to 3 can be used in most cases. Values 3 to 4 are
+	 * relaxed settings, but they still offer a flat frequency response up to
+	 * 21kHz with 44.1k source or destination sample rate.
 	 * @param ReqAtten Required stop-band attenuation in decibel, in the range
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
-	 * inclusive. The actual attenuation may be 0.40-4.46 dB higher.
+	 * inclusive. The actual attenuation may be 0.40-4.46 dB higher. The
+	 * general formula for selecting the ReqAtten is 6.02 * Bits + 40, where
+	 * "Bits" is the bit resolution (e.g. 16, 24), "40" is an added resolution
+	 * for stationary signals, this value can be decreased to 20 to 10 if the
+	 * signal being resampled is mostly non-stationary (e.g. impulse
+	 * response).
 	 * @param ReqPhase Required filter's phase response. Note that this
 	 * setting does not affect interpolator's phase response which is always
 	 * linear-phase. Also note that if the "power of 2" resampling was engaged
