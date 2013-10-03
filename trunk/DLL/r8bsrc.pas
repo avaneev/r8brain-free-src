@@ -14,17 +14,17 @@ const
 
 function r8b_create( SrcSampleRate: Double; DstSampleRate: Double;
 	MaxInLen: LongInt; ReqTransBand: Double; Res: LongInt ): CR8BResampler;
-	cdecl; external 'r8b-src.dll';
+	cdecl; external 'r8bsrc.dll';
 
-procedure r8b_delete( rs: CR8BResampler ); cdecl; external 'r8b-src.dll';
+procedure r8b_delete( rs: CR8BResampler ); cdecl; external 'r8bsrc.dll';
 
 function r8b_get_latency( rs: CR8BResampler ): LongInt; cdecl;
-	external 'r8b-src.dll';
+	external 'r8bsrc.dll';
 
-procedure r8b_clear( rs: CR8BResampler ); cdecl; external 'r8b-src.dll';
+procedure r8b_clear( rs: CR8BResampler ); cdecl; external 'r8bsrc.dll';
 
 function r8b_process( rs: CR8BResampler; ip0: PR8BDouble; l: LongInt;
-	var op0: PR8BDouble ): LongInt; cdecl; external 'r8b-src.dll';
+	var op0: PR8BDouble ): LongInt; cdecl; external 'r8bsrc.dll';
 
 implementation
 
