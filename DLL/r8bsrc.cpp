@@ -1,10 +1,10 @@
 /**
- * @file r8b-src.cpp
+ * @file r8bsrc.cpp
  *
- * @brief The "r8b-src.dll" source file.
+ * @brief The "r8bsrc.dll" source file.
  *
  * This source file contains implementation of the DLL functions defined in
- * the "r8b-src.h" file. This source file was designed for a proprietary DLL
+ * the "r8bsrc.h" file. This source file was designed for a proprietary DLL
  * compilation process (includes //$ definitions). The compiled DLL and LIB
  * files of the latest version can be downloaded at project's home page:
  * https://code.google.com/p/r8brain-free-src/

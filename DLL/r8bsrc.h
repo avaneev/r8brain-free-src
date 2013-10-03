@@ -1,10 +1,10 @@
 /**
- * @file r8b-src.h
+ * @file r8bsrc.h
  *
- * @brief Inclusion file for use with the "r8b-src.dll".
+ * @brief Inclusion file for use with the "r8bsrc.dll".
  *
- * This is the inclusion file for the "r8b-src.dll" dynamic link library
- * (the "r8b-src.lib" library should be included into the project). This DLL
+ * This is the inclusion file for the "r8bsrc.dll" dynamic link library
+ * (the "r8bsrc.lib" library should be included into the project). This DLL
  * is designed to be used on Windows, on a processor with SSE2 support.
  * On non-Windows systems it is preferrable to use the C++ library directly.
  *
