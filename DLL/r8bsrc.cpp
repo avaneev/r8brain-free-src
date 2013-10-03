@@ -11,15 +11,15 @@
  */
 
 //$ def "dll"
-//$ bin "*win32|Win32/r8b-src.dll"
-//$ bin "*win64|Win64/r8b-src.dll"
+//$ bin "*win32|Win32/r8bsrc.dll"
+//$ bin "*win64|Win64/r8bsrc.dll"
 //$ export "r8b_create"
 //$ export "r8b_delete"
 //$ export "r8b_get_latency"
 //$ export "r8b_clear"
 //$ export "r8b_process"
 
-#include "r8b-src.h"
+#include "r8bsrc.h"
 #include "../CDSPResampler.h"
 using namespace r8b;
 
