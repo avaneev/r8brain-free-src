@@ -21,11 +21,7 @@
  * downsampling, to/from any sample rate, including non-integer sample rates:
  * it can be also used for conversion to/from SACD sample rate and even go
  * beyond that. SRC routines were implemented in multi-platform C++ code, and
- * have a high level of optimality. The user can select the transition
- * band/steepness of the low-pass (reconstruction) filter, expressed as a
- * percentage of the full spectral bandwidth of the input signal (or the
- * output signal if the downsampling is performed), and the desired stop-band
- * attenuation in decibel.
+ * have a high level of optimality.
  *
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with a minimal performance
@@ -33,12 +29,13 @@
  * "initialization-expensive" objects: the fast Fourier transform and FIR
  * filter objects.
  *
- * The algorithm at first produces 2X oversampled (relative to the source
+ * The SRC algorithm at first produces 2X oversampled (relative to the source
  * sample rate, or the destination sample rate if the downsampling is
  * performed) signal and then performs interpolation using a bank of short
- * (28 taps) polynomial-interpolated sinc-based fractional delay filters. This
- * puts the algorithm into the league of the fastest among the most precise
- * SRC algorithms. The more precise alternative being only the whole
+ * (14 to 28 taps, depending on the required precision)
+ * polynomial-interpolated sinc-based fractional delay filters. This puts the
+ * algorithm into the league of the fastest among the most precise SRC
+ * algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
  *
  * @section requirements Requirements
@@ -60,7 +57,8 @@
  * The sample rate converter (resampler) is represented by the
  * r8b::CDSPResampler class, which is a single front-end class for the whole
  * library. You do not basically need to use nor understand any other classes
- * beside this class.
+ * beside this class. Several derived classes that have varying levels of
+ * precision are also available.
  *
  * The code of the library resides in the "r8b" C++ namespace, effectively
  * isolating it from all other code. The code is thread-safe. A separate
@@ -83,6 +81,15 @@
  * system without overclocking. This approximately translates to a real-time
  * resampling of 160*n_cores audio streams, at 100% CPU load.
  *
+ * @section dll Dynamic Link Library
+ *
+ * The functions of this SRC library are also accessible in simplified form
+ * via the DLL file on Windows, requiring a processor with SSE2 support.
+ * Delphi Pascal interface unit file for the DLL file is available. DLL and
+ * C LIB files are distributed in a separate ZIP file on the project's home
+ * page. On non-Windows systems it is preferrable to use the C++ library
+ * directly.
+ *
  * @section realtime Real-time Applications
  *
  * The resampler class of this library was designed as asynchronous processor:
@@ -100,6 +107,12 @@
  * resampler before the actual output starts.
  *
  * @section notes Notes
+ *
+ * When using the r8b::CDSPResampler<> class directly, you may select the
+ * transition band/steepness of the low-pass (reconstruction) filter,
+ * expressed as a percentage of the full spectral bandwidth of the input
+ * signal (or the output signal if the downsampling is performed), and the
+ * desired stop-band attenuation in decibel.
  *
  * The transition band is specified as the normalized spectral space of the
  * input signal (or the output signal if the downsampling is performed)
@@ -1109,7 +1122,7 @@ inline double asinh( const double v )
 }
 
 /**
- * @param x Input value (suggested to be below 350).
+ * @param x Input value.
  * @return Calculated zero-th order modified Bessel function of the first kind
  * of the input value. Approximate value.
  */
