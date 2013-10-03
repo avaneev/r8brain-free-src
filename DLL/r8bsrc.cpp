@@ -8,6 +8,9 @@
  * compilation process (includes //$ definitions). The compiled DLL and LIB
  * files of the latest version can be downloaded at project's home page:
  * https://code.google.com/p/r8brain-free-src/
+ *
+ * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * See the "License.txt" file for license.
  */
 
 //$ def "dll"
