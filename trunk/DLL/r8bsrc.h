@@ -14,6 +14,9 @@
  * Note that the "int" and "enum" types have 32-bit size on both 32-bit and
  * 64-bit systems. Pointer types, including the CR8BResampler type, have
  * 32-bit size on 32-bit system and 64-bit size on 64-bit system.
+ *
+ * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * See the "License.txt" file for license.
  */
 
 #ifndef R8BSRC_INCLUDED

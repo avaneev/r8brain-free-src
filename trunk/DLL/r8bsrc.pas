@@ -1,3 +1,6 @@
+// r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+// See the "License.txt" file for license.
+
 unit r8bsrc;
 
 interface
