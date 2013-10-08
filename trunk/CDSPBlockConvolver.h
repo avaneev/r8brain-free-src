@@ -76,7 +76,7 @@ public:
 		, BlockLen( 1 << Filter -> getBlockLenBits() )
 		, Latency( BlockLen + Filter -> getLatency() )
 	{
-		R8BASSERT( PrevLatencyFrac >= 0.0 && PrevLatencyFrac < 0.0 );
+		R8BASSERT( PrevLatencyFrac >= 0.0 && PrevLatencyFrac < 1.0 );
 
 		LatencyFrac = Filter -> getLatencyFrac() +
 			PrevLatencyFrac * ( UpShift + 1 );

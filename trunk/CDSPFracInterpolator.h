@@ -341,7 +341,7 @@ public:
 	int process( const double* ip, double* const op0, int l )
 	{
 		R8BASSERT( l >= 0 );
-		R8BASSERT( ip != op || l == 0 );
+		R8BASSERT( ip != op0 || l == 0 || SrcSampleRate > DstSampleRate );
 
 		double* op = op0;
 
@@ -495,14 +495,17 @@ private:
 	}
 
 #if !R8B_FLTTEST
-	static const // Define filter bank object statically if no filter test
-		// takes place.
+	static const CDSPFracDelayFilterBank< FilterLen, FilterFracs, 3,
+		8 > FilterBank; ///< Filter bank object, defined statically if no
+		///< filter test takes place.
+		///<
 #else // !R8B_FLTTEST
 public:
-#endif // !R8B_FLTTEST
-	CDSPFracDelayFilterBank< FilterLen, FilterFracs,
-		FilterElementSize, 8 > FilterBank; ///< Filter bank object.
+	CDSPFracDelayFilterBank< FilterLen, FilterFracs, 4, 8 > FilterBank; ///<
+		///< Filter bank object, defined as a member variable to allow for
+		///< recalculation.
 		///<
+#endif // !R8B_FLTTEST
 };
 
 // ---------------------------------------------------------------------------

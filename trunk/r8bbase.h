@@ -175,7 +175,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.3
+ * @version 1.4
  */
 
 #ifndef R8BBASE_INCLUDED
