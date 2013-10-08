@@ -135,7 +135,7 @@ public:
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
-		R8BASSERT( MaxInLen >= 0 );
+		R8BASSERT( MaxInLen > 0 );
 
 		if( SrcSampleRate == DstSampleRate )
 		{
