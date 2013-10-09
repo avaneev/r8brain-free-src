@@ -1,3 +1,5 @@
+//$ nocpp
+
 /**
  * @file r8bsrc.h
  *
