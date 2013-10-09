@@ -1,5 +1,7 @@
 // r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
 // See the "License.txt" file for license.
+//
+// Please read the "r8bsrc.h" file for function descriptions.
 
 unit r8bsrc;
 

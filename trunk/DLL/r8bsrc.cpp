@@ -90,7 +90,7 @@ public:
 
 	virtual int getInLenBeforeOutStart() const
 	{
-		Resamp -> getInLenBeforeOutStart();
+		return( Resamp -> getInLenBeforeOutStart() );
 	}
 
 	virtual void clear()
@@ -104,7 +104,8 @@ public:
 	}
 
 private:
-	CResampClass* Resamp;
+	CResampClass* Resamp; ///< Resampler object.
+		///<
 };
 
 extern "C" {
@@ -118,7 +119,7 @@ CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
 		return( new CR8BResamplerTpl< CDSPResampler16 >( new CDSPResampler16(
 			SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand )));
 	}
-	else
+
 	if( Res == r8brr16IR )
 	{
 		return( new CR8BResamplerTpl< CDSPResampler16IR >(
