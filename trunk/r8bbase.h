@@ -17,11 +17,11 @@
  * @section intro_sec Introduction
  *
  * Open source (under the MIT license) high-quality professional audio sample
- * rate converter (SRC) library. Features routines for SRC, both up- and
- * downsampling, to/from any sample rate, including non-integer sample rates:
- * it can be also used for conversion to/from SACD sample rate and even go
- * beyond that. SRC routines were implemented in multi-platform C++ code, and
- * have a high level of optimality.
+ * rate converter (SRC) (resampling) library. Features routines for SRC, both
+ * up- and downsampling, to/from any sample rate, including non-integer sample
+ * rates: it can be also used for conversion to/from SACD sample rate and even
+ * go beyond that. SRC routines were implemented in multi-platform C++ code,
+ * and have a high level of optimality.
  *
  * The structure of this library's objects is such that they can be frequently
  * created and destroyed in large applications with a minimal performance
@@ -146,6 +146,7 @@
  * This library is used by:
  *
  *  * http://www.martinic.com/combov/ Combo Model V VSTi instrument
+ *  * http://midithru.net/Home/AsioLink WDM Asio Link Driver
  *
  * @section license License
  *
@@ -175,7 +176,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.4
+ * @version 1.5
  */
 
 #ifndef R8BBASE_INCLUDED

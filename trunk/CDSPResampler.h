@@ -75,7 +75,8 @@ public:
 	 * high-frequency content 24-bit, but the original part of the signal will
 	 * remain 16-bit.
 	 *
-	 * @param SrcSampleRate Source signal sample rate.
+	 * @param SrcSampleRate Source signal sample rate. Both sample rates can
+	 * be specified as a ratio, e.g. SrcSampleRate = 1.0, DstSampleRate = 2.0.
 	 * @param DstSampleRate Destination signal sample rate. The "power of 2"
 	 * ratios between the source and destination sample rates force resampler
 	 * to use several fast "power of 2" resampling steps, without using
@@ -129,7 +130,7 @@ public:
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0,
-		const double ReqAtten = 206.69,
+		const double ReqAtten = 206.91,
 		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase,
 		const bool UsePower2 = true )
 	{
@@ -350,6 +351,10 @@ public:
 	 * If the source and destination sample rates are equal, the resampler
 	 * will do nothing and will simply return the input buffer unchanged.
 	 *
+	 * You do not need to allocate an intermediate output buffer for use with
+	 * this function. If required, the resampler will allocate a suitable
+	 * intermediate output buffer itself.
+	 *
 	 * @param ip0 Input buffer. This buffer may be used as output buffer by
 	 * this function.
 	 * @param l The number of samples available in the input buffer.
@@ -358,8 +363,13 @@ public:
 	 * buffer, or to *this object's internal buffer. In real-time applications
 	 * it is suggested to pass this pointer to the next output audio block and
 	 * consume any data left from the previous output audio block first before
-	 * calling the process() function again.
-	 * @return The number of samples available in the "op0" output buffer.
+	 * calling the process() function again. The buffer pointed to by the
+	 * "op0" on return may be owned by the resampler, so it should not be
+	 * freed by the caller.
+	 * @return The number of samples available in the "op0" output buffer. If
+	 * the data from the output buffer "op0" is going to be written to a
+	 * bigger output buffer, it is suggested to check the returned number of
+	 * samples so that no overflow of the bigger output buffer happens.
 	 */
 
 	int process( double* const ip0, int l, double*& op0 )
@@ -519,7 +529,7 @@ public:
 	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
 		: CDSPResampler< CDSPFracInterpolator< 24, 673, 9 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 180.0, fprLinearPhase,
+			DstSampleRate, MaxInLen, ReqTransBand, 180.15, fprLinearPhase,
 			true )
 	{
 	}
