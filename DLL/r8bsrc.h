@@ -50,7 +50,8 @@ extern "C" {
 /**
  * Function creates a new linear-phase resampler object.
  *
- * @param SrcSampleRate Source signal sample rate.
+ * @param SrcSampleRate Source signal sample rate. Both sample rates can
+ * be specified as a ratio, e.g. SrcSampleRate = 1.0, DstSampleRate = 2.0.
  * @param DstSampleRate Destination signal sample rate.
  * @param MaxInLen The maximal planned length of the input buffer (in samples)
  * that will be passed to the resampler. The resampler relies on this value as
@@ -98,6 +99,10 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * If the source and destination sample rates are equal, the resampler will do
  * nothing and will simply return the input buffer unchanged.
  *
+ * You do not need to allocate an intermediate output buffer for use with this
+ * function. If required, the resampler will allocate a suitable intermediate
+ * output buffer itself.
+ *
  * @param ip0 Input buffer. This buffer may be used as output buffer by this
  * function.
  * @param l The number of samples available in the input buffer.
@@ -106,8 +111,12 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * *this object's internal buffer. In real-time applications it is suggested
  * to pass this pointer to the next output audio block and consume any data
  * left from the previous output audio block first before calling the
- * process() function again.
- * @return The number of samples available in the "op0" output buffer.
+ * process() function again. The buffer pointed to by the "op0" on return may
+ * be owned by the resampler, so it should not be freed by the caller.
+ * @return The number of samples available in the "op0" output buffer. If the
+ * data from the output buffer "op0" is going to be written to a bigger output
+ * buffer, it is suggested to check the returned number of samples so that no
+ * overflow of the bigger output buffer happens.
  */
 
 int _cdecl r8b_process( CR8BResampler const rs, double* const ip0, int l,
