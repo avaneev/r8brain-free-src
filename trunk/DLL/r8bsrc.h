@@ -17,7 +17,7 @@
  * 64-bit systems. Pointer types, including the CR8BResampler type, have
  * 32-bit size on 32-bit system and 64-bit size on 64-bit system.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -81,7 +81,7 @@ void _cdecl r8b_delete( CR8BResampler const rs );
  * @param rs Resampler object.
  */
 
-int _cdecl r8b_get_latency( CR8BResampler const rs );
+int _cdecl r8b_get_inlen( CR8BResampler const rs );
 
 /**
  * Function clears (resets) the state of the resampler object and returns it

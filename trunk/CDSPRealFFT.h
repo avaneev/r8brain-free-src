@@ -9,7 +9,7 @@
  * kept in a global list after use for future reusal. Such approach minimizes
  * time necessary to initialize the FFT object of the required length.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -193,9 +193,8 @@ public:
 
 	/**
 	 * Function multiplies two complex-valued data blocks in-place. Length of
-	 * all data blocks should be equal to *this object's block length. Input
-	 * blocks should have been produced with the forward() function of *this
-	 * object.
+	 * both data blocks should be equal to *this object's block length. Blocks
+	 * should have been produced with the forward() function of *this object.
 	 *
 	 * @param ip Input data block 1.
 	 * @param[in,out] op Output/input data block 2.
@@ -223,6 +222,32 @@ public:
 		}
 
 	#endif // R8B_IPP
+	}
+
+	/**
+	 * Function multiplies two complex-valued data blocks in-place,
+	 * considering that the "ip" block contains "zero-phase" response. Length
+	 * of both data blocks should be equal to *this object's block length.
+	 * Blocks should have been produced with the forward() function of *this
+	 * object.
+	 *
+	 * @param ip Input data block 1, "zero-phase" response.
+	 * @param[in,out] op Output/input data block 2.
+	 */
+
+	void multiplyBlocksZ( const double* const ip, double* const op ) const
+	{
+		op[ 0 ] *= ip[ 0 ];
+		op[ 1 ] *= ip[ 1 ];
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			op[ i ] *= ip[ i ];
+			op[ i + 1 ] *= ip[ i ];
+			i += 2;
+		}
 	}
 
 	/**

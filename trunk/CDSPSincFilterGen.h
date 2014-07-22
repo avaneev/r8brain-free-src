@@ -9,7 +9,7 @@
  * This file includes the CDSPSincFilterGen class implementation that
  * generates FIR filters.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -139,8 +139,8 @@ public:
 
 		fl2 = (int) floor( Len2 );
 		KernelLen = fl2 + fl2 + 1;
-		f1.init( Freq1, 2.0, 0.0 );
-		f2.init( Freq2, 2.0, 0.0 );
+		f1.init( Freq1, 0.0 );
+		f2.init( Freq2, 0.0 );
 
 		setWindow( WinType, Params, UsePower, true );
 	}
@@ -202,7 +202,7 @@ public:
 
 	double calcWindowHann()
 	{
-		return( 0.5 + 0.5 * w1.gen() );
+		return( 0.5 + 0.5 * w1.generate() );
 	}
 
 	/**
@@ -211,7 +211,7 @@ public:
 
 	double calcWindowHamming()
 	{
-		return( 0.54 + 0.46 * w1.gen() );
+		return( 0.54 + 0.46 * w1.generate() );
 	}
 
 	/**
@@ -220,7 +220,7 @@ public:
 
 	double calcWindowBlackman()
 	{
-		return( 0.42 + 0.5 * w1.gen() + 0.08 * w2.gen() );
+		return( 0.42 + 0.5 * w1.generate() + 0.08 * w2.generate() );
 	}
 
 	/**
@@ -229,8 +229,8 @@ public:
 
 	double calcWindowNuttall()
 	{
-		return( 0.355768 + 0.487396 * w1.gen() + 0.144232 * w2.gen() +
-			0.012604 * w3.gen() );
+		return( 0.355768 + 0.487396 * w1.generate() +
+			0.144232 * w2.generate() + 0.012604 * w3.generate() );
 	}
 
 	/**
@@ -239,8 +239,8 @@ public:
 
 	double calcWindowBlackmanNuttall()
 	{
-		return( 0.3635819 + 0.4891775 * w1.gen() + 0.1365995 * w2.gen() +
-			0.0106411 * w3.gen() );
+		return( 0.3635819 + 0.4891775 * w1.generate() +
+			0.1365995 * w2.generate() + 0.0106411 * w3.generate() );
 	}
 
 	/**
@@ -281,10 +281,10 @@ public:
 
 	double calcWindowVaneev()
 	{
-		const double v1 = 0.5 + 0.5 * w1.gen();
-		const double v2 = 0.5 + 0.5 * w2.gen();
-		const double v3 = 0.5 + 0.5 * w3.gen();
-		const double v4 = 0.5 + 0.5 * w4.gen();
+		const double v1 = 0.5 + 0.5 * w1.generate();
+		const double v2 = 0.5 + 0.5 * w2.generate();
+		const double v3 = 0.5 + 0.5 * w3.generate();
+		const double v4 = 0.5 + 0.5 * w4.generate();
 
 		return( v1 * sqr( v2 ) * sqr( sqr( v3 )) * sqr( sqr( sqr( v4 ))));
 	}
@@ -351,8 +351,8 @@ public:
 	{
 		op += fl2;
 		T* op2 = op;
-		f1.gen();
-		f2.gen();
+		f1.generate();
+		f2.generate();
 		int t = 1;
 
 		if( Power < 0.0 )
@@ -361,7 +361,7 @@ public:
 
 			while( t <= fl2 )
 			{
-				const double v = ( f2.gen() - f1.gen() ) *
+				const double v = ( f2.generate() - f1.generate() ) *
 					( *this.*wfunc )() / t / M_PI;
 
 				op++;
@@ -377,7 +377,7 @@ public:
 
 			while( t <= fl2 )
 			{
-				const double v = ( f2.gen() - f1.gen() ) *
+				const double v = ( f2.generate() - f1.generate() ) *
 					pows(( *this.*wfunc )(), Power ) / t / M_PI;
 
 				op++;
@@ -732,28 +732,24 @@ private:
 
 		if( IsCentered )
 		{
-			w1.init( Params[ 0 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
-			w2.init( Params[ 1 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
-			w3.init( Params[ 2 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
-			w4.init( Params[ 3 ] * M_PI / Len2, 2.0, M_PI * 0.5 );
+			w1.init( Params[ 0 ] * M_PI / Len2, M_PI * 0.5 );
+			w2.init( Params[ 1 ] * M_PI / Len2, M_PI * 0.5 );
+			w3.init( Params[ 2 ] * M_PI / Len2, M_PI * 0.5 );
+			w4.init( Params[ 3 ] * M_PI / Len2, M_PI * 0.5 );
 		}
 		else
 		{
 			const double step1 = Params[ 0 ] * M_PI / Len2;
-			w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 +
-				step1 * FracDelay );
+			w1.init( step1, M_PI * 0.5 - step1 * fl2 + step1 * FracDelay );
 
 			const double step2 = Params[ 1 ] * M_PI / Len2;
-			w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 +
-				step2 * FracDelay );
+			w2.init( step2, M_PI * 0.5 - step2 * fl2 + step2 * FracDelay );
 
 			const double step3 = Params[ 2 ] * M_PI / Len2;
-			w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 +
-				step3 * FracDelay );
+			w3.init( step3, M_PI * 0.5 - step3 * fl2 + step3 * FracDelay );
 
 			const double step4 = Params[ 3 ] * M_PI / Len2;
-			w4.init( step4, 2.0, M_PI * 0.5 - step4 * fl2 +
-				step4 * FracDelay );
+			w4.init( step4, M_PI * 0.5 - step4 * fl2 + step4 * FracDelay );
 		}
 	}
 
@@ -783,22 +779,22 @@ private:
 		{
 			if( IsCentered )
 			{
-				w1.init( M_PI / Len2, 2.0, M_PI * 0.5 );
-				w2.init( M_2PI / Len2, 2.0, M_PI * 0.5 );
-				w3.init( M_3PI / Len2, 2.0, M_PI * 0.5 );
+				w1.init( M_PI / Len2, M_PI * 0.5 );
+				w2.init( M_2PI / Len2, M_PI * 0.5 );
+				w3.init( M_3PI / Len2, M_PI * 0.5 );
 			}
 			else
 			{
 				const double step1 = M_PI / Len2;
-				w1.init( step1, 2.0, M_PI * 0.5 - step1 * fl2 +
+				w1.init( step1, M_PI * 0.5 - step1 * fl2 +
 					step1 * FracDelay );
 
 				const double step2 = M_2PI / Len2;
-				w2.init( step2, 2.0, M_PI * 0.5 - step2 * fl2 +
+				w2.init( step2, M_PI * 0.5 - step2 * fl2 +
 					step2 * FracDelay );
 
 				const double step3 = M_3PI / Len2;
-				w3.init( step3, 2.0, M_PI * 0.5 - step3 * fl2 +
+				w3.init( step3, M_PI * 0.5 - step3 * fl2 +
 					step3 * FracDelay );
 			}
 
