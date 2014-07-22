@@ -7,7 +7,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -15,6 +15,7 @@
 #define R8B_CDSPFRACINTERPOLATOR_INCLUDED
 
 #include "CDSPSincFilterGen.h"
+#include "CDSPProcessor.h"
 
 namespace r8b {
 
@@ -209,18 +210,11 @@ private:
  * more details.
  * @param FilterFracs The number of fractional delay positions to sample. See
  * the r8b::CDSPFracDelayFilterBank class for more details.
- * @param BufLenBits The length of the ring buffer, expressed as Nth power of
- * 2. This value can be reduced if it is known that only short input buffers
- * will be passed to the interpolator. The minimum value of this parameter is
- * 5, and 1 << BufLenBits should be at least 3 times larger than the
- * FilterLen.
  */
 
-template< int FilterLen, int FilterFracs, int BufLenBits >
-class CDSPFracInterpolator : public R8B_BASECLASS
+template< int FilterLen, int FilterFracs >
+class CDSPFracInterpolator : public CDSPProcessor
 {
-	R8BNOCTOR( CDSPFracInterpolator );
-
 public:
 	/**
 	 * Constructor initalizes the interpolator. It is important to call the
@@ -250,24 +244,22 @@ public:
 		clear();
 	}
 
-	/**
-	 * @return The number of samples that should be passed to *this object
-	 * before the actual output starts.
-	 */
-
-	int getInLenBeforeOutStart() const
+	virtual int getLatency() const
 	{
-		return( FilterLenD2 );
+		return( 0 );
 	}
 
-	/**
-	 * @param MaxInLen The number of samples planned to process at once, at
-	 * most.
-	 * @return The maximal length of the output buffer required when
-	 * processing the "MaxInLen" number of input samples.
-	 */
+	virtual double getLatencyFrac() const
+	{
+		return( 0.0 );
+	}
 
-	int getMaxOutLen( const int MaxInLen ) const
+	virtual int getInLenBeforeOutStart( const int NextInLen ) const
+	{
+		return( FilterLenD2 + NextInLen );
+	}
+
+	virtual int getMaxOutLen( const int MaxInLen ) const
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
@@ -310,7 +302,7 @@ public:
 	 * was changed since the time of *this object's construction.
 	 */
 
-	void clear()
+	virtual void clear()
 	{
 		BufLeft = 0;
 		WritePos = 0;
@@ -326,19 +318,7 @@ public:
 		InPosShift = InitFracPos;
 	}
 
-	/**
-	 * Function performs input sample stream interpolation.
-	 *
-	 * @param ip Input sample buffer.
-	 * @param[out] op0 Output sample buffer, the capacity of this buffer
-	 * should be equal to the value returned by the getMaxOutLen() function
-	 * for the given "l". This buffer can be equal to "ip" only if the
-	 * getMaxOutLen( l ) function's returned value is lesser than "l".
-	 * @param l The number of samples available in the input sample buffer.
-	 * @return The number of output samples written to the "op0" buffer.
-	 */
-
-	int process( const double* ip, double* const op0, int l )
+	virtual int process( double* ip, int l, double*& op0 )
 	{
 		R8BASSERT( l >= 0 );
 		R8BASSERT( ip != op0 || l == 0 || SrcSampleRate > DstSampleRate );
@@ -451,6 +431,13 @@ private:
 	static const int FilterLenD2Plus1 = FilterLenD2 + 1; ///< =
 		///< FilterLen / 2 + 1.
 		///<
+	static const int BufLenBits = 8; ///< The length of the ring buffer,
+		///< expressed as Nth power of 2. This value can be reduced if it is
+		///< known that only short input buffers will be passed to the
+		///< interpolator. The minimum value of this parameter is 5, and
+		///< 1 << BufLenBits should be at least 3 times larger than the
+		///< FilterLen.
+		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
 		///< buffer. The actual length is twice as long to allow "beyond max
 		///< position" positioning.
@@ -490,10 +477,6 @@ private:
 	double InPosShift; ///< Interpolation position fractional shift.
 		///<
 
-	CDSPFracInterpolator()
-	{
-	}
-
 #if !R8B_FLTTEST
 	static const CDSPFracDelayFilterBank< FilterLen, FilterFracs, 3,
 		8 > FilterBank; ///< Filter bank object, defined statically if no
@@ -511,9 +494,9 @@ public:
 // ---------------------------------------------------------------------------
 
 #if !R8B_FLTTEST
-template< int FilterLen, int FilterFracs, int BufLenBits >
+template< int FilterLen, int FilterFracs >
 const CDSPFracDelayFilterBank< FilterLen, FilterFracs, 3, 8 >
-	CDSPFracInterpolator< FilterLen, FilterFracs, BufLenBits > :: FilterBank;
+	CDSPFracInterpolator< FilterLen, FilterFracs > :: FilterBank;
 #endif // !R8B_FLTTEST
 
 // ---------------------------------------------------------------------------

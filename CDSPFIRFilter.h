@@ -7,7 +7,7 @@
  *
  * This file includes low-pass FIR filter generator and filter cache.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -104,6 +104,15 @@ public:
 	}
 
 	/**
+	 * @return "True" if kernel block of *this filter has zero-phase response.
+	 */
+
+	bool isZeroPhase() const
+	{
+		return( IsZeroPhase );
+	}
+
+	/**
 	 * @return Filter's latency, in samples (integer part).
 	 */
 
@@ -145,8 +154,9 @@ public:
 	/**
 	 * @return Filter's kernel block, in complex-numbered form obtained via
 	 * the CDSPRealFFT::forward() function call, zero-padded, gain-adjusted
-	 * with the CDSPRealFFT::getInvMulConst() constant, immediately suitable
-	 * for convolution.
+	 * with the CDSPRealFFT::getInvMulConst() * ReqGain constant, immediately
+	 * suitable for convolution. Kernel block may have "zero-phase" response,
+	 * depending on the isZeroPhase() function's result.
 	 */
 
 	const double* getKernelBlock() const
@@ -172,9 +182,14 @@ private:
 		///<
 	EDSPFilterPhaseResponse ReqPhase; ///< Required filter's phase response.
 		///<
+	double ReqGain; ///< Required overall filter's gain.
+		///<
 	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
 		///<
 	int RefCount; ///< The number of references made to *this FIR filter.
+		///<
+	bool IsZeroPhase; ///< "True" if kernel block of *this filter has
+		///< zero-phase response.
 		///<
 	int Latency; ///< Filter's latency in samples (integer part).
 		///<
@@ -453,11 +468,13 @@ private:
 
 /*		if( ReqPhase == fprLinearPhase )
 		{*/
+			IsZeroPhase = true;
 			Latency = sinc.fl2;
 			LatencyFrac = 0.0;
 /*		}
 		else
 		{
+			IsZeroPhase = false;
 			double DCGroupDelay;
 
 			calcMinPhaseTransform( &KernelBlock[ 0 ], KernelLen, 3, false,
@@ -469,13 +486,50 @@ private:
 
 		CDSPRealFFTKeeper ffto( BlockLenBits + 1 );
 
-		normalizeFIRFilter( &KernelBlock[ 0 ], KernelLen,
-			ffto -> getInvMulConst() );
+		if( IsZeroPhase )
+		{
+			// Calculate DC gain.
 
-		memset( &KernelBlock[ KernelLen ], 0,
-			( BlockLen * 2 - KernelLen ) * sizeof( double ));
+			double s = 0.0;
+			int i;
+
+			for( i = 0; i < KernelLen; i++ )
+			{
+				s += KernelBlock[ i ];
+			}
+
+			s = ffto -> getInvMulConst() * ReqGain / s;
+
+			// Time-shift the filter so that zero-phase response is produced.
+			// Simultaneously multiply by "s".
+
+			for( i = 0; i <= sinc.fl2; i++ )
+			{
+				KernelBlock[ i ] = KernelBlock[ sinc.fl2 + i ] * s;
+			}
+
+			for( i = 1; i <= sinc.fl2; i++ )
+			{
+				KernelBlock[ BlockLen * 2 - i ] = KernelBlock[ i ];
+			}
+
+			memset( &KernelBlock[ sinc.fl2 + 1 ], 0,
+				( BlockLen * 2 - KernelLen ) * sizeof( double ));
+		}
+		else
+		{
+			normalizeFIRFilter( &KernelBlock[ 0 ], KernelLen,
+				ffto -> getInvMulConst() * ReqGain );
+
+			memset( &KernelBlock[ KernelLen ], 0,
+				( BlockLen * 2 - KernelLen ) * sizeof( double ));
+		}
 
 		ffto -> forward( KernelBlock );
+
+		R8BCONSOLE( "CDSPFIRFilter: flt_len=%i latency=%i nfreq=%.4f "
+			"tb=%.1f att=%.1f gain=%.3f\n", KernelLen, Latency,
+			ReqNormFreq, ReqTransBand, ReqAtten, ReqGain );
 	}
 };
 
@@ -496,11 +550,11 @@ public:
 	 * be monitored for debugging "forgotten" filters.
 	 */
 
-	static int getFilterCount()
+	static int getObjCount()
 	{
 		R8BSYNC( StateSync );
 
-		return( FilterCount );
+		return( ObjCount );
 	}
 
 	/**
@@ -522,113 +576,116 @@ public:
 	 * CDSPFIRFilter::getLPMinAtten() to CDSPFIRFilter::getLPMaxAtten(),
 	 * inclusive. Note that the actual stop-band attenuation of the resulting
 	 * filter may be 0.40-4.46 dB higher.
+	 * @param ReqPhase Required filter's phase response.
+	 * @param ReqGain Required overall filter's gain (1.0 for unity gain).
+	 * @param AttenCorrs Attentuation correction table, to pass to the filter
+	 * generation function. For internal use.
 	 * @return A reference to a new or a previously calculated low-pass FIR
 	 * filter object with the required characteristics. A reference count is
 	 * incremented in the returned filter object which should be released
 	 * after use via the CDSPFIRFilter::unref() function.
-	 * @param ReqPhase Required filter's phase response.
-	 * @param AttenCorrs Attentuation correction table, to pass to the filter
-	 * generation function. For internal use.
 	 */
 
 	static CDSPFIRFilter& getLPFilter( const double ReqNormFreq,
 		const double ReqTransBand, const double ReqAtten,
-		const EDSPFilterPhaseResponse ReqPhase,
+		const EDSPFilterPhaseResponse ReqPhase, const double ReqGain,
 		const double* const AttenCorrs = NULL )
 	{
-		R8BASSERT( ReqNormFreq >= 0.0 && ReqNormFreq <= 1.0 );
+		R8BASSERT( ReqNormFreq > 0.0 && ReqNormFreq <= 1.0 );
 		R8BASSERT( ReqTransBand >= CDSPFIRFilter :: getLPMinTransBand() );
 		R8BASSERT( ReqTransBand <= CDSPFIRFilter :: getLPMaxTransBand() );
 		R8BASSERT( ReqAtten >= CDSPFIRFilter :: getLPMinAtten() );
 		R8BASSERT( ReqAtten <= CDSPFIRFilter :: getLPMaxAtten() );
+		R8BASSERT( ReqGain > 0.0 );
 
 		R8BSYNC( StateSync );
 
-		CDSPFIRFilter* PrevFilter = NULL;
-		CDSPFIRFilter* CurFilter = Filters;
+		CDSPFIRFilter* PrevObj = NULL;
+		CDSPFIRFilter* CurObj = Objects;
 
-		while( CurFilter != NULL )
+		while( CurObj != NULL )
 		{
-			if( CurFilter -> ReqNormFreq == ReqNormFreq &&
-				CurFilter -> ReqTransBand == ReqTransBand &&
-				CurFilter -> ReqAtten == ReqAtten &&
-				CurFilter -> ReqPhase == ReqPhase )
+			if( CurObj -> ReqNormFreq == ReqNormFreq &&
+				CurObj -> ReqTransBand == ReqTransBand &&
+				CurObj -> ReqAtten == ReqAtten &&
+				CurObj -> ReqPhase == ReqPhase &&
+				CurObj -> ReqGain == ReqGain )
 			{
 				break;
 			}
 
-			if( CurFilter -> Next == NULL &&
-				FilterCount >= R8B_FILTER_CACHE_MAX )
+			if( CurObj -> Next == NULL && ObjCount >= R8B_FILTER_CACHE_MAX )
 			{
-				if( CurFilter -> RefCount == 0 )
+				if( CurObj -> RefCount == 0 )
 				{
 					// Delete the last filter which is not used.
 
-					PrevFilter -> Next = NULL;
-					delete CurFilter;
-					FilterCount--;
+					PrevObj -> Next = NULL;
+					delete CurObj;
+					ObjCount--;
 				}
 				else
 				{
 					// Move the last filter to the top of the list since it
 					// seems to be in use for a long time.
 
-					PrevFilter -> Next = NULL;
-					CurFilter -> Next = Filters.unkeep();
-					Filters = CurFilter;
+					PrevObj -> Next = NULL;
+					CurObj -> Next = Objects.unkeep();
+					Objects = CurObj;
 				}
 
-				CurFilter = NULL;
+				CurObj = NULL;
 				break;
 			}
 
-			PrevFilter = CurFilter;
-			CurFilter = CurFilter -> Next;
+			PrevObj = CurObj;
+			CurObj = CurObj -> Next;
 		}
 
-		if( CurFilter != NULL )
+		if( CurObj != NULL )
 		{
-			CurFilter -> RefCount++;
+			CurObj -> RefCount++;
 
-			if( PrevFilter == NULL )
+			if( PrevObj == NULL )
 			{
-				return( *CurFilter );
+				return( *CurObj );
 			}
 
 			// Remove the filter from the list temporarily.
 
-			PrevFilter -> Next = CurFilter -> Next;
+			PrevObj -> Next = CurObj -> Next;
 		}
 		else
 		{
 			// Create a new filter object (with RefCount == 1) and build the
 			// filter kernel.
 
-			CurFilter = new CDSPFIRFilter();
-			CurFilter -> ReqNormFreq = ReqNormFreq;
-			CurFilter -> ReqTransBand = ReqTransBand;
-			CurFilter -> ReqAtten = ReqAtten;
-			CurFilter -> ReqPhase = ReqPhase;
-			FilterCount++;
+			CurObj = new CDSPFIRFilter();
+			CurObj -> ReqNormFreq = ReqNormFreq;
+			CurObj -> ReqTransBand = ReqTransBand;
+			CurObj -> ReqAtten = ReqAtten;
+			CurObj -> ReqPhase = ReqPhase;
+			CurObj -> ReqGain = ReqGain;
+			ObjCount++;
 
-			CurFilter -> buildLPFilter( AttenCorrs );
+			CurObj -> buildLPFilter( AttenCorrs );
 		}
 
 		// Insert the filter at the start of the list.
 
-		CurFilter -> Next = Filters.unkeep();
-		Filters = CurFilter;
+		CurObj -> Next = Objects.unkeep();
+		Objects = CurObj;
 
-		return( *CurFilter );
+		return( *CurObj );
 	}
 
 private:
 	static CSyncObject StateSync; ///< Cache state synchronizer.
 		///<
-	static CPtrKeeper< CDSPFIRFilter* > Filters; ///< The chain of cached
-		///< filters.
+	static CPtrKeeper< CDSPFIRFilter* > Objects; ///< The chain of cached
+		///< objects.
 		///<
-	static int FilterCount; ///< The number of filters currently preset in the
+	static int ObjCount; ///< The number of objects currently preset in the
 		///< cache.
 		///<
 };

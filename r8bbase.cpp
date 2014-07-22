@@ -10,7 +10,7 @@
  * You may also need to include to your project: the "Kernel32" library
  * (on Windows) and the "pthread" library on Mac OS X and Linux.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -22,7 +22,7 @@ namespace r8b {
 CSyncObject CDSPRealFFTKeeper :: StateSync;
 CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
 CSyncObject CDSPFIRFilterCache :: StateSync;
-CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Filters;
-int CDSPFIRFilterCache :: FilterCount = 0;
+CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Objects;
+int CDSPFIRFilterCache :: ObjCount = 0;
 
 } // namespace r8b

@@ -9,7 +9,7 @@
  * converter. This inclusion file contains implementations of several small
  * utility classes and functions used by the library.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  *
  * @mainpage
@@ -33,7 +33,7 @@
  * sample rate, or the destination sample rate if the downsampling is
  * performed) signal and then performs interpolation using a bank of short
  * (14 to 28 taps, depending on the required precision)
- * polynomial-interpolated sinc-based fractional delay filters. This puts the
+ * polynomial-interpolated sinc function-based fractional delay filters. This puts the
  * algorithm into the league of the fastest among the most precise SRC
  * algorithms. The more precise alternative being only the whole
  * number-factored SRC, which can be slower.
@@ -128,18 +128,7 @@
  * Linux.
  *
  * All code is fully "inline", without the need to compile many source files.
- * The memory footprint is quite modest (8-byte "double" type data):
- *
- *  * 1.2 MB of static memory for the fractional delay filters
- *  * filter memory, per filter (N*8*2 bytes, where N is the block length,
- *    usually in the range 256 to 2048)
- *  * Ooura's FFT algorithm tables, per channel (N*8 bytes), plus 1 to 7
- *    smaller tables (128*8 bytes) for the "power of 2" resampling
- *  * convolver memory, per channel (N*8*5 bytes), plus Z=1 to 7 smaller
- *    convolvers for the "power of 2" resampling (Z*128*8*5 bytes)
- *  * interpolator memory (8 KB per channel)
- *  * I/O buffers, per channel (proportional to the maximal input buffer
- *    length and the source to destination sample rate ratio)
+ * The memory footprint is quite modest.
  *
  * @section users Users
  *
@@ -152,7 +141,7 @@
  *
  * The MIT License (MIT)
  * 
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -176,7 +165,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.5
+ * @version 1.6
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -227,6 +216,24 @@ namespace r8b {
 	#define M_3PI 9.42477796076937972
 #endif // M_3PI
 
+#if !defined( M_4PI )
+	/**
+	 * The M_4PI macro equals to "4 * pi" constant, fits 53-bit floating point
+	 * mantissa.
+	 */
+
+	#define M_4PI 12.56637061435917295
+#endif // M_4PI
+
+#if !defined( M_PId2 )
+	/**
+	 * The macro equals to "pi divided by 2" constant, fits 53-bit floating
+	 * point mantissa.
+	 */
+
+	#define M_PId2 1.57079632679489662
+#endif // M_PId2
+
 /**
  * A special macro that defines empty copy-constructor and copy operator with
  * the "private:" prefix. This macro should be used in classes that cannot be
@@ -259,7 +266,7 @@ public:
 	 * @return Pointer to object.
 	 */
 
-	void* operator new( size_t n, void* p )
+	void* operator new( size_t, void* p )
 	{
 		return( p );
 	}
@@ -706,64 +713,95 @@ protected:
 /**
  * @brief Sine signal generator class.
  *
- * Class implements sine signal generator with optional biasing.
+ * Class implements sine signal generator without biasing.
  */
 
 class CSineGen
 {
 public:
+	CSineGen()
+	{
+	}
+
 	/**
-	 * Function initializes *this sine signal generator.
+	 * Constructor initializes *this sine signal generator.
 	 *
 	 * @param si Sine function increment, in radians.
-	 * @param g Overall gain. If biasing is not planned to be used, this value
-	 * should be twice as high.
 	 * @param ph Starting phase, in radians. Add 0.5 * M_PI for cosine
 	 * function.
 	 */
 
-	void init( const double si, const double g,
-		const double ph = -0.5 * M_PI )
+	CSineGen( const double si, const double ph )
+		: svalue1( sin( ph ))
+		, svalue2( sin( ph - si ))
+		, sincr( 2.0 * cos( si ))
 	{
-		bias = 0.5 * g;
-		svalue1 = sin( ph ) * bias;
-		svalue2 = sin( ph - si ) * bias;
+	}
+
+	/**
+	 * Constructor initializes *this sine signal generator.
+	 *
+	 * @param si Sine function increment, in radians.
+	 * @param ph Starting phase, in radians. Add 0.5 * M_PI for cosine
+	 * function.
+	 * @param g The overall gain factor, 1.0 for unity gain (-1.0 to 1.0
+	 * amplitude).
+	 */
+
+	CSineGen( const double si, const double ph, const double g )
+		: svalue1( sin( ph ) * g )
+		, svalue2( sin( ph - si ) * g )
+		, sincr( 2.0 * cos( si ))
+	{
+	}
+
+	/**
+	 * Function initializes *this sine signal generator.
+	 *
+	 * @param si Sine function increment, in radians.
+	 * @param ph Starting phase, in radians. Add 0.5 * M_PI for cosine
+	 * function.
+	 */
+
+	void init( const double si, const double ph )
+	{
+		svalue1 = sin( ph );
+		svalue2 = sin( ph - si );
 		sincr = 2.0 * cos( si );
 	}
 
 	/**
-	 * @return Next value of the sine function, with biasing.
+	 * Function initializes *this sine signal generator.
+	 *
+	 * @param si Sine function increment, in radians.
+	 * @param ph Starting phase, in radians. Add 0.5 * M_PI for cosine
+	 * function.
+	 * @param g The overall gain factor, 1.0 for unity gain (-1.0 to 1.0
+	 * amplitude).
 	 */
 
-	double genBias()
+	void init( const double si, const double ph, const double g )
 	{
-		const double r = svalue1 + bias;
-
-		const double tmp = svalue1;
-		svalue1 = sincr * svalue1 - svalue2;
-		svalue2 = tmp;
-
-		return( r );
+		svalue1 = sin( ph ) * g;
+		svalue2 = sin( ph - si ) * g;
+		sincr = 2.0 * cos( si );
 	}
 
 	/**
 	 * @return Next value of the sine function, without biasing.
 	 */
 
-	double gen()
+	double generate()
 	{
-		const double r = svalue1;
+		const double res = svalue1;
 
-		const double tmp = svalue1;
-		svalue1 = sincr * svalue1 - svalue2;
-		svalue2 = tmp;
+		svalue1 = sincr * res - svalue2;
+		svalue2 = res;
 
-		return( r );
+		return( res );
 	}
 
 private:
-	double bias; ///< Value bias.
-		///<
 	double svalue1; ///< Current sine value.
 		///<
 	double svalue2; ///< Previous sine value.
@@ -822,7 +860,7 @@ inline int getBitOccupancy( const int v )
  *
  * @param flt FIR filter's coefficients.
  * @param fltlen Number of coefficients (taps) in the filter.
- * @param th Circular frequency (0..pi).
+ * @param th Circular frequency [0; pi].
  * @param[out] re0 Resulting real part of the complex frequency response.
  * @param[out] im0 Resulting imaginary part of the complex frequency response.
  */
@@ -834,7 +872,7 @@ inline void calcFIRFilterResponse( const double* flt, int fltlen,
 	double svalue2 = sin( -th );
 	const double sincr = 2.0 * cos( th );
 	double cvalue1 = 1.0;
-	double cvalue2 = sin( M_PI * 0.5 - th );
+	double cvalue2 = sin( M_PId2 - th );
 	double re = 0.0;
 	double im = 0.0;
 
@@ -865,7 +903,7 @@ inline void calcFIRFilterResponse( const double* flt, int fltlen,
  *
  * @param flt FIR filter's coefficients.
  * @param fltlen Number of coefficients (taps) in the filter.
- * @param th Circular frequency (0..pi).
+ * @param th Circular frequency [0; pi].
  * @param[out] re Resulting real part of the complex frequency response.
  * @param[out] im Resulting imaginary part of the complex frequency response.
  * @param[out] gd Resulting group delay at the specified frequency, in
@@ -1019,6 +1057,84 @@ inline void calcSpline2p8Coeffs( double* c, const double xm3,
 
 	c[ 2 ] = ( 106.0 * ( xm1 + x1 ) + 10.0 * x3 + 6.0 * xm3 - 3.0 * x4 -
 		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) / 76.0;
+}
+
+/**
+ * Function calculates coefficients used to calculate 3rd order segment
+ * interpolation polynomial on the equidistant lattice, using 4 points.
+ *
+ * @param[out] c Output coefficients buffer, length = 4.
+ * @param[in] y Equidistant point values. Value at offset 1 corresponds to
+ * x=0 point.
+ */
+
+inline void calcInterpCoeffs3p4( double* const c, const double* const y )
+{
+	c[ 0 ] = y[ 1 ];
+	c[ 1 ] = 0.5 * ( y[ 2 ] - y[ 0 ]);
+	c[ 2 ] = y[ 0 ] - 2.5 * y[ 1 ] + y[ 2 ] + y[ 2 ] - 0.5 * y[ 3 ];
+	c[ 3 ] = 0.5 * ( y[ 3 ] - y[ 0 ] ) + 1.5 * ( y[ 1 ] - y[ 2 ]);
+}
+
+/**
+ * Function calculates coefficients used to calculate 3rd order segment
+ * interpolation polynomial on the equidistant lattice, using 6 points.
+ *
+ * @param[out] c Output coefficients buffer, length = 4.
+ * @param[in] y Equidistant point values. Value at offset 2 corresponds to
+ * x=0 point.
+ */
+
+inline void calcInterpCoeffs3p6( double* const c, const double* const y )
+{
+	c[ 0 ] = y[ 2 ];
+	c[ 1 ] = ( 11.0 * ( y[ 3 ] - y[ 1 ]) + 2.0 * ( y[ 0 ] - y[ 4 ])) / 14.0;
+	c[ 2 ] = ( 20.0 * ( y[ 1 ] + y[ 3 ]) + 2.0 * y[ 5 ] - 4.0 * y[ 0 ] -
+		7.0 * y[ 4 ] - 31.0 * y[ 2 ]) / 14.0;
+
+	c[ 3 ] = ( 17.0 * ( y[ 2 ] - y[ 3 ]) + 9.0 * ( y[ 4 ] - y[ 1 ]) +
+		2.0 * ( y[ 0 ] - y[ 5 ])) / 14.0;
+}
+
+/**
+ * Function calculates coefficients used to calculate 3rd order segment
+ * interpolation polynomial on the equidistant lattice, using 8 points.
+ *
+ * @param[out] c Output coefficients buffer, length = 4.
+ * @param[in] y Equidistant point values. Value at offset 3 corresponds to
+ * x=0 point.
+ */
+
+inline void calcInterpCoeffs3p8( double* const c, const double* const y )
+{
+	c[ 0 ] = y[ 3 ];
+	c[ 1 ] = ( 61.0 * ( y[ 4 ] - y[ 2 ]) + 16.0 * ( y[ 1 ] - y[ 5 ]) +
+		3.0 * ( y[ 6 ] - y[ 0 ])) / 76.0;
+
+	c[ 2 ] = ( 106.0 * ( y[ 2 ] + y[ 4 ]) + 10.0 * y[ 6 ] + 6.0 * y[ 0 ] -
+		3.0 * y[ 7 ] - 29.0 * ( y[ 1 ] + y[ 5 ]) - 167.0 * y[ 3 ]) / 76.0;
+
+	c[ 3 ] = ( 91.0 * ( y[ 3 ] - y[ 4 ]) + 45.0 * ( y[ 5 ] - y[ 2 ]) +
+		13.0 * ( y[ 1 ] - y[ 6 ]) + 3.0 * ( y[ 7 ] - y[ 0 ])) / 76.0;
+}
+
+/**
+ * Function calculates coefficients used to calculate 3rd order segment
+ * interpolation polynomial on the equidistant lattice, using 8 points.
+ *
+ * @param[out] c Output coefficients buffer, length = 3.
+ * @param[in] y Equidistant point values. Value at offset 3 corresponds to
+ * x=0 point.
+ */
+
+inline void calcInterpCoeffs2p8( double* const c, const double* const y )
+{
+	c[ 0 ] = y[ 3 ];
+	c[ 1 ] = ( 61.0 * ( y[ 4 ] - y[ 2 ]) + 16.0 * ( y[ 1 ] - y[ 5 ]) +
+		3.0 * ( y[ 6 ] - y[ 0 ])) / 76.0;
+
+	c[ 2 ] = ( 106.0 * ( y[ 2 ] + y[ 4 ]) + 10.0 * y[ 6 ] + 6.0 * y[ 0 ] -
+		3.0 * y[ 7 ] - 29.0 * ( y[ 1 ] + y[ 5 ]) - 167.0 * y[ 3 ]) / 76.0;
 }
 
 #if !defined( min )

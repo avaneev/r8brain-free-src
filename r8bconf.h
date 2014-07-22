@@ -9,7 +9,7 @@
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -71,6 +71,19 @@
 
 	#define R8BASSERT( e )
 #endif // !defined( R8BASSERT )
+
+#if !defined( R8BCONSOLE )
+	/**
+	 * Console output macro, used to output various resampler status strings,
+	 * including filter design parameters, convolver parameters.
+	 *
+	 * @param e Expression to send to the console, usually consists of a
+	 * standard "printf" format string followed by several parameters
+	 * (__VA_ARGS__).
+	 */
+
+	#define R8BCONSOLE( ... )
+#endif // !defined( R8BCONSOLE )
 
 #if !defined( R8B_BASECLASS )
 	/**

@@ -6,7 +6,7 @@
  * This utility program calculates attenuation correction coefficients used
  * to increase filter's attenuation precision.
  *
- * r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 

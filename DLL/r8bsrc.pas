@@ -1,4 +1,4 @@
-// r8brain-free-src Copyright (c) 2013 Aleksey Vaneev
+// r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
 // See the "License.txt" file for license.
 //
 // Please read the "r8bsrc.h" file for function descriptions.
@@ -23,7 +23,7 @@ function r8b_create( SrcSampleRate: Double; DstSampleRate: Double;
 
 procedure r8b_delete( rs: CR8BResampler ); cdecl; external 'r8bsrc.dll';
 
-function r8b_get_latency( rs: CR8BResampler ): LongInt; cdecl;
+function r8b_get_inlen( rs: CR8BResampler ): LongInt; cdecl;
 	external 'r8bsrc.dll';
 
 procedure r8b_clear( rs: CR8BResampler ); cdecl; external 'r8bsrc.dll';
