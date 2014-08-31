@@ -356,7 +356,8 @@ public:
 	 *
 	 * @param ip0 Input buffer. This buffer may be used as output buffer by
 	 * this function.
-	 * @param l The number of samples available in the input buffer.
+	 * @param l The number of samples available in the input buffer. Should
+	 * not exceed the MaxInLen supplied to the constructor.
 	 * @param[out] op0 This variable receives the pointer to the resampled
 	 * data. On function's return, this pointer may point to the address
 	 * within the "ip0" input buffer, or to *this object's internal buffer. In
@@ -402,6 +403,55 @@ public:
 		op0 = op;
 
 		return( Interp -> process( ip, l, op ));
+	}
+
+	/**
+	 * Function performs resampling of an input sample buffer of the specified
+	 * length in the "one-shot" mode. This function can be useful when impulse
+	 * response resampling is required.
+	 *
+	 * @param MaxInLen The max input length value which was previously passed
+	 * to the constructor.
+	 * @param ip Input buffer pointer.
+	 * @param iplen Length of the input buffer in samples.
+	 * @param op Output buffer pointer.
+	 * @param oplen Length of the output buffer in samples.
+	 */
+
+	void oneshot( const int MaxInLen, const double* ip, int iplen,
+		double* op, int oplen )
+	{
+		CFixedBuffer< double > ZeroBuf( MaxInLen );
+		memset( &ZeroBuf[ 0 ], 0, MaxInLen * sizeof( double ));
+
+		while( oplen > 0 )
+		{
+			int rc;
+			double* p;
+
+			if( iplen == 0 )
+			{
+				rc = MaxInLen;
+				p = (double*) &ZeroBuf[ 0 ];
+			}
+			else
+			{
+				rc = min( iplen, MaxInLen );
+				p = (double*) ip;
+				ip += rc;
+				iplen -= rc;
+			}
+
+			double* op0;
+			int wc = process( p, rc, op0 );
+
+			wc = min( oplen, wc );
+			memcpy( op, op0, wc * sizeof( double ));
+			op += wc;
+			oplen -= wc;
+		}
+
+		clear();
 	}
 
 private:
