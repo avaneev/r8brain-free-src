@@ -546,21 +546,17 @@ private:
 	int wn; ///< Window function integer position. 0 - center of the window
 		///< function. This variable may not be used by some window functions.
 		///<
+	CSineGen w1; ///< Cosine wave 1 for window function.
+		///<
+	CSineGen w2; ///< Cosine wave 2 for window function.
+		///<
+	CSineGen w3; ///< Cosine wave 3 for window function.
+		///<
+	CSineGen w4; ///< Cosine wave 4 for window function.
+		///<
 
 	union
 	{
-		struct
-		{
-			CSineGen w1; ///< Cosine wave 1 for window function.
-				///<
-			CSineGen w2; ///< Cosine wave 2 for window function.
-				///<
-			CSineGen w3; ///< Cosine wave 3 for window function.
-				///<
-			CSineGen w4; ///< Cosine wave 4 for window function.
-				///<
-		};
-
 		struct
 		{
 			double KaiserBeta; ///< Kaiser window function's "Beta"
