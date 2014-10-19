@@ -312,7 +312,7 @@ public:
 		return( l );
 	}
 
-	virtual int getMaxOutLen( const int MaxInLen ) const
+	virtual int getMaxOutLen( const int/* MaxInLen */ ) const
 	{
 		return( 0 );
 	}
@@ -372,7 +372,7 @@ public:
 	 * samples so that no overflow of the bigger output buffer happens.
 	 */
 
-	virtual int process( double* const ip0, int l, double*& op0 )
+	virtual int process( double* ip0, int l, double*& op0 )
 	{
 		R8BASSERT( l >= 0 );
 
