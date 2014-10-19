@@ -71,6 +71,9 @@
  * library. You may also need to include to your project: the "Kernel32"
  * library (on Windows) and the "pthread" library on Mac OS X and Linux.
  *
+ * The library is able to process signal of any scale and loudness: it is not
+ * limited to just a "usual" -1.0 to 1.0 range.
+ *
  * The code of this library was commented in the Doxygen style. To generate
  * the documentation locally you may run the "doxygen ./other/r8bdoxy.txt"
  * command from the library's directory.
@@ -839,18 +842,18 @@ inline int getBitOccupancy( const int v )
 		8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
 	};
 
-	int t, tt;
-	tt = v >> 16;
+	const int tt = v >> 16;
 
 	if( tt != 0 )
 	{
-		return(( t = v >> 24 ) ? 24 + OccupancyTable[ t ] :
-			16 + OccupancyTable[ tt & 0xFF ]);
+		const int t = v >> 24;
+		return( t != 0 ? 24 + OccupancyTable[ t & 0xFF ] :
+			16 + OccupancyTable[ tt ]);
 	}
 	else
 	{
-		return(( t = v >> 8 ) ? 8 + OccupancyTable[ t ] :
-			OccupancyTable[ v ]);
+		const int t = v >> 8;
+		return( t != 0 ? 8 + OccupancyTable[ t ] : OccupancyTable[ v ]);
 	}
 }
 
