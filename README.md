@@ -1,7 +1,4 @@
 # r8brain-free-src #
-* [Documentation](https://c16f948c1577658f1b05f6c1d146730273eb6285.googledrive.com/host/0BwakvlMNBQdwUXhLMDFJLWdBSlU/Documentation/)
-* [Discussion](http://www.kvraudio.com/forum/viewtopic.php?t=389711)
-
 ## Introduction ##
 Open source (under the MIT license) high-quality professional audio sample rate converter (SRC) (resampling) library.  Features routines for SRC, both up- and downsampling, to/from any sample rate, including non-integer sample rates: it can be also used for conversion to/from SACD sample rate and even go beyond that.  SRC routines were implemented in multi-platform C++ code, and have a high level of optimality.
 
@@ -11,6 +8,11 @@ The SRC algorithm at first produces 2X oversampled (relative to the source sampl
 
 ## Requirements ##
 C++ compiler and system with the "double" floating point type (53-bit mantissa) support.  No explicit code for the "float" type is present in this library, because as practice has shown the "float"-based code performs considerably slower on a modern processor, at least in this library.  However, if the "double" type really represents the "float" type (24-bit mantissa) in a given compiler, on a given system, the library won't become broken, only the conversion quality may become degraded.  This library always uses the "sizeof( double )" operator to obtain "double" floating point type's size in bytes.  This library does not have dependencies beside the standard C library, the "windows.h" on Windows and the "pthread.h" on Mac OS X and Linux.
+
+## Links ##
+* [Documentation](https://c16f948c1577658f1b05f6c1d146730273eb6285.googledrive.com/host/0BwakvlMNBQdwUXhLMDFJLWdBSlU/Documentation/)
+* [Discussion](http://www.kvraudio.com/forum/viewtopic.php?t=389711)
+* [r8brain-free-src-1.6-dll.zip](https://drive.google.com/open?id=0BwakvlMNBQdwR1JlZ3pKcVBpaWc&authuser=0)
 
 ## Usage Information ##
 The sample rate converter (resampler) is represented by the **r8b::CDSPResampler<>** class, which is a single front-end class for the whole library.  You do not basically need to use nor understand any other classes beside this class.  Several derived classes that have varying levels of precision are also available.
