@@ -454,6 +454,56 @@ public:
 		clear();
 	}
 
+	template< class T, class T2 > void oneshot( const int MaxInLen,
+		const T* ip, int iplen, T2* op, int oplen )
+	{
+		CFixedBuffer< double > Buf( MaxInLen );
+		bool Zero = false;
+
+		while( oplen > 0 )
+		{
+			int rc;
+			int i;
+			double* p;
+
+			if( iplen == 0 )
+			{
+				rc = MaxInLen;
+				if( !Zero)
+				{
+					Zero = true;
+					memset( &Buf[ 0 ], 0, rc * sizeof( double ));
+				}
+			}
+			else
+			{
+				rc = min( iplen, MaxInLen );
+				p = (double*) &Buf[ 0 ];
+				for( i = 0; i < rc; i++ )
+				{
+					*p = (double) *ip;
+					p++;
+					ip++;
+				}
+				iplen -= rc;
+			}
+
+			double* op0;
+			int wc = process( &Buf[ 0 ], rc, op0 );
+
+			wc = min( oplen, wc );
+			for( i = 0; i < wc; i++ )
+			{
+				*op = (T2) *op0;
+				op++;
+				op0++;
+			}
+			oplen -= wc;
+		}
+
+		clear();
+	}
+
 private:
 	static const int ConvCountMax = 8; ///< 8 convolvers with the
 		///< built-in 2x up- or downsampling is enough for 256x up- or
