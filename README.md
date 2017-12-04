@@ -4,13 +4,13 @@ Open source (under the MIT license) high-quality professional audio sample rate 
 
 The structure of this library's objects is such that they can be frequently created and destroyed in large applications with a minimal performance impact due to a high level of reusability of its most "initialization-expensive" objects: the fast Fourier transform and FIR filter objects.
 
-The SRC algorithm at first produces 2X oversampled (relative to the source sample rate, or the destination sample rate if the downsampling is performed) signal and then performs interpolation using a bank of short (14 to 28 taps, depending on the required precision) polynomial-interpolated sinc function-based fractional delay filters.  This puts the algorithm into the league of the fastest among the most precise SRC algorithms. The more precise alternative being only the whole number-factored SRC, which can be slower.
+The SRC algorithm at first produces 2X oversampled (relative to the source sample rate, or the destination sample rate if the downsampling is performed) signal and then performs interpolation using a bank of short (14 to 24 taps, depending on the required precision) polynomial-interpolated sinc function-based fractional delay filters.  This puts the algorithm into the league of the fastest among the most precise SRC algorithms. The more precise alternative being only the whole number-factored SRC, which can be slower.
 
 ## Requirements ##
 C++ compiler and system with the "double" floating point type (53-bit mantissa) support.  No explicit code for the "float" type is present in this library, because as practice has shown the "float"-based code performs considerably slower on a modern processor, at least in this library.  However, if the "double" type really represents the "float" type (24-bit mantissa) in a given compiler, on a given system, the library won't become broken, only the conversion quality may become degraded.  This library always uses the "sizeof( double )" operator to obtain "double" floating point type's size in bytes.  This library does not have dependencies beside the standard C library, the "windows.h" on Windows and the "pthread.h" on Mac OS X and Linux.
 
 ## Links ##
-* [Documentation](https://c16f948c1577658f1b05f6c1d146730273eb6285.googledrive.com/host/0BwakvlMNBQdwUXhLMDFJLWdBSlU/Documentation/)
+* [Documentation](https://voxb.powweb.com/r8brain-free-src/Documentation/)
 * [Discussion](http://www.kvraudio.com/forum/viewtopic.php?t=389711)
 * [r8brain-free-src-1.6-dll.zip](https://drive.google.com/open?id=0BwakvlMNBQdwR1JlZ3pKcVBpaWc&authuser=0)
 
@@ -53,3 +53,8 @@ This library is used by:
   * [WDM Asio Link Driver](http://midithru.net/Home/AsioLink)
   * [Boogex Guitar Amp audio plugin](http://www.voxengo.com/product/boogex/)
   * [OpenMPT](http://openmpt.org/)
+  * [Zynewave Podium](http://zynewave.com/podium/)
+
+Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
+your software product to the list of users. This list is important at
+maintaining confidence in this library among the interested parties.
