@@ -17,7 +17,7 @@
  * 64-bit systems. Pointer types, including the CR8BResampler type, have
  * 32-bit size on 32-bit system and 64-bit size on 64-bit system.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -75,15 +75,6 @@ CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
 void _cdecl r8b_delete( CR8BResampler const rs );
 
 /**
- * Function returns the number of samples that should be passed to the
- * resampler object before the actual output starts.
- *
- * @param rs Resampler object.
- */
-
-int _cdecl r8b_get_inlen( CR8BResampler const rs );
-
-/**
  * Function clears (resets) the state of the resampler object and returns it
  * to the state after construction. All input data accumulated in the
  * internal buffer of this resampler object so far will be discarded.
@@ -103,6 +94,7 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * function. If required, the resampler will allocate a suitable intermediate
  * output buffer itself.
  *
+ * @param rs Resampler object that performs processing.
  * @param ip0 Input buffer. This buffer may be used as output buffer by this
  * function.
  * @param l The number of samples available in the input buffer.
@@ -111,8 +103,8 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * *this object's internal buffer. In real-time applications it is suggested
  * to pass this pointer to the next output audio block and consume any data
  * left from the previous output audio block first before calling the
- * process() function again. The buffer pointed to by the "op0" on return may
- * be owned by the resampler, so it should not be freed by the caller.
+ * r8b_process() function again. The buffer pointed to by the "op0" on return
+ * may be owned by the resampler, so it should not be freed by the caller.
  * @return The number of samples available in the "op0" output buffer. If the
  * data from the output buffer "op0" is going to be written to a bigger output
  * buffer, it is suggested to check the returned number of samples so that no

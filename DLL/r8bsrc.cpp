@@ -7,9 +7,9 @@
  * the "r8bsrc.h" file. This source file was designed for a proprietary DLL
  * compilation process (includes //$ definitions). The compiled DLL and LIB
  * files of the latest version can be downloaded at project's home page:
- * https://code.google.com/p/r8brain-free-src/
+ * https://github.com/avaneev/r8brain-free-src
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -18,7 +18,6 @@
 //$ bin "*win64|Win64/r8bsrc.dll"
 //$ export "r8b_create"
 //$ export "r8b_delete"
-//$ export "r8b_get_inlen"
 //$ export "r8b_clear"
 //$ export "r8b_process"
 
@@ -51,11 +50,6 @@ CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
 void _cdecl r8b_delete( CR8BResampler const rs )
 {
 	delete (CDSPProcessor*) rs;
-}
-
-int _cdecl r8b_get_inlen( CR8BResampler const rs )
-{
-	return(( (CDSPProcessor*) rs ) -> getInLenBeforeOutStart( 0 ));
 }
 
 void _cdecl r8b_clear( CR8BResampler const rs )

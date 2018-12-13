@@ -7,7 +7,7 @@
  *
  * This file includes single-block overlap-save convolution processor class.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -193,12 +193,6 @@ public:
 	virtual double getLatencyFrac() const
 	{
 		return( LatencyFrac );
-	}
-
-	virtual int getInLenBeforeOutStart( const int NextInLen ) const
-	{
-		return(( InputLen - InputDelay + NextInLen * DownFactor ) /
-			UpFactor );
 	}
 
 	virtual int getMaxOutLen( const int MaxInLen ) const

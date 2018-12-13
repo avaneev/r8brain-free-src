@@ -8,7 +8,7 @@
  * This file includes the master sample rate converter (resampler) class that
  * combines all elements of this library into a single front-end class.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -297,21 +297,6 @@ public:
 		return( 0.0 );
 	}
 
-	virtual int getInLenBeforeOutStart( const int NextInLen ) const
-	{
-		int l = ( Interp == NULL ? 0 :
-			Interp -> getInLenBeforeOutStart( NextInLen ));
-
-		int i;
-
-		for( i = ConvCount - 1; i >= 0; i-- )
-		{
-			l = Convs[ i ] -> getInLenBeforeOutStart( l );
-		}
-
-		return( l );
-	}
-
 	virtual int getMaxOutLen( const int/* MaxInLen */ ) const
 	{
 		return( 0 );
@@ -414,7 +399,7 @@ public:
 	 * to the constructor.
 	 * @param ip Input buffer pointer.
 	 * @param iplen Length of the input buffer in samples.
-	 * @param op Output buffer pointer.
+	 * @param[out] op Output buffer pointer.
 	 * @param oplen Length of the output buffer in samples.
 	 */
 
@@ -455,9 +440,9 @@ public:
 	}
 
 private:
-	static const int ConvCountMax = 8; ///< 8 convolvers with the
-		///< built-in 2x up- or downsampling is enough for 256x up- or
-		///< downsampling.
+	static const int ConvCountMax = 28; ///< These convolvers with the
+		///< built-in 2x up- or downsampling is enough for
+		///< 1<<(ConvCountMax+1) up- or downsampling.
 		///<
 	CPtrKeeper< CDSPBlockConvolver* > Convs[ ConvCountMax ]; ///< Convolvers.
 		///<

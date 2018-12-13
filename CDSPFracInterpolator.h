@@ -7,7 +7,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -197,8 +197,7 @@ private:
  * precision they are interpolated between adjacent filters.
  *
  * To increase sample timing precision, this class uses "resettable counter"
- * approach. This gives less than "1 per 100 billion" sample timing error when
- * converting 44100 to 48000 sample rate.
+ * approach. This gives zero overall sample timing error.
  *
  * VERY IMPORTANT: the interpolation step should not exceed FilterLen / 2 + 1
  * samples or the algorithm in its current form will fail. However, this
@@ -254,43 +253,11 @@ public:
 		return( 0.0 );
 	}
 
-	virtual int getInLenBeforeOutStart( const int NextInLen ) const
-	{
-		return( FilterLenD2 + NextInLen );
-	}
-
 	virtual int getMaxOutLen( const int MaxInLen ) const
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
 		return( (int) ceil( MaxInLen * DstSampleRate / SrcSampleRate ) + 1 );
-	}
-
-	/**
-	 * Function changes the destination sample rate "on the fly". Note that
-	 * the getMaxOutLen() function may needed to be called after calling this
-	 * function as the maximal number of output samples produced by the
-	 * interpolator depends on the destination sample rate.
-	 *
-	 * It can be a useful approach to construct *this object passing the
-	 * maximal possible destination sample rate to the constructor, obtaining
-	 * the getMaxOutLen() value and then setting the destination sample rate
-	 * to whatever lower value is needed.
-	 *
-	 * It is advisable to change the sample rate in small increments, and as
-	 * rarely as possible: e.g. every several samples.
-	 *
-	 * @param NewDstSampleRate New destination sample rate.
-	 */
-
-	void setDstSampleRate( const double NewDstSampleRate )
-	{
-		R8BASSERT( DstSampleRate > 0.0 );
-
-		DstSampleRate = NewDstSampleRate;
-		InCounter = 0;
-		InPosInt = 0;
-		InPosShift = InPosFrac;
 	}
 
 	/**
@@ -315,7 +282,7 @@ public:
 		InCounter = 0;
 		InPosInt = 0;
 		InPosFrac = InitFracPos;
-		InPosShift = InitFracPos;
+		InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
@@ -382,8 +349,8 @@ public:
 				op++;
 
 				InCounter++;
-				const double NextInPos =
-					InCounter * SrcSampleRate / DstSampleRate + InPosShift;
+				const double NextInPos = ( InCounter + InPosShift ) *
+					SrcSampleRate / DstSampleRate;
 
 				const int NextInPosInt = (int) NextInPos;
 				const int PosIncr = NextInPosInt - InPosInt;
@@ -402,7 +369,7 @@ public:
 
 			InCounter = 0;
 			InPosInt = 0;
-			InPosShift = InPosFrac;
+			InPosShift = InPosFrac * DstSampleRate / SrcSampleRate;
 		}
 
 		return( (int) ( op - op0 ));
