@@ -62,10 +62,10 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`42.8*n_cores` Mflops when converting 1 channel of 24-bit audio from 44100 to
+`28.5*n_cores` Mflops when converting 1 channel of 24-bit audio from 44100 to
 96000 sample rate (2% transition band), on an Intel Core i7-7700K
 processor-based system without overclocking.  This approximately translates to
-a real-time resampling of `440*n_cores` audio streams, at 100% CPU load.  When
+a real-time resampling of `296*n_cores` audio streams, at 100% CPU load.  When
 comparing performance of this resampler library to another library make sure
 that the competing library is also tuned to produce a fully linear-phase
 response and has similar stop-band characteristics.

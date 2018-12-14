@@ -87,7 +87,7 @@ VOXMAIN
 	int64_t ol = (int64_t) ( inf.SampleCount * OutSampleRate /
 		inf.SampleRate );
 
-	int64_t ool = ol;
+	int64_t ool = 0;
 	double srct = 0.0;
 
 	while( ol > 0 )
