@@ -137,6 +137,7 @@ This library is used by:
   * [Boogex Guitar Amp audio plugin](http://www.voxengo.com/product/boogex/)
   * [OpenMPT](http://openmpt.org/)
   * [Zynewave Podium](http://zynewave.com/podium/)
+  * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
