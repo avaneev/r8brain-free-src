@@ -9,7 +9,7 @@
  * converter. This inclusion file contains implementations of several small
  * utility classes and functions used by the library.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  *
  * @mainpage
@@ -30,7 +30,7 @@
  *
  * The MIT License (MIT)
  * 
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -54,7 +54,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.7
+ * @version 1.8
  */
 
 #ifndef R8BBASE_INCLUDED

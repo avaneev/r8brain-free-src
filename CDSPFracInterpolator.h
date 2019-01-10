@@ -7,7 +7,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -197,7 +197,9 @@ private:
  * precision they are interpolated between adjacent filters.
  *
  * To increase sample timing precision, this class uses "resettable counter"
- * approach. This gives zero overall sample timing error.
+ * approach. This gives zero overall sample timing error. With the
+ * R8B_FASTTIMING configuration option enabled, the sample timing experiences
+ * a very minor drift.
  *
  * VERY IMPORTANT: the interpolation step should not exceed FilterLen / 2 + 1
  * samples or the algorithm in its current form will fail. However, this
@@ -233,6 +235,9 @@ public:
 		: SrcSampleRate( aSrcSampleRate )
 		, DstSampleRate( aDstSampleRate )
 		, InitFracPos( aInitFracPos )
+	#if R8B_FASTTIMING
+		, FracStep( aSrcSampleRate / aDstSampleRate )
+	#endif // R8B_FASTTIMING
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -279,10 +284,13 @@ public:
 
 		memset( &Buf[ ReadPos ], 0, FilterLenD2Minus1 * sizeof( double ));
 
-		InCounter = 0;
-		InPosInt = 0;
 		InPosFrac = InitFracPos;
-		InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
+
+		#if !R8B_FASTTIMING
+			InCounter = 0;
+			InPosInt = 0;
+			InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
+		#endif // !R8B_FASTTIMING
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
@@ -348,29 +356,43 @@ public:
 				*op = s;
 				op++;
 
-				InCounter++;
-				const double NextInPos = ( InCounter + InPosShift ) *
-					SrcSampleRate / DstSampleRate;
+				#if R8B_FASTTIMING
 
-				const int NextInPosInt = (int) NextInPos;
-				const int PosIncr = NextInPosInt - InPosInt;
-				InPosInt = NextInPosInt;
-				InPosFrac = NextInPos - NextInPosInt;
+					InPosFrac += FracStep;
+					const int PosIncr = (int) InPosFrac;
+					InPosFrac -= PosIncr;
+
+				#else // R8B_FASTTIMING
+
+					InCounter++;
+					const double NextInPos = ( InCounter + InPosShift ) *
+						SrcSampleRate / DstSampleRate;
+
+					const int NextInPosInt = (int) NextInPos;
+					const int PosIncr = NextInPosInt - InPosInt;
+					InPosInt = NextInPosInt;
+					InPosFrac = NextInPos - NextInPosInt;
+
+				#endif // R8B_FASTTIMING
 
 				ReadPos = ( ReadPos + PosIncr ) & BufLenMask;
 				BufLeft -= PosIncr;
 			}
 		}
 
-		if( InCounter > 1000 )
-		{
-			// Reset the interpolation position counter to achieve a higher
-			// sample timing precision.
+		#if !R8B_FASTTIMING
 
-			InCounter = 0;
-			InPosInt = 0;
-			InPosShift = InPosFrac * DstSampleRate / SrcSampleRate;
-		}
+			if( InCounter > 1000 )
+			{
+				// Reset the interpolation position counter to achieve a
+				// higher sample timing precision.
+
+				InCounter = 0;
+				InPosInt = 0;
+				InPosShift = InPosFrac * DstSampleRate / SrcSampleRate;
+			}
+
+		#endif // !R8B_FASTTIMING
 
 		return( (int) ( op - op0 ));
 	}
@@ -435,14 +457,18 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
+	double InPosFrac; ///< Interpolation position (fractional part).
+		///<
+#if R8B_FASTTIMING
+	double FracStep; ///< Fractional sample timing step.
+#else // R8B_FASTTIMING
 	int InCounter; ///< Interpolation step counter.
 		///<
 	int InPosInt; ///< Interpolation position (integer part).
 		///<
-	double InPosFrac; ///< Interpolation position (fractional part).
-		///<
 	double InPosShift; ///< Interpolation position fractional shift.
 		///<
+#endif // R8B_FASTTIMING
 
 #if !R8B_FLTTEST
 	static const CDSPFracDelayFilterBank< FilterLen, FilterFracs, 3,

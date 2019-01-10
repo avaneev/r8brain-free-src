@@ -9,7 +9,7 @@
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -127,5 +127,17 @@
 
 	#define R8B_FLTTEST 0
 #endif // !defined( R8B_FLTTEST )
+
+#if !defined( R8B_FASTTIMING )
+	/**
+	 * This macro, when equal to 1, enables fast approach to interpolation
+	 * sample timing. This approach improves overall resampling time
+	 * performance (by around 15%) at the expense of a minor sample timing
+	 * drift which is on the order of 1e-6 samples per 10 billion output
+	 * samples.
+	 */
+
+	#define R8B_FASTTIMING 0
+#endif // !defined( R8B_FASTTIMING )
 
 #endif // R8BCONF_INCLUDED

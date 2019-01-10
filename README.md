@@ -33,7 +33,7 @@ bytes.  This library does not have dependencies beside the standard C library,
 the "windows.h" on Windows and the "pthread.h" on Mac OS X and Linux.
 
 ## Links ##
-* [Documentation](https://voxb.powweb.com/r8brain-free-src/Documentation/)
+* [Documentation](https://www.voxengo.com/public/r8brain-free-src/Documentation/)
 * [Discussion](http://www.kvraudio.com/forum/viewtopic.php?t=389711)
 
 ## Usage Information ##
@@ -62,13 +62,14 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`28.5*n_cores` Mflops when converting 1 channel of 24-bit audio from 44100 to
-96000 sample rate (2% transition band), on an Intel Core i7-7700K
-processor-based system without overclocking.  This approximately translates to
-a real-time resampling of `296*n_cores` audio streams, at 100% CPU load.  When
-comparing performance of this resampler library to another library make sure
-that the competing library is also tuned to produce a fully linear-phase
-response and has similar stop-band characteristics.
+`28.5*n_cores` (`36.6*n_cores` for `R8B_FASTTIMING` config) Mflops when
+converting 1 channel of 24-bit audio from 44100 to 96000 sample rate (2%
+transition band), on an Intel Core i7-7700K processor-based system without
+overclocking.  This approximately translates to a real-time resampling of
+`296*n_cores` (`350*n_cores`) audio streams, at 100% CPU load.  When comparing
+performance of this resampler library to another library make sure that the
+competing library is also tuned to produce a fully linear-phase response and
+has similar stop-band characteristics, and similar sample timing precision.
 
 ## Dynamic Link Library ##
 The functions of this SRC library are also accessible in simplified form via
@@ -121,6 +122,10 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 1.8:
+
+* Added `R8B_FASTTIMING` configuration option.
+
 Version 1.7:
 
 * Improved sample timing precision.
