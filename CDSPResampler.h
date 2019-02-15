@@ -8,13 +8,14 @@
  * This file includes the master sample rate converter (resampler) class that
  * combines all elements of this library into a single front-end class.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
 #ifndef R8B_CDSPRESAMPLER_INCLUDED
 #define R8B_CDSPRESAMPLER_INCLUDED
 
+#include "CDSPHBConvolver.h"
 #include "CDSPBlockConvolver.h"
 #include "CDSPFracInterpolator.h"
 
@@ -121,8 +122,9 @@ public:
 	 * do not have fractional delay.
 	 * @param UsePower2 "True" if the "power of 2" resampling optimization
 	 * should be used when possible. This value should be set to "false" if
-	 * the access to interpolator is needed in any case (also the source and
-	 * destination sample rates should not be equal).
+	 * the access to interpolator is needed (also the source and destination
+	 * sample rates should not be equal). If minimal latency is required this
+	 * value should be set to "false".
 	 * @see CDSPFIRFilterCache::getLPFilter()
 	 */
 
@@ -232,25 +234,42 @@ public:
 			{
 				SrcSRDiv *= 2;
 
-				// If downsampling is even deeper, use a less steep filter at
-				// this step.
+				// Use a fixed very relaxed 2X downsampling filter that only
+				// guarantees stop-band between 0.75 and pi. 0.5-0.75 range
+				// will be aliased to 0.25-0.5 range which will then be
+				// filtered out by the final filter.
 
-				const double tb =
-					( CheckSR * SrcSRDiv <= SrcSampleRate ? 45.0 : 34.0 );
-
-				Convs[ ConvCount ] = new CDSPBlockConvolver(
-					CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
-					ReqPhase, 1.0 ), 1, 2, PrevLatencyFrac );
+				Convs[ ConvCount ] = new CDSPHBConvolver( ReqAtten );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
-				PrevLatencyFrac = Convs[ ConvCount ] -> getLatencyFrac();
+				PrevLatencyFrac *= 0.5;
 				ConvCount++;
 
 				R8BASSERT( ConvCount < ConvCountMax );
 			}
 
-			const double NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
-			const int downf = ( UsePower2 && NormFreq == 0.5 ? 2 : 1 );
+			int downf;
+			double NormFreq;
+			bool UseInterp = true;
+
+			if( UsePower2 )
+			{
+				for( downf = 2; downf <= 3; downf++ )
+				{
+					if( DstSampleRate * SrcSRDiv * downf == SrcSampleRate )
+					{
+						NormFreq = 1.0 / downf;
+						UseInterp = false;
+						break;
+					}
+				}
+			}
+
+			if( UseInterp )
+			{
+				downf = 1;
+				NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
+			}
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
@@ -260,14 +279,14 @@ public:
 			PrevLatencyFrac = Convs[ ConvCount ] -> getLatencyFrac();
 			ConvCount++;
 
-			if( downf > 1 )
+			if( !UseInterp )
 			{
 				return; // No interpolator is needed.
 			}
 		}
 
-		Interp = new CInterpClass( SrcSampleRate * SrcSRMult / SrcSRDiv,
-			DstSampleRate, PrevLatencyFrac );
+		Interp = new CInterpClass( SrcSampleRate * SrcSRMult,
+			DstSampleRate * SrcSRDiv, PrevLatencyFrac );
 
 		MaxOutLen = Interp -> getMaxOutLen( MaxOutLen );
 
@@ -439,12 +458,19 @@ public:
 		clear();
 	}
 
+#if R8B_FLTTEST
+	CInterpClass* getInterpolator() const
+	{
+		return( Interp );
+	}
+#endif // R8B_FLTTEST
+
 private:
 	static const int ConvCountMax = 28; ///< These convolvers with the
 		///< built-in 2x up- or downsampling is enough for
 		///< 1<<(ConvCountMax+1) up- or downsampling.
 		///<
-	CPtrKeeper< CDSPBlockConvolver* > Convs[ ConvCountMax ]; ///< Convolvers.
+	CPtrKeeper< CDSPProcessor* > Convs[ ConvCountMax ]; ///< Convolvers.
 		///<
 	int ConvCount; ///< The number of objects defined in the Convs[] array.
 		///< Equals to 0 if sample rate conversion is not needed.
@@ -455,7 +481,7 @@ private:
 		///< performed at all.
 		///<
 	CFixedBuffer< double > ConvBufs[ 2 ]; ///< Intermediate convolution
-		///< buffers to use, used only when at least 2x upsampling is
+		///< buffers to use, used only when at least 2x resampling is
 		///< performed. These buffers are used in flip-flop manner. If NULL
 		///< then the input buffer will be used instead.
 		///<

@@ -24,5 +24,8 @@ CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
 CSyncObject CDSPFIRFilterCache :: StateSync;
 CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Objects;
 int CDSPFIRFilterCache :: ObjCount = 0;
+CSyncObject CDSPFracDelayFilterBankCache :: StateSync;
+CPtrKeeper< CDSPFracDelayFilterBank* > CDSPFracDelayFilterBankCache :: Objects;
+int CDSPFracDelayFilterBankCache :: ObjCount = 0;
 
 } // namespace r8b

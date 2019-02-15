@@ -1,9 +1,8 @@
-//$ bin "Win64/r8bfreesrc"
+///$ bin "Win64/r8bfreesrc"
 
 #include "/libvox/Sources/Core/AppMain.h"
 #include "/libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
-#include <stdint.h>
 
 /**
  * @file r8bfreesrc.cpp
@@ -45,8 +44,9 @@ VOXMAIN
 			"The specified output sample rate is invalid." );
 	}
 
-	const double d = ( OutSampleRate > inf.SampleRate ?
-		OutSampleRate / inf.SampleRate : inf.SampleRate / OutSampleRate );
+	const double InSampleRate = inf.SampleRate;
+	const double d = ( OutSampleRate > InSampleRate ?
+		OutSampleRate / InSampleRate : InSampleRate / OutSampleRate );
 
 	if( d >= ( 1 << 29 ))
 	{
@@ -80,15 +80,16 @@ VOXMAIN
 	{
 		InBufs[ i ].alloc( InBufCapacity );
 
-		Resamps[ i ] = new r8b :: CDSPResampler24( inf.SampleRate,
+		Resamps[ i ] = new r8b :: CDSPResampler24( InSampleRate,
 			OutSampleRate, InBufCapacity, tb );
 	}
 
 	int64_t ol = (int64_t) ( inf.SampleCount * OutSampleRate /
-		inf.SampleRate );
+		InSampleRate );
 
 	int64_t ool = 0;
 	double srct = 0.0;
+	CArray< double* > opp( inf.ChannelCount );
 
 	while( ol > 0 )
 	{
@@ -105,7 +106,6 @@ VOXMAIN
 			}
 		}
 
-		double* opp[ inf.ChannelCount ];
 		int WriteCount; // At initial steps this variable can be equal to 0
 			// after resampler. Same number for all channels.
 
@@ -125,7 +125,7 @@ VOXMAIN
 			WriteCount = (int) ol;
 		}
 
-		outf.writeData( opp, WriteCount );
+		outf.writeData( &opp[ 0 ], WriteCount );
 		ol -= WriteCount;
 	}
 

@@ -459,7 +459,7 @@ private:
 		sinc.initBand( CDSPSincFilterGen :: wftKaiser, WinParams, true );
 
 		KernelLen = sinc.KernelLen;
-		BlockLenBits = getBitOccupancy( KernelLen - 1 );
+		BlockLenBits = getBitOccupancy( KernelLen - 1 ) + R8B_EXTFFT;
 		const int BlockLen = 1 << BlockLenBits;
 
 		KernelBlock.alloc( BlockLen * 2 );

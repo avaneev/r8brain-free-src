@@ -118,6 +118,18 @@
 	#define R8B_FILTER_CACHE_MAX 96
 #endif // !defined( R8B_FILTER_CACHE_MAX )
 
+#if !defined( R8B_FRACBANK_CACHE_MAX )
+	/**
+	 * This macro specifies the number of whole-number stepping fractional
+	 * delay filter banks kept in the cache at most. The actual number can be
+	 * higher if many different filter banks are in use at the same time. As
+	 * filter banks are usually big objects, it is advisable to keep this
+	 * cache size small.
+	 */
+
+	#define R8B_FRACBANK_CACHE_MAX 5
+#endif // !defined( R8B_FRACBANK_CACHE_MAX )
+
 #if !defined( R8B_FLTTEST )
 	/**
 	 * This macro, when equal to 1, enables fractional delay filter bank
@@ -134,10 +146,25 @@
 	 * sample timing. This approach improves overall resampling time
 	 * performance (by around 15%) at the expense of a minor sample timing
 	 * drift which is on the order of 1e-6 samples per 10 billion output
-	 * samples.
+	 * samples. This setting does not apply to whole-number stepping if it is
+	 * in use as this stepping provides zero timing error without performance
+	 * impact.
 	 */
 
 	#define R8B_FASTTIMING 0
 #endif // !defined( R8B_FASTTIMING )
+
+#if !defined( R8B_EXTFFT )
+	/**
+	 * This macro, when equal to 1, extends length of low-pass filters' FFT
+	 * block by a factor of 2 by zero-padding them. This usually improves the
+	 * overall time performance of the resampler at the expense of higher
+	 * overall latency (initial processing delay). If such delay is not an
+	 * issue, setting this macro to 1 is preferrable. This macro can only have
+	 * value of 0 or 1.
+	 */
+
+	#define R8B_EXTFFT 0
+#endif // !defined( R8B_EXTFFT )
 
 #endif // R8BCONF_INCLUDED

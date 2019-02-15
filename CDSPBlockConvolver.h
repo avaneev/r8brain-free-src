@@ -7,7 +7,7 @@
  *
  * This file includes single-block overlap-save convolution processor class.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -88,13 +88,13 @@ public:
 			InputLen = BlockLen2 - PrevInputLen;
 		}
 
-		OutOffset = Filter -> getLatency();
+		OutOffset = ( Filter -> isZeroPhase() ? Filter -> getLatency() : 0 );
 		LatencyFrac = Filter -> getLatencyFrac() + PrevLatency * UpFactor;
 		Latency = (int) LatencyFrac;
 		LatencyFrac -= Latency;
 		LatencyFrac /= DownFactor;
 
-		Latency += InputLen + OutOffset;
+		Latency += InputLen + Filter -> getLatency();
 
 		int fftoutBits;
 		InputDelay = 0;
