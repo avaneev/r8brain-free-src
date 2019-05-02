@@ -123,6 +123,10 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 2.0:
+
+* Optimized power-of-2 upsampling.
+
 Version 1.9:
 
 * Optimized half-band downsampling filter.

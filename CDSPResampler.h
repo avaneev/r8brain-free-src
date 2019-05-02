@@ -16,6 +16,7 @@
 #define R8B_CDSPRESAMPLER_INCLUDED
 
 #include "CDSPHBConvolver.h"
+#include "CDSPHBUpsampler.h"
 #include "CDSPBlockConvolver.h"
 #include "CDSPFracInterpolator.h"
 
@@ -200,15 +201,11 @@ public:
 
 				for( i = 1; i < UseConvCount; i++ )
 				{
-					const double tb = ( i >= 2 ? 45.0 : 34.0 );
-
-					Convs[ i ] = new CDSPBlockConvolver(
-						CDSPFIRFilterCache :: getLPFilter( 0.5, tb, ReqAtten,
-						ReqPhase, 2.0 ), 2, 1, PrevLatencyFrac );
+					Convs[ i ] = new CDSPHBUpsampler( ReqAtten, i - 1 );
 
 					MaxOutLen = Convs[ i ] -> getMaxOutLen( MaxOutLen );
 					ConvBufCapacities[ i & 1 ] = MaxOutLen;
-					PrevLatencyFrac = Convs[ i ] -> getLatencyFrac();
+					PrevLatencyFrac *= 2.0;
 				}
 
 				ConvBufs[ 0 ].alloc( ConvBufCapacities[ 0 ]);

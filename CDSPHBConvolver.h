@@ -124,9 +124,10 @@ public:
 
 		flt = FltPtrs[ k ];
 		convfn = FltConvFn[ k ];
-		fltt = 4 + k;
-		fl2 = fltt * 2 - 1;
-		fl4 = fl2 + fl2;
+		const int fltt = 4 + k;
+		fll = fltt * 2 - 1;
+		fl2 = fll;
+		fl4 = fll + fl2;
 
 		R8BCONSOLE( "CDSPHBConvolver: taps=%i att=%.1f io=1/2\n", fltt,
 			FltAttens[ k ]);
@@ -161,10 +162,10 @@ public:
 	{
 		BufLeft = 0;
 		WritePos = 0;
-		ReadPos = BufLen - fl2; // Set "read" position to
+		ReadPos = BufLen - fll; // Set "read" position to
 			// account for filter's latency.
 
-		memset( &Buf[ ReadPos ], 0, fl2 * sizeof( double ));
+		memset( &Buf[ ReadPos ], 0, fll * sizeof( double ));
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
@@ -240,11 +241,11 @@ private:
 		///<
 	const double* flt; ///< Half-band filter taps.
 		///<
-	int fltt; ///< The number of taps in the filter.
+	int fll; ///< Input latency.
 		///<
-	int fl2; ///< =FilterLen/2. Excludes center tap.
+	int fl2; ///< Right-side filter length.
 		///<
-	int fl4; ///< =fl2*2.
+	int fl4; ///< Overrun length.
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation
