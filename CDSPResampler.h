@@ -15,7 +15,7 @@
 #ifndef R8B_CDSPRESAMPLER_INCLUDED
 #define R8B_CDSPRESAMPLER_INCLUDED
 
-#include "CDSPHBConvolver.h"
+#include "CDSPHBDownsampler.h"
 #include "CDSPHBUpsampler.h"
 #include "CDSPBlockConvolver.h"
 #include "CDSPFracInterpolator.h"
@@ -226,6 +226,7 @@ public:
 			ConvBufCapacities[ 0 ] = 0;
 			ConvCount = 0;
 			const double CheckSR = DstSampleRate * 4;
+			double FinGain = 1.0;
 
 			while( CheckSR * SrcSRDiv <= SrcSampleRate )
 			{
@@ -236,10 +237,11 @@ public:
 				// will be aliased to 0.25-0.5 range which will then be
 				// filtered out by the final filter.
 
-				Convs[ ConvCount ] = new CDSPHBConvolver( ReqAtten );
+				Convs[ ConvCount ] = new CDSPHBDownsampler( ReqAtten );
 
 				MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 				PrevLatencyFrac *= 0.5;
+				FinGain *= 0.5;
 				ConvCount++;
 
 				R8BASSERT( ConvCount < ConvCountMax );
@@ -270,7 +272,7 @@ public:
 
 			Convs[ ConvCount ] = new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten, ReqPhase, 1.0 ), 1, downf, PrevLatencyFrac );
+				ReqAtten, ReqPhase, FinGain ), 1, downf, PrevLatencyFrac );
 
 			MaxOutLen = Convs[ ConvCount ] -> getMaxOutLen( MaxOutLen );
 			PrevLatencyFrac = Convs[ ConvCount ] -> getLatencyFrac();

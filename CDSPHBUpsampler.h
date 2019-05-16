@@ -30,7 +30,7 @@ class CDSPHBUpsampler : public CDSPProcessor
 {
 public:
 	/**
-	 * Constructor initalizes the convolver.
+	 * Constructor initalizes the half-band upsampler.
 	 *
 	 * @param ReqAtten Required half-band filter attentuation.
 	 * @param SteepIndex Steepness index - 0=steepest. Corresponds to general
@@ -40,7 +40,7 @@ public:
 
 	CDSPHBUpsampler( const double ReqAtten, const int SteepIndex )
 	{
-		static const int FltCount = 11;
+		static const int FltCount = 11; // 0.25
 		static const double HBKernel_4[ 4 ] = { // StopAtten = -64.9241 dB
 			6.1073830069265700e-001, -1.4463982571471834e-001,
 			4.1136036923117736e-002, -7.4740105856911931e-003 };
@@ -111,15 +111,8 @@ public:
 			HBKernel_5, HBKernel_6, HBKernel_7, HBKernel_8, HBKernel_9,
 			HBKernel_10, HBKernel_11, HBKernel_12, HBKernel_13,
 			HBKernel_14 };
-		static const CConvolveFn FltConvFn[ FltCount ] = {
-			&CDSPHBUpsampler :: convolve4, &CDSPHBUpsampler :: convolve5,
-			&CDSPHBUpsampler :: convolve6, &CDSPHBUpsampler :: convolve7,
-			&CDSPHBUpsampler :: convolve8, &CDSPHBUpsampler :: convolve9,
-			&CDSPHBUpsampler :: convolve10, &CDSPHBUpsampler :: convolve11,
-			&CDSPHBUpsampler :: convolve12, &CDSPHBUpsampler :: convolve13,
-			&CDSPHBUpsampler :: convolve14 };
 
-		static const int FltCountB = 7;
+		static const int FltCountB = 7; // 0.125
 		static const double HBKernel_2b[ 2 ] = { // StopAtten = -46.2556 dB
 			5.6965643437574798e-001, -7.0243561190601822e-002 };
 		static const double HBKernel_3b[ 3 ] = { // StopAtten = -93.6536 dB
@@ -152,13 +145,8 @@ public:
 		static const double* const FltPtrsB[ FltCountB ] = { HBKernel_2b,
 			HBKernel_3b, HBKernel_4b, HBKernel_5b, HBKernel_6b, HBKernel_7b,
 			HBKernel_8b };
-		static const CConvolveFn FltConvFnB[ FltCountB ] = {
-			&CDSPHBUpsampler :: convolve2, &CDSPHBUpsampler :: convolve3,
-			&CDSPHBUpsampler :: convolve4, &CDSPHBUpsampler :: convolve5,
-			&CDSPHBUpsampler :: convolve6, &CDSPHBUpsampler :: convolve7,
-			&CDSPHBUpsampler :: convolve8 };
 
-		static const int FltCountC = 5;
+		static const int FltCountC = 5; // 0.0625
 		static const double HBKernel_2c[ 2 ] = { // StopAtten = -87.9438 dB
 			5.6430278013478086e-001, -6.4338068855764208e-002 };
 		static const double HBKernel_3c[ 3 ] = { // StopAtten = -130.8862 dB
@@ -179,16 +167,51 @@ public:
 			87.9438, 130.8862, 172.3191, 213.4984, 254.5179 };
 		static const double* const FltPtrsC[ FltCountC ] = { HBKernel_2c,
 			HBKernel_3c, HBKernel_4c, HBKernel_5c, HBKernel_6c };
-		static const CConvolveFn FltConvFnC[ FltCountC ] = {
-			&CDSPHBUpsampler :: convolve2, &CDSPHBUpsampler :: convolve3,
-			&CDSPHBUpsampler :: convolve4, &CDSPHBUpsampler :: convolve5,
-			&CDSPHBUpsampler :: convolve6 };
+
+		static const int FltCountD = 3; // 0.03125
+		static const double HBKernel_2d[ 2 ] = { // StopAtten = -113.1456 dB
+			5.6295152180538044e-001, -6.2953706070191726e-002 };
+		static const double HBKernel_3d[ 3 ] = { // StopAtten = -167.1446 dB
+			5.8621968728761675e-001, -9.8080551656624410e-002,
+			1.1860868762030571e-002 };
+		static const double HBKernel_4d[ 4 ] = { // StopAtten = -220.6519 dB
+			5.9835028661892165e-001, -1.1999986095168852e-001,
+			2.4132530901858028e-002, -2.4829565783680927e-003 };
+		static const double FltAttensD[ FltCountD ] = {
+			113.1456, 167.1446, 220.6519 };
+		static const double* const FltPtrsD[ FltCountD ] = { HBKernel_2d,
+			HBKernel_3d, HBKernel_4d };
+
+		static const int FltCountE = 4; // 0.015625
+		static const double HBKernel_1e[ 1 ] = { // StopAtten = -60.9962 dB
+			5.0030136284718241e-001 };
+		static const double HBKernel_2e[ 2 ] = { // StopAtten = -137.3130 dB
+			5.6261293163934145e-001, -6.2613067826625832e-002 };
+		static const double HBKernel_3e[ 3 ] = { // StopAtten = -203.2997 dB
+			5.8600808139033378e-001, -9.7762185874608526e-002,
+			1.1754104552667852e-002 };
+		static const double HBKernel_4e[ 4 ] = { // StopAtten = -268.8561 dB
+			5.9819599535791312e-001, -1.1972157884617740e-001,
+			2.3977307400990484e-002, -2.4517239127622593e-003 };
+		static const double FltAttensE[ FltCountE ] = {
+			60.9962, 137.3130, 203.2997, 268.8561 };
+		static const double* const FltPtrsE[ FltCountE ] = { HBKernel_1e,
+			HBKernel_2e, HBKernel_3e, HBKernel_4e };
+
+		static const CConvolveFn FltConvFn[ 14 ] = {
+			&CDSPHBUpsampler :: convolve1, &CDSPHBUpsampler :: convolve2,
+			&CDSPHBUpsampler :: convolve3, &CDSPHBUpsampler :: convolve4,
+			&CDSPHBUpsampler :: convolve5, &CDSPHBUpsampler :: convolve6,
+			&CDSPHBUpsampler :: convolve7, &CDSPHBUpsampler :: convolve8,
+			&CDSPHBUpsampler :: convolve9, &CDSPHBUpsampler :: convolve10,
+			&CDSPHBUpsampler :: convolve11, &CDSPHBUpsampler :: convolve12,
+			&CDSPHBUpsampler :: convolve13, &CDSPHBUpsampler :: convolve14 };
 
 		int k = 0;
 		int fltt;
 		double att;
 
-		if( SteepIndex == 0 )
+		if( SteepIndex <= 0 )
 		{
 			while( k != FltCount - 1 && FltAttens[ k ] < ReqAtten )
 			{
@@ -196,7 +219,6 @@ public:
 			}
 
 			flt = FltPtrs[ k ];
-			convfn = FltConvFn[ k ];
 			fltt = 4 + k;
 			att = FltAttens[ k ];
 		}
@@ -209,11 +231,11 @@ public:
 			}
 
 			flt = FltPtrsB[ k ];
-			convfn = FltConvFnB[ k ];
 			fltt = 2 + k;
 			att = FltAttensB[ k ];
 		}
 		else
+		if( SteepIndex == 2 )
 		{
 			while( k != FltCountC - 1 && FltAttensC[ k ] < ReqAtten )
 			{
@@ -221,11 +243,34 @@ public:
 			}
 
 			flt = FltPtrsC[ k ];
-			convfn = FltConvFnC[ k ];
 			fltt = 2 + k;
 			att = FltAttensC[ k ];
 		}
+		else
+		if( SteepIndex == 3 )
+		{
+			while( k != FltCountD - 1 && FltAttensD[ k ] < ReqAtten )
+			{
+				k++;
+			}
 
+			flt = FltPtrsD[ k ];
+			fltt = 2 + k;
+			att = FltAttensD[ k ];
+		}
+		else
+		{
+			while( k != FltCountE - 1 && FltAttensE[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsE[ k ];
+			fltt = 1 + k;
+			att = FltAttensE[ k ];
+		}
+
+		convfn = FltConvFn[ fltt - 1 ];
 		fll = fltt - 1;
 		fl2 = fltt;
 		fl4 = fll + fl2;
@@ -280,27 +325,15 @@ public:
 			// Add new input samples to both halves of the ring buffer.
 
 			const int b = min( min( l, BufLen - WritePos ),
-				BufLen - fl2 - BufLeft );
+				BufLen - fll - BufLeft );
 
 			double* const wp1 = Buf + WritePos;
+			memcpy( wp1, ip, b * sizeof( double ));
 
 			if( WritePos < fl4 )
 			{
 				const int c = min( b, fl4 - WritePos );
-				double* const wp2 = wp1 + BufLen;
-				int i;
-
-				for( i = 0; i < c; i++ )
-				{
-					wp1[ i ] = ip[ i ];
-					wp2[ i ] = ip[ i ];
-				}
-
-				memcpy( wp1 + c, ip + c, ( b - c ) * sizeof( double ));
-			}
-			else
-			{
-				memcpy( wp1, ip, b * sizeof( double ));
+				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
 			}
 
 			ip += b;
@@ -371,7 +404,9 @@ private:
 		while( c > 0 ) \
 		{ \
 			const double* const rp = rp0 + rpos; \
-			op[ 0 ] = rp[ 0 ];
+			op[ 0 ] = rp[ 0 ]; \
+			op[ 1 ] =
+
 #define R8BHBC2 \
 			rpos = ( rpos + 1 ) & BufLenMask; \
 			op += 2; \
@@ -380,21 +415,22 @@ private:
 		ReadPos = rpos; \
 	}
 
+	R8BHBC1( convolve1 )
+				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]);
+	R8BHBC2
+
 	R8BHBC1( convolve2 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]);
 	R8BHBC2
 
 	R8BHBC1( convolve3 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]);
 	R8BHBC2
 
 	R8BHBC1( convolve4 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -402,7 +438,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve5 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -411,7 +446,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve6 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -421,7 +455,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve7 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -432,7 +465,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve8 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -444,7 +476,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve9 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -457,7 +488,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve10 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -471,7 +501,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve11 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -486,7 +515,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve12 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -502,7 +530,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve13 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +
@@ -519,7 +546,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve14 )
-			op[ 1 ] =
 				flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]) +
 				flt[ 1 ] * ( rp[ 2 ] + rp[ -1 ]) +
 				flt[ 2 ] * ( rp[ 3 ] + rp[ -2 ]) +

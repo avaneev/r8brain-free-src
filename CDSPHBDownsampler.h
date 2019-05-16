@@ -1,7 +1,7 @@
 //$ nocpp
 
 /**
- * @file CDSPHBConvolver.h
+ * @file CDSPHBDownsampler.h
  *
  * @brief Half-band downsampling convolver class.
  *
@@ -11,109 +11,109 @@
  * See the "License.txt" file for license.
  */
 
-#ifndef R8B_CDSPHBCONVOLVER_INCLUDED
-#define R8B_CDSPHBCONVOLVER_INCLUDED
+#ifndef R8B_CDSPHBDOWNSAMPLER_INCLUDED
+#define R8B_CDSPHBDOWNSAMPLER_INCLUDED
 
 #include "CDSPProcessor.h"
 
 namespace r8b {
 
 /**
- * @brief Half-band downsampling convolver class.
+ * @brief Half-band downsampler class.
  *
  * Class implements brute-force half-band 2X downsampling that uses small
- * sparse symmetric FIR filters.
+ * sparse symmetric FIR filters. The output has 2.0 gain.
  */
 
-class CDSPHBConvolver : public CDSPProcessor
+class CDSPHBDownsampler : public CDSPProcessor
 {
 public:
 	/**
-	 * Constructor initalizes the convolver.
+	 * Constructor initalizes the half-band downsampler.
 	 *
 	 * @param ReqAtten Required half-band filter attentuation.
 	 */
 
-	CDSPHBConvolver( const double ReqAtten )
+	CDSPHBDownsampler( const double ReqAtten )
 	{
 		static const int FltCount = 11;
-		static const double HBKernel_4[ 4 ] = { // StopAtten = -64.9241 dB
-			3.0536915034632850e-001, -7.2319912857359170e-002,
-			2.0568018461558868e-002, -3.7370052928455966e-003 };
-		static const double HBKernel_5[ 5 ] = { // StopAtten = -87.4775 dB
-			3.0776527071252091e-001, -7.7956761696988730e-002,
-			2.6202401330647218e-002, -7.1152871743619395e-003,
-			1.1228796902684746e-003 };
-		static const double HBKernel_6[ 6 ] = { // StopAtten = -104.5154 dB
-			3.0941883280967319e-001, -8.1981413279378135e-002,
-			3.0552285639668053e-002, -1.0158878222612300e-002,
-			2.5132263733023130e-003, -3.4696469214778869e-004 };
-		static const double HBKernel_7[ 7 ] = { // StopAtten = -120.6199 dB
-			3.1062656844362180e-001, -8.4998819246324686e-002,
-			3.4007054030319894e-002, -1.2839910658310139e-002,
-			3.9899414124635602e-003, -8.9355300771687407e-004,
-			1.0918303229612292e-004 };
-		static const double HBKernel_8[ 8 ] = { // StopAtten = -136.5151 dB
-			3.1154649542685675e-001, -8.7344845966894846e-002,
-			3.6814373222551655e-002, -1.5189134275084837e-002,
-			5.4540426138667275e-003, -1.5643671665347414e-003,
-			3.1816007305529581e-004, -3.4798569574112648e-005 };
-		static const double HBKernel_9[ 9 ] = { // StopAtten = -152.3240 dB
-			3.1227034797423214e-001, -8.9221518250120035e-002,
-			3.9139705405200953e-002, -1.7250559781632369e-002,
-			6.8589449138030112e-003, -2.3045054506348750e-003,
-			6.0963760316434801e-004, -1.1323809273311447e-004,
-			1.1197777274540854e-005 };
-		static const double HBKernel_10[ 10 ] = { // StopAtten = -168.0859 dB
-			3.1285441994054719e-001, -9.0756373210797991e-002,
-			4.1095931641371264e-002, -1.9065889659329205e-002,
-			8.1837462708107545e-003, -3.0765089392719158e-003,
-			9.6388469603070348e-004, -2.3582958177437163e-004,
-			4.0245947281469796e-005, -3.6290757795542916e-006 };
-		static const double HBKernel_11[ 11 ] = { // StopAtten = -183.7962 dB
-			3.1333583852618196e-001, -9.2035766690425125e-002,
-			4.2764997775709412e-002, -2.0673415702531672e-002,
-			9.4224158235471922e-003, -3.8562585043157016e-003,
-			1.3634337358552351e-003, -3.9872513956817901e-004,
-			9.0581722118621144e-005, -1.4284574681888706e-005,
-			1.1833510784597934e-006 };
-		static const double HBKernel_12[ 12 ] = { // StopAtten = -199.4768 dB
-			3.1373924858707514e-001, -9.3118083749112346e-002,
-			4.4204877719434599e-002, -2.2103734183864354e-002,
-			1.0574587791389645e-002, -4.6275752986798535e-003,
-			1.7935780427078551e-003, -5.9615835307380571e-004,
-			1.6313905035447718e-004, -3.4553448402641074e-005,
-			5.0614484139455129e-006, -3.8765934695650373e-007 };
-		static const double HBKernel_13[ 13 ] = { // StopAtten = -215.1363 dB
-			3.1408208078360489e-001, -9.4045383482463718e-002,
-			4.5459268183225543e-002, -2.3382749556300153e-002,
-			1.1643758756137546e-002, -5.3803125703677512e-003,
-			2.2426955190719688e-003, -8.2193845506672858e-004,
-			2.5720642977944408e-004, -6.6058584117012487e-005,
-			1.3095648579319885e-005, -1.7901195397129754e-006,
-			1.2745620847631756e-007 };
-		static const double HBKernel_14[ 14 ] = { // StopAtten = -230.7517 dB
-			3.1437736642800962e-001, -9.4849711931384806e-002,
-			4.6563050335205025e-002, -2.4533628834576215e-002,
-			1.2636507245178175e-002, -6.1093251664958714e-003,
-			2.7024484370059554e-003, -1.0704967072912019e-003,
-			3.7125180403951852e-004, -1.0962284308879688e-004,
-			2.6507945896536711e-005, -4.9371616503979254e-006,
-			6.3252117721290801e-007, -4.2073474482151596e-008 };
+		static const double HBKernel_4[ 4 ] = { // att -64.9241 dB, frac 4.0
+			6.1073830069265711e-001, -1.4463982571471876e-001,
+			4.1136036923118187e-002, -7.4740105856914872e-003 };
+		static const double HBKernel_5[ 5 ] = { // att -87.4775 dB, frac 4.0
+			6.1553054142504338e-001, -1.5591352339398118e-001,
+			5.2404802661298266e-002, -1.4230574348726146e-002,
+			2.2457593805377831e-003 };
+		static const double HBKernel_6[ 6 ] = { // att -104.5154 dB, frac 4.0
+			6.1883766561934184e-001, -1.6396282655874558e-001,
+			6.1104571279325129e-002, -2.0317756445217543e-002,
+			5.0264527466018826e-003, -6.9392938429507279e-004 };
+		static const double HBKernel_7[ 7 ] = { // att -120.6199 dB, frac 4.0
+			6.2125313688727779e-001, -1.6999763849273491e-001,
+			6.8014108060738196e-002, -2.5679821316697125e-002,
+			7.9798828249699784e-003, -1.7871060154498470e-003,
+			2.1836606459564009e-004 };
+		static const double HBKernel_8[ 8 ] = { // att -136.5151 dB, frac 4.0
+			6.2309299085367287e-001, -1.7468969193368433e-001,
+			7.3628746444973150e-002, -3.0378268550055314e-002,
+			1.0908085227657214e-002, -3.1287343330312556e-003,
+			6.3632014609722092e-004, -6.9597139145649502e-005 };
+		static const double HBKernel_9[ 9 ] = { // att -152.3240 dB, frac 4.0
+			6.2454069594794803e-001, -1.7844303649890664e-001,
+			7.8279410808762842e-002, -3.4501119561829857e-002,
+			1.3717889826645487e-002, -4.6090109007760798e-003,
+			1.2192752061406873e-003, -2.2647618541786664e-004,
+			2.2395554542567748e-005 };
+		static const double HBKernel_10[ 10 ] = { // att -168.0859 dB, frac 4.0
+			6.2570883988448611e-001, -1.8151274643053061e-001,
+			8.2191863294185458e-002, -3.8131779329357615e-002,
+			1.6367492549512565e-002, -6.1530178832078578e-003,
+			1.9277693942420303e-003, -4.7165916432255402e-004,
+			8.0491894752808465e-005, -7.2581515842465856e-006 };
+		static const double HBKernel_11[ 11 ] = { // att -183.7962 dB, frac 4.0
+			6.2667167706646965e-001, -1.8407153341833782e-001,
+			8.5529995600327216e-002, -4.1346831452173063e-002,
+			1.8844831683400131e-002, -7.7125170314919214e-003,
+			2.7268674834296570e-003, -7.9745028391855826e-004,
+			1.8116344571770699e-004, -2.8569149678673122e-005,
+			2.3667021922861879e-006 };
+		static const double HBKernel_12[ 12 ] = { // att -199.4768 dB, frac 4.0
+			6.2747849729182659e-001, -1.8623616781335248e-001,
+			8.8409755856508648e-002, -4.4207468780136254e-002,
+			2.1149175912217915e-002, -9.2551508154301194e-003,
+			3.5871562052326249e-003, -1.1923167600753576e-003,
+			3.2627812001613326e-004, -6.9106902008709490e-005,
+			1.0122897772888322e-005, -7.7531878091292963e-007 };
+		static const double HBKernel_13[ 13 ] = { // att -215.1364 dB, frac 4.0
+			6.2816416238782957e-001, -1.8809076918442266e-001,
+			9.0918539368474965e-002, -4.6765502172995604e-002,
+			2.3287520069933797e-002, -1.0760626940880943e-002,
+			4.4853921118213676e-003, -1.6438774496992904e-003,
+			5.1441308429384374e-004, -1.3211724349740752e-004,
+			2.6191316362108199e-005, -3.5802424384280469e-006,
+			2.5491272423372411e-007 };
+		static const double HBKernel_14[ 14 ] = { // att -230.7526 dB, frac 4.0
+			6.2875473147254901e-001, -1.8969942008858576e-001,
+			9.3126095475258408e-002, -4.9067252227455962e-002,
+			2.5273009767563311e-002, -1.2218646838258702e-002,
+			5.4048946497798353e-003, -2.1409921992386689e-003,
+			7.4250304371305991e-004, -2.1924546773651068e-004,
+			5.3015823597863675e-005, -9.8743070771832892e-006,
+			1.2650397198764347e-006, -8.4146728313072455e-008 };
 		static const double FltAttens[ FltCount ] = {
 			64.9241, 87.4775, 104.5154, 120.6199, 136.5151, 152.3240,
-			168.0859, 183.7962, 199.4768, 215.1363, 230.7517 };
+			168.0859, 183.7962, 199.4768, 215.1364, 230.7526 };
 		static const double* const FltPtrs[ FltCount ] = { HBKernel_4,
 			HBKernel_5, HBKernel_6, HBKernel_7, HBKernel_8, HBKernel_9,
 			HBKernel_10, HBKernel_11, HBKernel_12, HBKernel_13,
 			HBKernel_14 };
 		static const CConvolveFn FltConvFn[ FltCount ] = {
-			&CDSPHBConvolver :: convolve4, &CDSPHBConvolver :: convolve5,
-			&CDSPHBConvolver :: convolve6, &CDSPHBConvolver :: convolve7,
-			&CDSPHBConvolver :: convolve8, &CDSPHBConvolver :: convolve9,
-			&CDSPHBConvolver :: convolve10, &CDSPHBConvolver :: convolve11,
-			&CDSPHBConvolver :: convolve12, &CDSPHBConvolver :: convolve13,
-			&CDSPHBConvolver :: convolve14 };
+			&CDSPHBDownsampler :: convolve4, &CDSPHBDownsampler :: convolve5,
+			&CDSPHBDownsampler :: convolve6, &CDSPHBDownsampler :: convolve7,
+			&CDSPHBDownsampler :: convolve8, &CDSPHBDownsampler :: convolve9,
+			&CDSPHBDownsampler :: convolve10, &CDSPHBDownsampler :: convolve11,
+			&CDSPHBDownsampler :: convolve12, &CDSPHBDownsampler :: convolve13,
+			&CDSPHBDownsampler :: convolve14 };
 
 		int k = 0;
 
@@ -129,7 +129,7 @@ public:
 		fl2 = fll;
 		fl4 = fll + fl2;
 
-		R8BCONSOLE( "CDSPHBConvolver: taps=%i att=%.1f io=1/2\n", fltt,
+		R8BCONSOLE( "CDSPHBDownsampler: taps=%i att=%.1f io=1/2\n", fltt,
 			FltAttens[ k ]);
 
 		clear();
@@ -179,27 +179,15 @@ public:
 			// Add new input samples to both halves of the ring buffer.
 
 			const int b = min( min( l, BufLen - WritePos ),
-				BufLen - fl2 - BufLeft );
+				BufLen - fll - BufLeft );
 
 			double* const wp1 = Buf + WritePos;
+			memcpy( wp1, ip, b * sizeof( double ));
 
 			if( WritePos < fl4 )
 			{
 				const int c = min( b, fl4 - WritePos );
-				double* const wp2 = wp1 + BufLen;
-				int i;
-
-				for( i = 0; i < c; i++ )
-				{
-					wp1[ i ] = ip[ i ];
-					wp2[ i ] = ip[ i ];
-				}
-
-				memcpy( wp1 + c, ip + c, ( b - c ) * sizeof( double ));
-			}
-			else
-			{
-				memcpy( wp1, ip, b * sizeof( double ));
+				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
 			}
 
 			ip += b;
@@ -256,8 +244,8 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
-	typedef void( CDSPHBConvolver :: *CConvolveFn )( double* op, int c ); ///<
-		///< Convolution funtion type.
+	typedef void( CDSPHBDownsampler :: *CConvolveFn )( double* op,
+		int c ); ///< Convolution funtion type.
 		///<
 	CConvolveFn convfn; ///< Convolution function in use.
 		///<
@@ -265,11 +253,13 @@ private:
 #define R8BHBC1( fn ) \
 	void fn( double* op, int c ) \
 	{ \
-		const double* const rp0 = Buf + fl2; \
+		const double* const rp0 = Buf + fll; \
 		int rpos = ReadPos; \
 		while( c > 0 ) \
 		{ \
-			const double* const rp = rp0 + rpos;
+			const double* const rp = rp0 + rpos; \
+			*op = rp[ 0 ] +
+
 #define R8BHBC2 \
 			rpos = ( rpos + 2 ) & BufLenMask; \
 			op++; \
@@ -279,7 +269,6 @@ private:
 	}
 
 	R8BHBC1( convolve4 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -287,7 +276,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve5 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -296,7 +284,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve6 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -306,7 +293,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve7 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -317,7 +303,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve8 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -329,7 +314,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve9 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -342,7 +326,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve10 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -356,7 +339,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve11 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -371,7 +353,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve12 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -387,7 +368,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve13 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -404,7 +384,6 @@ private:
 	R8BHBC2
 
 	R8BHBC1( convolve14 )
-			*op = 0.5 * rp[ 0 ] +
 				flt[ 0 ] * ( rp[ 1 ] + rp[ -1 ]) +
 				flt[ 1 ] * ( rp[ 3 ] + rp[ -3 ]) +
 				flt[ 2 ] * ( rp[ 5 ] + rp[ -5 ]) +
@@ -429,4 +408,4 @@ private:
 
 } // namespace r8b
 
-#endif // R8B_CDSPHBCONVOLVER_INCLUDED
+#endif // R8B_CDSPHBDOWNSAMPLER_INCLUDED
