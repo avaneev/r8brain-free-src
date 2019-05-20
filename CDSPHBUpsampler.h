@@ -273,7 +273,7 @@ public:
 		convfn = FltConvFn[ fltt - 1 ];
 		fll = fltt - 1;
 		fl2 = fltt;
-		fl4 = fll + fl2;
+		flo = fll + fl2;
 
 		R8BCONSOLE( "CDSPHBUpsampler: sti=%i taps=%i att=%.1f io=2/1\n",
 			SteepIndex, fltt, att );
@@ -330,9 +330,9 @@ public:
 			double* const wp1 = Buf + WritePos;
 			memcpy( wp1, ip, b * sizeof( double ));
 
-			if( WritePos < fl4 )
+			if( WritePos < flo )
 			{
-				const int c = min( b, fl4 - WritePos );
+				const int c = min( b, flo - WritePos );
 				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
 			}
 
@@ -379,7 +379,7 @@ private:
 		///<
 	int fl2; ///< Right-side filter length.
 		///<
-	int fl4; ///< Overrrun length.
+	int flo; ///< Overrrun length.
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation

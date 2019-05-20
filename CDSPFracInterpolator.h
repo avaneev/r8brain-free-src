@@ -513,30 +513,19 @@ public:
 				BufLeftMax - BufLeft );
 
 			double* const wp1 = Buf + WritePos;
-			int i;
+			memcpy( wp1, ip, b * sizeof( double ));
 
 			if( WritePos < FilterLen1 )
 			{
 				const int c = min( b, FilterLen1 - WritePos );
-				double* const wp2 = wp1 + BufLen;
-
-				for( i = 0; i < c; i++ )
-				{
-					wp1[ i ] = ip[ i ];
-					wp2[ i ] = ip[ i ];
-				}
-
-				memcpy( wp1 + c, ip + c, ( b - c ) * sizeof( double ));
-			}
-			else
-			{
-				memcpy( wp1, ip, b * sizeof( double ));
+				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
 			}
 
 			ip += b;
 			WritePos = ( WritePos + b ) & BufLenMask;
 			l -= b;
 			BufLeft += b;
+			int i;
 
 			// Produce as many output samples as possible.
 
