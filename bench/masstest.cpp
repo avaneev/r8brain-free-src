@@ -48,13 +48,13 @@ VOXMAIN
 	{
 		const double SrcSampleRate = (int) ( 10 + 200 * rnd.getUniform() );
 		const double DstSampleRate = (int) ( 10 + 200 * rnd.getUniform() );
-		const double tb = 1.0 + 9.0 * rnd.getUniform();
+		const double tb = 0.5 + 5.0 * rnd.getUniform();
 		const int MaxInLen = 50 + (int) ( 2000 * rnd.getUniform() );
 
 		printf( "Iteration %i src=%f dst=%f tb=%f MaxInLen=%i\n",
 			k + 1, SrcSampleRate, DstSampleRate, tb, MaxInLen );
 
-		const int ol = (int) ( InBufSize * SrcSampleRate / DstSampleRate );
+		const int ol = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf( ol );
 		CPtrKeeper< r8b :: CDSPResampler24* > Resamp;
 		Resamp = new r8b :: CDSPResampler24( SrcSampleRate,
