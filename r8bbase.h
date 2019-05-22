@@ -54,7 +54,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 1.9
+ * @version 3.0
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -83,7 +83,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "1.9"
+#define R8B_VERSION "3.0"
 
 #if !defined( M_PI )
 	/**
@@ -317,6 +317,31 @@ public:
 		Data = (T*) allocmem( Capacity * sizeof( T ));
 
 		R8BASSERT( Data != NULL || Capacity == 0 );
+	}
+
+	/**
+	 * Function reallocates memory so that the specified number of elements of
+	 * type T can be stored in *this buffer object. Previously allocated data
+	 * is copied to the new memory buffer.
+	 *
+	 * @param PrevCapacity Previous capacity of *this buffer.
+	 * @param NewCapacity Storage for this number of elements to allocate.
+	 */
+
+	void realloc( const int PrevCapacity, const int NewCapacity )
+	{
+		R8BASSERT( PrevCapacity >= 0 );
+		R8BASSERT( NewCapacity >= 0 );
+
+		T* const NewData = (T*) allocmem( NewCapacity * sizeof( T ));
+
+		memcpy( NewData, Data, ( PrevCapacity > NewCapacity ?
+			NewCapacity : PrevCapacity ) * sizeof( T ));
+
+		freemem( Data );
+		Data = NewData;
+
+		R8BASSERT( Data != NULL || NewCapacity == 0 );
 	}
 
 	/**
@@ -867,7 +892,7 @@ inline void calcFIRFilterResponseAndGroupDelay( const double* const flt,
 	}
 
 	const double thd = ths[ 1 ] - ths[ 0 ];
-	gd = ( ph1[ 1 ] - ph1[ 0 ]) / -thd;
+	gd = ( ph1[ 1 ] - ph1[ 0 ]) / thd;
 }
 
 /**

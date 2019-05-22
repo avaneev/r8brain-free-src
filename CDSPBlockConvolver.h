@@ -77,7 +77,9 @@ public:
 		if(( 1 << UpShift ) == UpFactor )
 		{
 			fftinBits = Filter -> getBlockLenBits() + 1 - UpShift;
-			PrevInputLen = ( Filter -> getKernelLen() - 1 ) / UpFactor;
+			PrevInputLen = ( Filter -> getKernelLen() - 1 + UpFactor - 1 ) /
+				UpFactor;
+
 			InputLen = BlockLen2 - PrevInputLen * UpFactor;
 		}
 		else
@@ -118,26 +120,31 @@ public:
 				}
 				else
 				{
-					int Delay = Latency & ( DownFactor - 1 );
+					// Make sure InputLen is divisible by DownFactor.
 
-					if( Delay > 0 )
+					const int ilc = InputLen & ( DownFactor - 1 );
+					PrevInputLen += ilc;
+					InputLen -= ilc;
+					Latency -= ilc;
+
+					if( DoConsumeLatency && !Filter -> isZeroPhase() )
 					{
-						Delay = DownFactor - Delay;
-						Latency += Delay;
+						// Correct InputDelay for filter's latency.
 
-						if( Delay < UpFactor )
+						const int lc = Filter -> getLatency() &
+							( DownFactor - 1 );
+
+						if( lc > 0 )
 						{
-							UpSkipInit = Delay;
-						}
-						else
-						{
-							UpSkipInit = UpFactor - 1;
-							InputDelay = Delay - UpSkipInit;
+							InputDelay = DownFactor - lc;
 						}
 					}
 
 					if( !DoConsumeLatency )
 					{
+						const int sh = Latency % DownFactor;
+						InputDelay = sh;
+						Latency += sh;
 						Latency /= DownFactor;
 					}
 				}
@@ -199,8 +206,7 @@ public:
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
-		return(( MaxInLen * UpFactor + InputDelay + DownFactor - 1 ) /
-			DownFactor );
+		return(( MaxInLen * UpFactor + DownFactor - 1 ) / DownFactor );
 	}
 
 	virtual void clear()

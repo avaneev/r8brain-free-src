@@ -30,83 +30,85 @@ class CDSPHBUpsampler : public CDSPProcessor
 {
 public:
 	/**
-	 * Constructor initalizes the half-band upsampler.
+	 * Function that provides filter data for various steepness indices and
+	 * attenuations.
 	 *
 	 * @param ReqAtten Required half-band filter attentuation.
 	 * @param SteepIndex Steepness index - 0=steepest. Corresponds to general
-	 * upsampling ratio, e.g. at 4x upsampling 0 is used, at 8x upsampling 1
-	 * is used, etc.
+	 * upsampling/downsampling ratio, e.g. at 4x 0 is used, at 8x 1 is used,
+	 * etc.
 	 */
 
-	CDSPHBUpsampler( const double ReqAtten, const int SteepIndex )
+	static void getHBFilter( const double ReqAtten, const int SteepIndex,
+		const double*& flt, int& fltt, double& att )
 	{
-		static const int FltCount = 11; // 0.25
-		static const double HBKernel_4[ 4 ] = { // StopAtten = -64.9241 dB
-			6.1073830069265700e-001, -1.4463982571471834e-001,
-			4.1136036923117736e-002, -7.4740105856911931e-003 };
-		static const double HBKernel_5[ 5 ] = { // StopAtten = -87.4775 dB
-			6.1553054142504182e-001, -1.5591352339397746e-001,
-			5.2404802661294436e-002, -1.4230574348723879e-002,
-			2.2457593805369491e-003 };
-		static const double HBKernel_6[ 6 ] = { // StopAtten = -104.5154 dB
-			6.1883766561934372e-001, -1.6396282655874983e-001,
-			6.1104571279329445e-002, -2.0317756445220159e-002,
-			5.0264527466028497e-003, -6.9392938429513329e-004 };
-		static const double HBKernel_7[ 7 ] = { // StopAtten = -120.6199 dB
-			6.2125313688726314e-001, -1.6999763849269822e-001,
-			6.8014108060695744e-002, -2.5679821316663798e-002,
-			7.9798828249511011e-003, -1.7871060154426299e-003,
-			2.1836606459402219e-004 };
-		static const double HBKernel_8[ 8 ] = { // StopAtten = -136.5151 dB
-			6.2309299085364334e-001, -1.7468969193360939e-001,
-			7.3628746444883930e-002, -3.0378268549981380e-002,
-			1.0908085227611775e-002, -3.1287343330108630e-003,
-			6.3632014609105170e-004, -6.9597139144672582e-005 };
-		static const double HBKernel_9[ 9 ] = { // StopAtten = -152.3240 dB
-			6.2454069594801442e-001, -1.7844303649906834e-001,
-			7.8279410808936412e-002, -3.4501119561946458e-002,
-			1.3717889826688978e-002, -4.6090109007730362e-003,
-			1.2192752061257472e-003, -2.2647618540871939e-004,
-			2.2395554540199925e-005 };
-		static const double HBKernel_10[ 10 ] = { // StopAtten = -168.0859 dB
-			6.2570883988448456e-001, -1.8151274643051463e-001,
-			8.2191863294133416e-002, -3.8131779329263038e-002,
-			1.6367492549395291e-002, -6.1530178831008531e-003,
-			1.9277693941690544e-003, -4.7165916428615340e-004,
-			8.0491894740575276e-005, -7.2581515822012221e-006 };
-		static const double HBKernel_11[ 11 ] = { // StopAtten = -183.7962 dB
-			6.2667167705228000e-001, -1.8407153338070459e-001,
-			8.5529995551434368e-002, -4.1346831405384199e-002,
-			1.8844831647669924e-002, -7.7125170092675610e-003,
-			2.7268674722185082e-003, -7.9745027943944891e-004,
-			1.8116344436958087e-004, -2.8569149403079308e-005,
-			2.3667021631368357e-006 };
-		static const double HBKernel_12[ 12 ] = { // StopAtten = -199.4768 dB
-			6.2747849716660786e-001, -1.8623616747750149e-001,
-			8.8409755409981194e-002, -4.4207468337011502e-002,
-			2.1149175555773780e-002, -9.2551505772804354e-003,
-			3.5871560727791518e-003, -1.1923166995018164e-003,
-			3.2627809786633932e-004, -6.9106895864035067e-005,
-			1.0122896608955045e-005, -7.7531866615743184e-007 };
-		static const double HBKernel_13[ 13 ] = { // StopAtten = -215.1362 dB
-			6.2816416241409012e-001, -1.8809076924909807e-001,
-			9.0918539438652246e-002, -4.6765502217762434e-002,
-			2.3287520076995527e-002, -1.0760626918534744e-002,
-			4.4853920783696211e-003, -1.6438774206595230e-003,
-			5.1441306611588189e-004, -1.3211723499129135e-004,
-			2.6191313459378307e-005, -3.5802417774899453e-006,
-			2.5491264654675660e-007 };
-		static const double HBKernel_14[ 14 ] = { // StopAtten = -230.7513 dB
-			6.2875473134883197e-001, -1.8969941971554194e-001,
-			9.3126094863805076e-002, -4.9067251432719283e-002,
-			2.5273008898692328e-002, -1.2218646028834490e-002,
-			5.4048940066335760e-003, -2.1409917655095256e-003,
-			7.4250279810872399e-004, -2.1924535312756177e-004,
-			5.3015780896448206e-005, -9.8742950571661936e-006,
-			1.2650374272560327e-006, -8.4146504875093342e-008 };
+		static const int FltCount = 11;
+		static const double HBKernel_4[ 4 ] = { // att -64.9241 dB, frac 4.0
+			6.1073830069265711e-001, -1.4463982571471876e-001,
+			4.1136036923118187e-002, -7.4740105856914872e-003 };
+		static const double HBKernel_5[ 5 ] = { // att -87.4775 dB, frac 4.0
+			6.1553054142504338e-001, -1.5591352339398118e-001,
+			5.2404802661298266e-002, -1.4230574348726146e-002,
+			2.2457593805377831e-003 };
+		static const double HBKernel_6[ 6 ] = { // att -104.5154 dB, frac 4.0
+			6.1883766561934184e-001, -1.6396282655874558e-001,
+			6.1104571279325129e-002, -2.0317756445217543e-002,
+			5.0264527466018826e-003, -6.9392938429507279e-004 };
+		static const double HBKernel_7[ 7 ] = { // att -120.6199 dB, frac 4.0
+			6.2125313688727779e-001, -1.6999763849273491e-001,
+			6.8014108060738196e-002, -2.5679821316697125e-002,
+			7.9798828249699784e-003, -1.7871060154498470e-003,
+			2.1836606459564009e-004 };
+		static const double HBKernel_8[ 8 ] = { // att -136.5151 dB, frac 4.0
+			6.2309299085367287e-001, -1.7468969193368433e-001,
+			7.3628746444973150e-002, -3.0378268550055314e-002,
+			1.0908085227657214e-002, -3.1287343330312556e-003,
+			6.3632014609722092e-004, -6.9597139145649502e-005 };
+		static const double HBKernel_9[ 9 ] = { // att -152.3240 dB, frac 4.0
+			6.2454069594794803e-001, -1.7844303649890664e-001,
+			7.8279410808762842e-002, -3.4501119561829857e-002,
+			1.3717889826645487e-002, -4.6090109007760798e-003,
+			1.2192752061406873e-003, -2.2647618541786664e-004,
+			2.2395554542567748e-005 };
+		static const double HBKernel_10[ 10 ] = { // att -168.0859 dB, frac 4.0
+			6.2570883988448611e-001, -1.8151274643053061e-001,
+			8.2191863294185458e-002, -3.8131779329357615e-002,
+			1.6367492549512565e-002, -6.1530178832078578e-003,
+			1.9277693942420303e-003, -4.7165916432255402e-004,
+			8.0491894752808465e-005, -7.2581515842465856e-006 };
+		static const double HBKernel_11[ 11 ] = { // att -183.7962 dB, frac 4.0
+			6.2667167706646965e-001, -1.8407153341833782e-001,
+			8.5529995600327216e-002, -4.1346831452173063e-002,
+			1.8844831683400131e-002, -7.7125170314919214e-003,
+			2.7268674834296570e-003, -7.9745028391855826e-004,
+			1.8116344571770699e-004, -2.8569149678673122e-005,
+			2.3667021922861879e-006 };
+		static const double HBKernel_12[ 12 ] = { // att -199.4768 dB, frac 4.0
+			6.2747849729182659e-001, -1.8623616781335248e-001,
+			8.8409755856508648e-002, -4.4207468780136254e-002,
+			2.1149175912217915e-002, -9.2551508154301194e-003,
+			3.5871562052326249e-003, -1.1923167600753576e-003,
+			3.2627812001613326e-004, -6.9106902008709490e-005,
+			1.0122897772888322e-005, -7.7531878091292963e-007 };
+		static const double HBKernel_13[ 13 ] = { // att -215.1364 dB, frac 4.0
+			6.2816416238782957e-001, -1.8809076918442266e-001,
+			9.0918539368474965e-002, -4.6765502172995604e-002,
+			2.3287520069933797e-002, -1.0760626940880943e-002,
+			4.4853921118213676e-003, -1.6438774496992904e-003,
+			5.1441308429384374e-004, -1.3211724349740752e-004,
+			2.6191316362108199e-005, -3.5802424384280469e-006,
+			2.5491272423372411e-007 };
+		static const double HBKernel_14[ 14 ] = { // att -230.7526 dB, frac 4.0
+			6.2875473147254901e-001, -1.8969942008858576e-001,
+			9.3126095475258408e-002, -4.9067252227455962e-002,
+			2.5273009767563311e-002, -1.2218646838258702e-002,
+			5.4048946497798353e-003, -2.1409921992386689e-003,
+			7.4250304371305991e-004, -2.1924546773651068e-004,
+			5.3015823597863675e-005, -9.8743070771832892e-006,
+			1.2650397198764347e-006, -8.4146728313072455e-008 };
 		static const double FltAttens[ FltCount ] = {
 			64.9241, 87.4775, 104.5154, 120.6199, 136.5151, 152.3240,
-			168.0859, 183.7962, 199.4768, 215.1362, 230.7513 };
+			168.0859, 183.7962, 199.4768, 215.1364, 230.7526 };
 		static const double* const FltPtrs[ FltCount ] = { HBKernel_4,
 			HBKernel_5, HBKernel_6, HBKernel_7, HBKernel_8, HBKernel_9,
 			HBKernel_10, HBKernel_11, HBKernel_12, HBKernel_13,
@@ -198,18 +200,7 @@ public:
 		static const double* const FltPtrsE[ FltCountE ] = { HBKernel_1e,
 			HBKernel_2e, HBKernel_3e, HBKernel_4e };
 
-		static const CConvolveFn FltConvFn[ 14 ] = {
-			&CDSPHBUpsampler :: convolve1, &CDSPHBUpsampler :: convolve2,
-			&CDSPHBUpsampler :: convolve3, &CDSPHBUpsampler :: convolve4,
-			&CDSPHBUpsampler :: convolve5, &CDSPHBUpsampler :: convolve6,
-			&CDSPHBUpsampler :: convolve7, &CDSPHBUpsampler :: convolve8,
-			&CDSPHBUpsampler :: convolve9, &CDSPHBUpsampler :: convolve10,
-			&CDSPHBUpsampler :: convolve11, &CDSPHBUpsampler :: convolve12,
-			&CDSPHBUpsampler :: convolve13, &CDSPHBUpsampler :: convolve14 };
-
 		int k = 0;
-		int fltt;
-		double att;
 
 		if( SteepIndex <= 0 )
 		{
@@ -269,11 +260,236 @@ public:
 			fltt = 1 + k;
 			att = FltAttensE[ k ];
 		}
+	}
+
+	/**
+	 * Function that provides filter data for various steepness indices and
+	 * attenuations. For 1/3 resamplings.
+	 *
+	 * @param ReqAtten Required half-band filter attentuation.
+	 * @param SteepIndex Steepness index - 0=steepest. Corresponds to general
+	 * upsampling/downsampling ratio, e.g. at 4x 0 is used, at 8x 1 is used,
+	 * etc.
+	 */
+
+	static void getHBFilterThird( const double ReqAtten, const int SteepIndex,
+		const double*& flt, int& fltt, double& att )
+	{
+		static const int FltCount = 7;
+		static const double HBKernel_3[ 3 ] = { // att -75.0994 dB, frac 6.0
+			5.9381789425210385e-001, -1.1030344037819353e-001,
+			1.6601396044066741e-002 };
+		static const double HBKernel_4[ 4 ] = { // att -102.5310 dB, frac 6.0
+			6.0388679447131843e-001, -1.3043900369548017e-001,
+			3.0518777984447295e-002, -3.9738477033171900e-003 };
+		static const double HBKernel_5[ 5 ] = { // att -126.5360 dB, frac 6.0
+			6.1014115058940344e-001, -1.4393081816630204e-001,
+			4.1760642892854860e-002, -8.9692183234068596e-003,
+			9.9871340618369218e-004 };
+		static const double HBKernel_6[ 6 ] = { // att -150.1830 dB, frac 6.0
+			6.1439563420561982e-001, -1.5360187826939378e-001,
+			5.0840891346007507e-002, -1.4053648740740480e-002,
+			2.6771286587896391e-003, -2.5815816045721899e-004 };
+		static const double HBKernel_7[ 7 ] = { // att -173.7067 dB, frac 6.0
+			6.1747493476475102e-001, -1.6087373733655960e-001,
+			5.8263075644905349e-002, -1.8872408175697929e-002,
+			4.7421376553202421e-003, -8.0196529637661137e-004,
+			6.7964807425180754e-005 };
+		static const double HBKernel_8[ 8 ] = { // att -197.1454 dB, frac 6.0
+			6.1980610946074488e-001, -1.6654070574184196e-001,
+			6.4416567396953492e-002, -2.3307744316524541e-002,
+			6.9909157209589430e-003, -1.5871946236745982e-003,
+			2.4017727258609085e-004, -1.8125308111373566e-005 };
+		static const double HBKernel_9[ 9 ] = { // att -220.5199 dB, frac 6.0
+			6.2163188987470752e-001, -1.7108115412330563e-001,
+			6.9588371105224839e-002, -2.7339625869282957e-002,
+			9.2954473703765472e-003, -2.5537181861669997e-003,
+			5.2572296540671394e-004, -7.1813366796731157e-005,
+			4.8802392556669750e-006 };
+		static const double FltAttens[ FltCount ] = {
+			75.0994, 102.5310, 126.5360, 150.1830, 173.7067, 197.1454,
+			220.5199 };
+		static const double* const FltPtrs[ FltCount ] = { HBKernel_3,
+			HBKernel_4, HBKernel_5, HBKernel_6, HBKernel_7, HBKernel_8,
+			HBKernel_9 };
+
+		static const int FltCountB = 5;
+		static const double HBKernel_2b[ 2 ] = { // att -75.4413 dB, frac 12.0
+			5.6569875353984056e-001, -6.5811416441328888e-002 };
+		static const double HBKernel_3b[ 3 ] = { // att -115.7198 dB, frac 12.0
+			5.8793612182667099e-001, -1.0070583248877137e-001,
+			1.2771337947163270e-002 };
+		static const double HBKernel_4b[ 4 ] = { // att -152.1528 dB, frac 12.0
+			5.9960155600859322e-001, -1.2228154335192955e-001,
+			2.5433718917658079e-002, -2.7537562530760588e-003 };
+		static const double HBKernel_5b[ 5 ] = { // att -188.2914 dB, frac 12.0
+			6.0676859170270769e-001, -1.3689667009297382e-001,
+			3.6288512627614941e-002, -6.7838855288962756e-003,
+			6.2345167652090897e-004 };
+		static const double HBKernel_6b[ 6 ] = { // att -224.2705 dB, frac 12.0
+			6.1161456377889145e-001, -1.4743902036519768e-001,
+			4.5344160828746795e-002, -1.1207372108402218e-002,
+			1.8328498006058664e-003, -1.4518194076022933e-004 };
+		static const double FltAttensB[ FltCountB ] = {
+			75.4413, 115.7198, 152.1528, 188.2914, 224.2705 };
+		static const double* const FltPtrsB[ FltCountB ] = { HBKernel_2b,
+			HBKernel_3b, HBKernel_4b, HBKernel_5b, HBKernel_6b };
+
+		static const int FltCountC = 4;
+		static const double HBKernel_2c[ 2 ] = { // att -102.9806 dB, frac 24.0
+			5.6330232648142842e-001, -6.3309247177420730e-002 };
+		static const double HBKernel_3c[ 3 ] = { // att -152.1187 dB, frac 24.0
+			5.8643891113575064e-001, -9.8411593011501639e-002,
+			1.1972706651455891e-002 };
+		static const double HBKernel_4c[ 4 ] = { // att -200.6182 dB, frac 24.0
+			5.9851012364429712e-001, -1.2028885240905723e-001,
+			2.4294521088349529e-002, -2.5157924167197453e-003 };
+		static const double HBKernel_5c[ 5 ] = { // att -248.8728 dB, frac 24.0
+			6.0590922849004858e-001, -1.3515953371903033e-001,
+			3.5020856634677522e-002, -6.3256195330255094e-003,
+			5.5506812768978109e-004 };
+		static const double FltAttensC[ FltCountC ] = {
+			102.9806, 152.1187, 200.6182, 248.8728 };
+		static const double* const FltPtrsC[ FltCountC ] = { HBKernel_2c,
+			HBKernel_3c, HBKernel_4c, HBKernel_5c };
+
+		static const int FltCountD = 4;
+		static const double HBKernel_1d[ 1 ] = { // att -48.6615 dB, frac 48.0
+			5.0053598654836240e-001 };
+		static const double HBKernel_2d[ 2 ] = { // att -127.3033 dB, frac 48.0
+			5.6270074379958679e-001, -6.2701174487726163e-002 };
+		static const double HBKernel_3d[ 3 ] = { // att -188.2989 dB, frac 48.0
+			5.8606296210257025e-001, -9.7844644764129421e-002,
+			1.1781683046197223e-002 };
+		static const double HBKernel_4d[ 4 ] = { // att -248.8578 dB, frac 48.0
+			5.9823601283411165e-001, -1.1979369067338455e-001,
+			2.4017459011435899e-002, -2.4597811725236445e-003 };
+		static const double FltAttensD[ FltCountD ] = {
+			48.6615, 127.3033, 188.2989, 248.8578 };
+		static const double* const FltPtrsD[ FltCountD ] = { HBKernel_1d,
+			HBKernel_2d, HBKernel_3d, HBKernel_4d };
+
+		static const int FltCountE = 3;
+		static const double HBKernel_1e[ 1 ] = { // att -73.2782 dB, frac 96.0
+			5.0013388897382527e-001 };
+		static const double HBKernel_2e[ 2 ] = { // att -151.4076 dB, frac 96.0
+			5.6255019604318290e-001, -6.2550222932385172e-002 };
+		static const double HBKernel_3e[ 3 ] = { // att -224.4366 dB, frac 96.0
+			5.8596887233874539e-001, -9.7703321108182931e-002,
+			1.1734448775437802e-002 };
+		static const double FltAttensE[ FltCountE ] = {
+			73.2782, 151.4076, 224.4366 };
+		static const double* const FltPtrsE[ FltCountE ] = { HBKernel_1e,
+			HBKernel_2e, HBKernel_3e };
+
+		int k = 0;
+
+		if( SteepIndex <= 0 )
+		{
+			while( k != FltCount - 1 && FltAttens[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrs[ k ];
+			fltt = 3 + k;
+			att = FltAttens[ k ];
+		}
+		else
+		if( SteepIndex == 1 )
+		{
+			while( k != FltCountB - 1 && FltAttensB[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsB[ k ];
+			fltt = 2 + k;
+			att = FltAttensB[ k ];
+		}
+		else
+		if( SteepIndex == 2 )
+		{
+			while( k != FltCountC - 1 && FltAttensC[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsC[ k ];
+			fltt = 2 + k;
+			att = FltAttensC[ k ];
+		}
+		else
+		if( SteepIndex == 3 )
+		{
+			while( k != FltCountD - 1 && FltAttensD[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsD[ k ];
+			fltt = 1 + k;
+			att = FltAttensD[ k ];
+		}
+		else
+		{
+			while( k != FltCountE - 1 && FltAttensE[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsE[ k ];
+			fltt = 1 + k;
+			att = FltAttensE[ k ];
+		}
+	}
+
+	/**
+	 * Constructor initalizes the half-band upsampler.
+	 *
+	 * @param ReqAtten Required half-band filter attentuation.
+	 * @param SteepIndex Steepness index - 0=steepest. Corresponds to general
+	 * upsampling ratio, e.g. at 4x upsampling 0 is used, at 8x upsampling 1
+	 * is used, etc.
+	 * @param IsThird "True" if 1/3 resampling is performed.
+	 * @param PrevLatency Latency, in samples (any value >=0), which was left
+	 * in the output signal by a previous process. Whole-number latency will
+	 * be consumed by *this object while remaining fractional latency can be
+	 * obtained via the getLatencyFrac() function.
+	 */
+
+	CDSPHBUpsampler( const double ReqAtten, const int SteepIndex,
+		const bool IsThird, const double PrevLatency )
+	{
+		static const CConvolveFn FltConvFn[ 14 ] = {
+			&CDSPHBUpsampler :: convolve1, &CDSPHBUpsampler :: convolve2,
+			&CDSPHBUpsampler :: convolve3, &CDSPHBUpsampler :: convolve4,
+			&CDSPHBUpsampler :: convolve5, &CDSPHBUpsampler :: convolve6,
+			&CDSPHBUpsampler :: convolve7, &CDSPHBUpsampler :: convolve8,
+			&CDSPHBUpsampler :: convolve9, &CDSPHBUpsampler :: convolve10,
+			&CDSPHBUpsampler :: convolve11, &CDSPHBUpsampler :: convolve12,
+			&CDSPHBUpsampler :: convolve13, &CDSPHBUpsampler :: convolve14 };
+
+		int fltt;
+		double att;
+
+		if( IsThird )
+		{
+			getHBFilterThird( ReqAtten, SteepIndex, flt, fltt, att );
+		}
+		else
+		{
+			getHBFilter( ReqAtten, SteepIndex, flt, fltt, att );
+		}
 
 		convfn = FltConvFn[ fltt - 1 ];
 		fll = fltt - 1;
 		fl2 = fltt;
 		flo = fll + fl2;
+
+		LatencyFrac = PrevLatency * 2.0;
+		Latency = (int) LatencyFrac;
+		LatencyFrac -= Latency;
 
 		R8BCONSOLE( "CDSPHBUpsampler: sti=%i taps=%i att=%.1f io=2/1\n",
 			SteepIndex, fltt, att );
@@ -288,7 +504,7 @@ public:
 
 	virtual double getLatencyFrac() const
 	{
-		return( 0.0 );
+		return( LatencyFrac );
 	}
 
 	virtual int getMaxOutLen( const int MaxInLen ) const
@@ -298,14 +514,9 @@ public:
 		return( MaxInLen * 2 );
 	}
 
-	/**
-	 * Function clears (resets) the state of *this object and returns it to
-	 * the state after construction. All input data accumulated in the
-	 * internal buffer so far will be discarded.
-	 */
-
 	virtual void clear()
 	{
+		LatencyLeft = Latency;
 		BufLeft = 0;
 		WritePos = 0;
 		ReadPos = BufLen - fll; // Set "read" position to
@@ -352,7 +563,22 @@ public:
 			}
 		}
 
-		return( (int) ( op - op0 ));
+		int ol = (int) ( op - op0 );
+
+		if( LatencyLeft > 0 )
+		{
+			if( LatencyLeft >= ol )
+			{
+				LatencyLeft -= ol;
+				return( 0 );
+			}
+
+			ol -= LatencyLeft;
+			op0 += LatencyLeft;
+			LatencyLeft = 0;
+		}
+
+		return( ol );
 	}
 
 private:
@@ -381,6 +607,10 @@ private:
 		///<
 	int flo; ///< Overrrun length.
 		///<
+	int Latency; ///< Initial latency that should be removed from the output.
+		///<
+	double LatencyFrac; ///< Fractional latency left on the output.
+		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation
 		///< cycle ends.
@@ -389,6 +619,8 @@ private:
 		///< with the BufLeft variable.
 		///<
 	int ReadPos; ///< The current buffer read position.
+		///<
+	int LatencyLeft; ///< Latency left to remove.
 		///<
 	typedef void( CDSPHBUpsampler :: *CConvolveFn )( double* op, int c ); ///<
 		///< Convolution funtion type.

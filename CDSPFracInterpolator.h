@@ -31,6 +31,8 @@ namespace r8b {
 
 class CDSPFracDelayFilterBank : public R8B_BASECLASS
 {
+	R8BNOCTOR( CDSPFracDelayFilterBank );
+
 	friend class CDSPFracDelayFilterBankCache;
 
 public:
@@ -243,6 +245,8 @@ private:
 
 class CDSPFracDelayFilterBankCache : public R8B_BASECLASS
 {
+	R8BNOCTOR( CDSPFracDelayFilterBankCache );
+
 	friend class CDSPFracDelayFilterBank;
 
 public:
@@ -372,6 +376,79 @@ inline void CDSPFracDelayFilterBank :: unref()
 }
 
 /**
+ * @param l Number 1.
+ * @param s Number 2.
+ * @param[out] GCD Resulting GCD.
+ * @return "True" if the greatest common denominator of 2 numbers was
+ * found.
+ */
+
+inline bool findGCD( double l, double s, double& GCD )
+{
+	int it = 0;
+
+	while( it < 50 )
+	{
+		if( s <= 0.0 )
+		{
+			GCD = l;
+			return( true );
+		}
+
+		const double r = l - s;
+		l = s;
+		s = ( r < 0.0 ? -r : r );
+		it++;
+	}
+
+	return( false );
+}
+
+/**
+ * Function evaluates source and destination sample rate ratio and returns
+ * the required input and output stepping. Function returns "false" if
+ * *this class cannot be used to perform interpolation using these sample
+ * rates.
+ *
+ * @param SSampleRate Source sample rate.
+ * @param DSampleRate Destination sample rate.
+ * @param[out] ResInStep Resulting input step.
+ * @param[out] ResOutStep Resulting output step.
+ * @return "True" if stepping was acquired.
+ */
+
+inline bool getWholeStepping( const double SSampleRate,
+	const double DSampleRate, int& ResInStep, int& ResOutStep )
+{
+	double GCD;
+
+	if( !findGCD( SSampleRate, DSampleRate, GCD ) || GCD < 1.0 )
+	{
+		return( false );
+	}
+
+	const double InStep0 = SSampleRate / GCD;
+	ResInStep = (int) InStep0;
+	const double OutStep0 = DSampleRate / GCD;
+	ResOutStep = (int) OutStep0;
+
+	if( InStep0 != ResInStep || OutStep0 != ResOutStep )
+	{
+		return( false );
+	}
+
+	if( ResOutStep > 1500 )
+	{
+		// Do not allow large output stepping due to low cache
+		// performance of large filter banks.
+
+		return( false );
+	}
+
+	return( true );
+}
+
+/**
  * @brief Fractional delay filter bank-based interpolator class.
  *
  * Class implements the fractional delay interpolator. This implementation at
@@ -408,17 +485,15 @@ public:
 	 *
 	 * @param aSrcSampleRate Source sample rate.
 	 * @param aDstSampleRate Destination sample rate.
-	 * @param aInitFracPos Initial fractional position, in samples, in the
-	 * range [0; 1). A non-zero value can be specified to remove the
-	 * fractional delay introduced by a minimum-phase filter. This value is
-	 * usually equal to the CDSPBlockConvolver.getLatencyFrac() value.
+	 * @param PrevLatency Latency, in samples (any value >=0), which was left
+	 * in the output signal by a previous process. This latency will be
+	 * consumed completely.
 	 */
 
 	CDSPFracInterpolator( const double aSrcSampleRate,
-		const double aDstSampleRate, const double aInitFracPos )
+		const double aDstSampleRate, const double PrevLatency )
 		: SrcSampleRate( aSrcSampleRate )
 		, DstSampleRate( aDstSampleRate )
-		, InitFracPos( aInitFracPos )
 	#if R8B_FASTTIMING
 		, FracStep( aSrcSampleRate / aDstSampleRate )
 	#endif // R8B_FASTTIMING
@@ -428,26 +503,32 @@ public:
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
-		R8BASSERT( InitFracPos >= 0.0 && InitFracPos < 1.0 );
+		R8BASSERT( PrevLatency >= 0.0 );
 		R8BASSERT( BufLenBits >= 5 );
 		R8BASSERT(( 1 << BufLenBits ) >= FilterLen * 3 );
 
-		if( getWholeStepping() )
+		InitFracPos = PrevLatency;
+		Latency = (int) InitFracPos;
+		InitFracPos -= Latency;
+
+		if( getWholeStepping( SrcSampleRate, DstSampleRate, InStep, OutStep ))
 		{
-			InitFracPosW = (int) ( InitFracPos * InStep / OutStep );
+			InitFracPosW = (int) ( InitFracPos * OutStep );
+			LatencyFrac = InitFracPos - (double) InitFracPosW / OutStep;
 			FilterBankW = &CDSPFracDelayFilterBankCache :: getFilterBank(
 				FilterLen, OutStep, 1, 2 );
 		}
 		else
 		{
 			InitFracPosW = 0;
+			LatencyFrac = 0.0;
 			FilterBankW = NULL;
 		}
 
 		clear();
 	}
 
-	~CDSPFracInterpolator()
+	virtual ~CDSPFracInterpolator()
 	{
 		if( FilterBankW != NULL )
 		{
@@ -462,7 +543,7 @@ public:
 
 	virtual double getLatencyFrac() const
 	{
-		return( 0.0 );
+		return( LatencyFrac );
 	}
 
 	virtual int getMaxOutLen( const int MaxInLen ) const
@@ -472,36 +553,49 @@ public:
 		return( (int) ceil( MaxInLen * DstSampleRate / SrcSampleRate ) + 1 );
 	}
 
-	/**
-	 * Function clears (resets) the state of *this object and returns it to
-	 * the state after construction. All input data accumulated in the
-	 * internal buffer so far will be discarded.
-	 */
-
 	virtual void clear()
 	{
+		LatencyLeft = Latency;
 		BufLeft = 0;
 		WritePos = 0;
-		ReadPos = BufLen - FilterLenD2Minus1; // Set "read" position to
-			// account for filter's latency at zero fractional delay which
-			// equals to FilterLenD2Minus1.
+		ReadPos = BufLen - fll; // Set "read" position to account for filter's
+			// latency at zero fractional delay.
 
-		memset( &Buf[ ReadPos ], 0, FilterLenD2Minus1 * sizeof( double ));
+		memset( &Buf[ ReadPos ], 0, fll * sizeof( double ));
 
-		InPosFrac = InitFracPos;
-		InPosFracW = InitFracPosW;
+		if( FilterBankW != NULL )
+		{
+			InPosFracW = InitFracPosW;
+		}
+		else
+		{
+			InPosFrac = InitFracPos;
 
-		#if !R8B_FASTTIMING
-			InCounter = 0;
-			InPosInt = 0;
-			InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
-		#endif // !R8B_FASTTIMING
+			#if !R8B_FASTTIMING
+				InCounter = 0;
+				InPosInt = 0;
+				InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
+			#endif // !R8B_FASTTIMING
+		}
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
 	{
 		R8BASSERT( l >= 0 );
 		R8BASSERT( ip != op0 || l == 0 || SrcSampleRate > DstSampleRate );
+
+		if( LatencyLeft > 0 )
+		{
+			if( LatencyLeft >= l )
+			{
+				LatencyLeft -= l;
+				return( 0 );
+			}
+
+			l -= LatencyLeft;
+			ip += LatencyLeft;
+			LatencyLeft = 0;
+		}
 
 		double* op = op0;
 
@@ -515,9 +609,9 @@ public:
 			double* const wp1 = Buf + WritePos;
 			memcpy( wp1, ip, b * sizeof( double ));
 
-			if( WritePos < FilterLen1 )
+			if( WritePos < flo )
 			{
-				const int c = min( b, FilterLen1 - WritePos );
+				const int c = min( b, flo - WritePos );
 				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
 			}
 
@@ -533,7 +627,7 @@ public:
 			{
 				// Whole-number stepping.
 
-				while( BufLeft >= FilterLenD2Plus1 )
+				while( BufLeft > fl2 )
 				{
 					const double* const ftp = &(*FilterBankW)[ InPosFracW ];
 					const double* const rp = Buf + ReadPos;
@@ -557,7 +651,7 @@ public:
 			}
 			else
 			{
-				while( BufLeft >= FilterLenD2Plus1 )
+				while( BufLeft > fl2 )
 				{
 					double x = InPosFrac * FilterFracs;
 					const int fti = (int) x; // Function table index.
@@ -646,16 +740,12 @@ private:
 		///<
 #endif // !R8B_FLTTEST
 
-	static const int FilterLen1 = FilterLen - 1; ///< = FilterLen - 1.
+	static const int fl2 = FilterLen >> 1; ///< Right-side (half) filter
+		///< length.
 		///<
-	static const int FilterLenD2 = FilterLen >> 1; ///< = FilterLen / 2.
+	static const int fll = fl2 - 1; ///< Input latency.
 		///<
-	static const int FilterLenD2Minus1 = FilterLenD2 - 1; ///< =
-		///< FilterLen / 2 - 1. This value also equals to filter's latency in
-		///< samples (taps).
-		///<
-	static const int FilterLenD2Plus1 = FilterLenD2 + 1; ///< =
-		///< FilterLen / 2 + 1.
+	static const int flo = fll + fl2; ///< Overrun length.
 		///<
 	static const int BufLenBits = 8; ///< The length of the ring buffer,
 		///< expressed as Nth power of 2. This value can be reduced if it is
@@ -671,13 +761,11 @@ private:
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
 		///<
-	static const int BufLeftMax = BufLen - FilterLenD2Minus1; ///< The number
-		///< of new samples that the ring buffer can hold at most. The
-		///< remaining FilterLenD2Minus1 samples hold "previous" input samples
-		///< for the filter.
+	static const int BufLeftMax = BufLen - fll; ///< The number of new samples
+		///< that the ring buffer can hold at most.
 		///<
-	double Buf[ BufLen + FilterLen1 ]; ///< The ring buffer, including
-		///< overrun protection.
+	double Buf[ BufLen + flo ]; ///< The ring buffer, including overrun
+		///< protection.
 		///<
 	double SrcSampleRate; ///< Source sample rate.
 		///<
@@ -694,14 +782,18 @@ private:
 	int InitFracPosW; ///< Initial fractional position for whole-number
 		///< stepping.
 		///<
+	int Latency; ///< Initial latency that should be removed from the input.
+		///<
+	double LatencyFrac; ///< Left-over fractional latency.
+		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
-		///< When this value is below FilterLenD2Plus1, the interpolation
-		///< cycle ends.
 		///<
 	int WritePos; ///< The current buffer write position. Incremented together
 		///< with the BufLeft variable.
 		///<
 	int ReadPos; ///< The current buffer read position.
+		///<
+	int LatencyLeft; ///< Input latency left to remove.
 		///<
 	double InPosFrac; ///< Interpolation position (fractional part).
 		///<
@@ -722,74 +814,6 @@ private:
 	double InPosShift; ///< Interpolation position fractional shift.
 		///<
 #endif // R8B_FASTTIMING
-
-	/**
-	 * @param l Number 1.
-	 * @param s Number 2.
-	 * @param[out] GCD Resulting GCD.
-	 * @return "True" if the greatest common denominator of 2 numbers was
-	 * found.
-	 */
-
-	static bool findGCD( double l, double s, double& GCD )
-	{
-		int it = 0;
-
-		while( it < 50 )
-		{
-			if( s <= 0.0 )
-			{
-				GCD = l;
-				return( true );
-			}
-
-			const double r = l - s;
-			l = s;
-			s = ( r < 0.0 ? -r : r );
-			it++;
-		}
-
-		return( false );
-	}
-
-	/**
-	 * Function evaluates source and destination sample rate ratio and returns
-	 * the required input and output stepping. Function returns "false" if
-	 * *this class cannot be used to perform interpolation using these sample
-	 * rates.
-	 *
-	 * @return "True" if stepping was acquired.
-	 */
-
-	bool getWholeStepping()
-	{
-		double GCD;
-
-		if( !findGCD( SrcSampleRate, DstSampleRate, GCD ) || GCD < 1.0 )
-		{
-			return( false );
-		}
-
-		const double InStep0 = SrcSampleRate / GCD;
-		InStep = (int) InStep0;
-		const double OutStep0 = DstSampleRate / GCD;
-		OutStep = (int) OutStep0;
-
-		if( InStep0 != InStep || OutStep0 != OutStep )
-		{
-			return( false );
-		}
-
-		if( OutStep > 1800 )
-		{
-			// Do not allow large output stepping due to low cache
-			// performance of large filter banks.
-
-			return( false );
-		}
-
-		return( true );
-	}
 
 #if !R8B_FLTTEST
 	static const CDSPFracDelayFilterBank FilterBank; ///< Filter bank object,

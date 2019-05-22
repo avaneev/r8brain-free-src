@@ -17,7 +17,7 @@ sample rate, or the destination sample rate if the downsampling is performed)
 signal and then performs interpolation using a bank of short (14 to 24 taps,
 depending on the required precision) polynomial-interpolated sinc
 function-based fractional delay filters.  This puts the algorithm into the
-league of the fastest among the most precise SRC algorithms. The more precise
+league of the fastest among the most precise SRC algorithms.  The more precise
 alternative being only the whole number-factored SRC, which can be slower.
 
 ## Requirements ##
@@ -30,7 +30,7 @@ given compiler, on a given system, the library won't become broken, only the
 conversion quality may become degraded.  This library always uses the
 `sizeof( double )` operator to obtain "double" floating point type's size in
 bytes.  This library does not have dependencies beside the standard C library,
-the "windows.h" on Windows and the "pthread.h" on Mac OS X and Linux.
+the "windows.h" on Windows and the "pthread.h" on macOS and Linux.
 
 ## Links ##
 * [Documentation](https://www.voxengo.com/public/r8brain-free-src/Documentation/)
@@ -46,13 +46,13 @@ of precision are also available.
 The code of the library resides in the "r8b" C++ namespace, effectively
 isolating it from all other code.  The code is thread-safe.  A separate
 resampler object should be created for each audio channel or stream being
-processed.
+processed concurrently.
 
 Note that you will need to compile the "r8bbase.cpp" source file and include
 the resulting object file into your application build.  This source file
 includes definitions of several global static objects used by the library.
 You may also need to include to your project: the "Kernel32" library (on
-Windows) and the "pthread" library on Mac OS X and Linux.
+Windows) and the "pthread" library on macOS and Linux.
 
 The library is able to process signal of any scale and loudness: it is not
 limited to just a "usual" -1.0 to 1.0 range.
@@ -67,17 +67,18 @@ Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
 processor-based 64-bit AVX2-enabled system without overclocking.  This
 approximately translates to a real-time resampling of `625*n_cores` audio
 streams, at 100% CPU load.  Time performance when converting to other sample
-rates may vary greatly. When comparing performance of this resampler library
+rates may vary greatly.  When comparing performance of this resampler library
 to another library make sure that the competing library is also tuned to
-produce a fully linear-phase response and has similar stop-band
-characteristics, and similar sample timing precision.
+produce a fully linear-phase response, has similar stop-band characteristics,
+and similar sample timing precision.
 
 ## Dynamic Link Library ##
 The functions of this SRC library are also accessible in simplified form via
-the DLL file on Windows, requiring a processor with SSE2 support.  Delphi
-Pascal interface unit file for the DLL file is available.  DLL and C LIB files
-are distributed in the DLL folder on the project's home page. On non-Windows
-systems it is preferrable to use the C++ library directly.
+the DLL file on Windows, requiring a processor with SSE2 support (Win64
+version includes AVX2 auto-dispatch code).  Delphi Pascal interface unit file
+for the DLL file is available.  DLL and C LIB files are distributed in the DLL
+folder on the project's home page.  On non-Windows systems it is preferrable
+to use the C++ library directly.
 
 ## Real-time Applications ##
 The resampler class of this library was designed as asynchronous processor: it
@@ -106,13 +107,8 @@ low-pass filter's -3 dB point and the Nyquist frequency, and ranges from
 0.5% to 45%.  Stop-band attenuation can be specified in the range 49 to 218
 decibel.
 
-When performing sample rate conversion using user-provided sample rates it is
-important to control the resampling ratio: it should not exceed or be equal to
-`1<<(CDSPResampler::ConvCountMax+1)` and should not be equal or lower than
-`1/1<<(CDSPResampler::ConvCountMax+1)`.
-
-This SRC library also implements a faster "power of 2" resampling (e.g. 2X,
-4X, 8X, 16X, etc. upsampling and downsampling).
+This SRC library also implements a much faster "power of 2" resampling (e.g.
+2X, 4X, 8X, 16X, etc. upsampling and downsampling).
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/) and
@@ -123,6 +119,23 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 3.0:
+
+* Implemented a new variant of the getInLenBeforeOutStart() function.
+* Reimplemented oneshot() function to support `float` buffer types.
+* Considerably improved downsampling performance at high resampling ratios.
+* Implemented intermediate interpolation technique which boosted upsampling
+performance for most resampling ratios considerably.
+* Removed the ConvCount constant - now resampler supports virtually any
+resampling ratios.
+* Removed the UsePower2 parameter from the resampler constructor.
+* Now resampler's process() function always returns pointer to the internal
+buffer, input buffer is returned only if no resampling happens.
+* Resampler's getMaxOutLen() function can now be used to obtain the maximal
+output length that can be produced by the resampler in a single call.
+* Added a more efficient "one-third" filters to half-band upsampler and
+downsampler.
+
 Version 2.1:
 
 * Optimized 2X half-band downsampler.

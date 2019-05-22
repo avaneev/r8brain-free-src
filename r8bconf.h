@@ -143,12 +143,13 @@
 #if !defined( R8B_FASTTIMING )
 	/**
 	 * This macro, when equal to 1, enables fast approach to interpolation
-	 * sample timing. This approach improves overall resampling time
-	 * performance (by around 15%) at the expense of a minor sample timing
-	 * drift which is on the order of 1e-6 samples per 10 billion output
-	 * samples. This setting does not apply to whole-number stepping if it is
-	 * in use as this stepping provides zero timing error without performance
-	 * impact.
+	 * sample timing. This approach improves interpolation performance
+	 * (by around 15%) at the expense of a minor sample timing drift which is
+	 * on the order of 1e-6 samples per 10 billion output samples. This
+	 * setting does not apply to whole-number stepping if it is in use as this
+	 * stepping provides zero timing error without performance impact. Also
+	 * does not apply to the cases when whole-numbered resampling is in actual
+	 * use.
 	 */
 
 	#define R8B_FASTTIMING 0
@@ -161,7 +162,7 @@
 	 * overall time performance of the resampler at the expense of higher
 	 * overall latency (initial processing delay). If such delay is not an
 	 * issue, setting this macro to 1 is preferrable. This macro can only have
-	 * value of 0 or 1.
+	 * a value of 0 or 1.
 	 */
 
 	#define R8B_EXTFFT 0

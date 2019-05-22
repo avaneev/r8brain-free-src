@@ -9,7 +9,7 @@
  *
  * @brief RMS comparison utility.
  *
- * r8brain-free-src Copyright (c) 2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2018-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -69,9 +69,21 @@ VOXMAIN
 		ll = inf1.SampleCount;
 	}
 
+	const int64_t ex0 = (int64_t) ( 0.050 * inf1.SampleRate );
+
+	if( ex0 * 2 >= ll )
+	{
+		VOXERROR( "@voxstr_rmscompare_FileTooShort "
+			"Input files are too short." );
+	}
+
+	ll -= ex0;
 	const int64_t ll0 = ll;
-	printf( "Total samples: %lli (%.4f s)\n", ll,
-		(double) ll / inf1.SampleRate );
+
+	printf( "Total samples: %lli (%.4f s), skip %lli, sample rate %.0f\n", ll,
+		(double) ll / inf1.SampleRate, ex0 * 2, inf1.SampleRate );
+
+	int64_t exc = ex0;
 
 	while( ll > 0 )
 	{
@@ -81,28 +93,31 @@ VOXMAIN
 		int ReadCount2;
 		VOXCHECK( inf2.readData( InBufs2, InBufCapacity, ReadCount2 ));
 
-		if( ReadCount1 == -1 || ReadCount2 == -1 )
-		{
-			VOXERROR( "@voxstr_rmscompare_PrematureEOF "
-				"Premature EOF." );
-		}
+		int ki;
 
-		if( ReadCount1 != ReadCount2 )
+		if( exc < ReadCount1 )
 		{
-			VOXERROR( "@voxstr_rmscompare_ReadCountMismatch "
-				"Read count mismatch." );
+			ki = (int) exc;
+			exc = 0;
+		}
+		else
+		{
+			ki = ReadCount1;
+			exc -= ReadCount1;
 		}
 
 		for( i = 0; i < inf1.ChannelCount; i++ )
 		{
 			const double* ip1 = InBufs1[ i ];
 			const double* ip2 = InBufs2[ i ];
-			int k;
 
-			for( k = 0; k < ReadCount1; k++ )
+			int k = ki;
+
+			while( k < ReadCount1 )
 			{
 				const double d = ip1[ k ] - ip2[ k ];
 				rms[ i ] += d * d;
+				k++;
 			}
 		}
 
@@ -111,8 +126,15 @@ VOXMAIN
 
 	for( i = 0; i < inf1.ChannelCount; i++ )
 	{
-		printf( "Channel %i RMS of difference: %.2f dB\n", i + 1,
-			10.0 * log( rms[ i ] / ll0 ) / log( 10.0 ));
+		if( rms[ i ] == 0.0 )
+		{
+			printf( "Channel %i RMS of difference: -inf dB\n", i + 1 );
+		}
+		else
+		{
+			printf( "Channel %i RMS of difference: %.2f dB\n", i + 1,
+				10.0 * log( rms[ i ] / ( ll0 - ex0 )) / log( 10.0 ));
+		}
 	}
 
 	VOXRET;

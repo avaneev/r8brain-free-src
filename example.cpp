@@ -8,7 +8,7 @@
  * pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -67,7 +67,7 @@ int main()
 
 		if( WriteCount > ol )
 		{
-			WriteCount = ol;
+			WriteCount = (int) ol;
 		}
 
 		outf.writeData( opp, WriteCount );

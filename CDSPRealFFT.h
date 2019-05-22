@@ -9,7 +9,7 @@
  * kept in a global list after use for future reusal. Such approach minimizes
  * time necessary to initialize the FFT object of the required length.
  *
- * r8brain-free-src Copyright (c) 2013-2014 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -587,7 +587,7 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 		ip2[ i ] = sqrt( ip[ i * 2 ] * ip[ i * 2 ] +
 			ip[ i * 2 + 1 ] * ip[ i * 2 + 1 ]);
 
-		ip[ i * 2 ] = log( ip2[ i ] + 1e-50 );
+		ip[ i * 2 ] = log( ip2[ i ] + 1e-100 );
 		ip[ i * 2 + 1 ] = 0.0;
 	}
 
@@ -595,18 +595,21 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	ffto -> inverse( ip );
 
+	const double m1 = ffto -> getInvMulConst();
+	const double m2 = -m1;
+
 	ip[ 0 ] = 0.0;
 
 	for( i = 1; i < Len2; i++ )
 	{
-		ip[ i ] *= ffto -> getInvMulConst();
+		ip[ i ] *= m1;
 	}
 
 	ip[ Len2 ] = 0.0;
 
 	for( i = Len2 + 1; i < Len; i++ )
 	{
-		ip[ i ] *= -ffto -> getInvMulConst();
+		ip[ i ] *= m2;
 	}
 
 	// Convert Hilbert-transformed cepstrum back to the "log |c|" spectrum and
@@ -631,7 +634,7 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	{
 		for( i = 0; i < KernelLen; i++ )
 		{
-			Kernel[ i ] = ip[ i ] * ffto -> getInvMulConst();
+			Kernel[ i ] = ip[ i ] * m1;
 		}
 	}
 	else

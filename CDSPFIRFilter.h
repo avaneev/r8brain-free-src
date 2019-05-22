@@ -25,10 +25,10 @@ namespace r8b {
 
 enum EDSPFilterPhaseResponse
 {
-	fprLinearPhase = 0 ///< Linear-phase response. Features a linear-phase
+	fprLinearPhase = 0, ///< Linear-phase response. Features a linear-phase
 		///< high-latency response, with the latency expressed as integer
 		///< value.
-//	fprMinPhase ///< Minimum-phase response. Features a minimal latency
+	fprMinPhase ///< Minimum-phase response. Features a minimal latency
 		///< response, but the response's phase is non-linear. The latency is
 		///< usually expressed as non-integer value, and usually is small, but
 		///< is never equal to zero. The minimum-phase filter is transformed
@@ -466,23 +466,23 @@ private:
 		sinc.generateBand( &KernelBlock[ 0 ],
 			&CDSPSincFilterGen :: calcWindowKaiser );
 
-/*		if( ReqPhase == fprLinearPhase )
-		{*/
+		if( ReqPhase == fprLinearPhase )
+		{
 			IsZeroPhase = true;
 			Latency = sinc.fl2;
 			LatencyFrac = 0.0;
-/*		}
+		}
 		else
 		{
 			IsZeroPhase = false;
 			double DCGroupDelay;
 
-			calcMinPhaseTransform( &KernelBlock[ 0 ], KernelLen, 3, false,
+			calcMinPhaseTransform( &KernelBlock[ 0 ], KernelLen, 16, false,
 				&DCGroupDelay );
 
 			Latency = (int) DCGroupDelay;
 			LatencyFrac = DCGroupDelay - Latency;
-		}*/
+		}
 
 		CDSPRealFFTKeeper ffto( BlockLenBits + 1 );
 
@@ -542,6 +542,8 @@ private:
 
 class CDSPFIRFilterCache : public R8B_BASECLASS
 {
+	R8BNOCTOR( CDSPFIRFilterCache );
+
 	friend class CDSPFIRFilter;
 
 public:
