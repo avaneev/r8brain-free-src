@@ -525,6 +525,11 @@ public:
 			FilterBankW = NULL;
 		}
 
+		R8BCONSOLE( "CDSPFracInterpolator: src=%.2f dst=%.2f flen=%i "
+			"fracs=%i step=%.6f\n", SrcSampleRate, DstSampleRate, FilterLen,
+			( FilterBankW != NULL ? OutStep : FilterFracs ),
+			aSrcSampleRate / aDstSampleRate );
+
 		clear();
 	}
 

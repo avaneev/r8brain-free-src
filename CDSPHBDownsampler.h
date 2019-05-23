@@ -78,8 +78,8 @@ public:
 		Latency = (int) LatencyFrac;
 		LatencyFrac -= Latency;
 
-		R8BCONSOLE( "CDSPHBDownsampler: taps=%i att=%.1f io=1/2\n", fltt,
-			att );
+		R8BCONSOLE( "CDSPHBDownsampler: taps=%i third=%i att=%.1f io=1/2\n",
+			fltt, (int) IsThird, att );
 
 		clear();
 	}

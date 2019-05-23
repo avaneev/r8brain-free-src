@@ -3,6 +3,8 @@
 #include "/libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
 
+typedef r8b :: CDSPResampler24 CResamp;
+
 /**
  * @file masstest.cpp
  *
@@ -52,8 +54,8 @@ VOXMAIN
 	int ReadCount;
 	VOXCHECK( inf.readData( InBufs, InBufSize, ReadCount ));
 
-	const int MaxInLen = 521;
-	const double tb = 2.0;
+	CRnd rnd;
+	rnd.init( getRndInitValue() );
 
 	// Create reference signal which has 9/10 bandwidth of the input signal.
 
@@ -61,14 +63,16 @@ VOXMAIN
 
 	if( true )
 	{
+		const int MaxInLen = 521;
+		const double tb = 2.0;
 		const int Ref0Size = (int) ( InBufSize * 9.0 / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp1;
-		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.0, MaxInLen, tb );
+		CPtrKeeper< CResamp* > Resamp1;
+		Resamp1 = new CResamp( 10.0, 9.0, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
-		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
+		CPtrKeeper< CResamp* > Resamp2;
+		Resamp2 = new CResamp( 9.0, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( MaxInLen, &InBufs[ 0 ][ 0 ], InBufSize,
 			&Ref0[ 0 ], Ref0Size );
@@ -77,26 +81,31 @@ VOXMAIN
 			&Ref[ 0 ], InBufSize );
 	}
 
-	const double SrcSampleRate = 10.0;
+	const double SrcSampleRate = 20.0;
 	int k;
 
-	for( k = 11; k < 200; k++ )
+	for( k = 21; k < 600; k++ )
 	{
+		const int MaxInLen = (int) ( 50 + rnd.getUniform() * 1500 );
+		const double tb = 0.5 + rnd.getUniform() * 4.0;
+
 		const double DstSampleRate = k;
 		const int ol1 = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf1( ol1 );
 		CFixedBuffer< double > OutBuf2( InBufSize );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp1;
-		Resamp1 = new r8b :: CDSPResampler24( SrcSampleRate,
-			DstSampleRate, MaxInLen, tb );
+		CPtrKeeper< CResamp* > Resamp1;
+		Resamp1 = new CResamp( SrcSampleRate, DstSampleRate, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
-		Resamp2 = new r8b :: CDSPResampler24( DstSampleRate,
-			SrcSampleRate, MaxInLen, tb );
+		CPtrKeeper< CResamp* > Resamp2;
+		Resamp2 = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
+
+		const TClock t1( CSystem :: getClock() );
 
 		Resamp1 -> oneshot( MaxInLen, &Ref[ 0 ], InBufSize,
 			&OutBuf1[ 0 ], ol1 );
+
+		const double perf = 1e-6 * ol1 / CSystem :: getClockDiffSec( t1 );
 
 		Resamp2 -> oneshot( MaxInLen, &OutBuf1[ 0 ], ol1,
 			&OutBuf2[ 0 ], InBufSize );
@@ -104,16 +113,18 @@ VOXMAIN
 		const double r = calcRMS( &Ref[ 5000 ], &OutBuf2[ 5000 ],
 			InBufSize - 10000 );
 
-		printf( "%3.0f/%3.0f: ", DstSampleRate, SrcSampleRate );
+		printf( "%3.0f/%3.0f\t", DstSampleRate, SrcSampleRate );
 
 		if( r == 0 )
 		{
-			printf( "-inf\n" );
+			printf( "-inf");
 		}
 		else
 		{
-			printf( "%.2f\n", 20.0 * log( r ) / log( 10.0 ));
+			printf( "%7.2f", 20.0 * log( r ) / log( 10.0 ));
 		}
+
+		printf( "\t%.2f\tMflops\n", perf );
 	}
 
 	VOXRET;

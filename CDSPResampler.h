@@ -136,6 +136,10 @@ public:
 		R8BASSERT( DstSampleRate > 0.0 );
 		R8BASSERT( MaxInLen > 0 );
 
+		R8BCONSOLE( "* CDSPResampler: src=%.1f dst=%.1f len=%i tb=%.1f "
+			"att=%.2f ph=%i\n", SrcSampleRate, DstSampleRate, aMaxInLen,
+			ReqTransBand, ReqAtten, (int) ReqPhase );
+
 		if( SrcSampleRate == DstSampleRate )
 		{
 			return;
@@ -659,6 +663,8 @@ private:
 			TmpBufs[ 0 ] = &TmpBufAll[ 0 ];
 			TmpBufs[ 1 ] = &TmpBufAll[ TmpBufCapacities[ 0 ]];
 		}
+
+		R8BCONSOLE( "* CDSPResampler: init done\n" );
 	}
 };
 
