@@ -80,18 +80,15 @@ public:
 	 * @param DstSampleRate Destination signal sample rate. The "power of 2"
 	 * ratios between the source and destination sample rates force resampler
 	 * to use several fast "power of 2" resampling steps, without using
-	 * fractional interpolation at all. Note that the "power of 2" upsampling
-	 * (but not downsampling) requires a lot of buffer memory: e.g. upsampling
-	 * by a factor of 16 requires an intermediate buffer MaxInLen*(16+8)
-	 * samples long. So, when doing the "power of 2" upsampling it is highly
-	 * recommended to do it in small steps, e.g. no more than 256 samples at
-	 * once (also set the MaxInLen to 256).
+	 * fractional interpolation at all.
 	 * @param aMaxInLen The maximal planned length of the input buffer (in
 	 * samples) that will be passed to the resampler. The resampler relies on
 	 * this value as it allocates intermediate buffers. Input buffers longer
 	 * than this value should never be supplied to the resampler. Note that
-	 * the resampler may use the input buffer itself for intermediate sample
-	 * data storage.
+	 * upsampling produces more samples than was provided on input, so at
+	 * higher upsampling ratios it is advisable to use smaller MaxInLen
+	 * values to reduce memory footprint. When downsampling, a larger MaxInLen
+	 * is suggested in order to increase downsampling performance.
 	 * @param ReqTransBand Required transition band, in percent of the
 	 * spectral space of the input signal (or the output signal if
 	 * downsampling is performed) between filter's -3 dB point and the Nyquist

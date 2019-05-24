@@ -19,14 +19,20 @@
 
 namespace r8b {
 
+#if R8B_FLTTEST
+	extern int InterpFilterFracs; ///< Force this number of fractional filter
+		///< positions. -1 - use default.
+		///<
+#endif // R8B_FLTTEST
+
 /**
  * @brief Sinc function-based fractional delay filter bank class.
  *
  * Class implements storage and initialization of a bank of sinc-based
  * fractional delay filters, expressed as 0, 1st, 2nd or 3rd order polynomial
- * interpolation coefficients. The filters are windowed by either the "Vaneev"
- * or "Kaiser" power-raised window function. The FilterLen and FilterFracs
- * parameters can be varied freely without breaking the resampler.
+ * interpolation coefficients. The filters are windowed by the "Kaiser"
+ * power-raised window function. The FilterLen and FilterFracs parameters can
+ * be varied freely without breaking the resampler.
  */
 
 class CDSPFracDelayFilterBank : public R8B_BASECLASS
@@ -83,27 +89,10 @@ public:
 		R8BASSERT( ElementSize >= 1 && ElementSize <= 4 );
 		R8BASSERT( InterpPoints == 2 || InterpPoints == 8 );
 
-		Table.alloc( FilterSize * ( FilterFracs + InterpPoints ));
-
-		calculate();
-	}
-
-	~CDSPFracDelayFilterBank()
-	{
-		delete Next;
-	}
-
-	/**
-	 * Function calculates the filter bank.
-	 *
-	 * @param Params Window function's parameters. If NULL then the built-in
-	 * table values for the current FilterLen will be used.
-	 */
-
-	void calculate( const double* const Params = NULL )
-	{
 		R8BCONSOLE( "CDSPFracDelayFilterBank: flt_len=%i fracs=%i order=%i\n",
 			FilterLen, FilterFracs, ElementSize - 1 );
+
+		Table.alloc( FilterSize * ( FilterFracs + InterpPoints ));
 
 		CDSPSincFilterGen sinc;
 		sinc.Len2 = FilterLen / 2;
@@ -112,31 +101,15 @@ public:
 		const int pc2 = InterpPoints / 2;
 		int i;
 
-		if( FilterLen <= 20 )
+		for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
 		{
-			for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
-			{
-				sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
-				sinc.initFrac( CDSPSincFilterGen :: wftVaneev, Params );
-				sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowVaneev,
-					ElementSize );
+			sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
+			sinc.initFrac( CDSPSincFilterGen :: wftKaiser, NULL, true );
+			sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowKaiser,
+				ElementSize );
 
-				normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
-				p += FilterSize;
-			}
-		}
-		else
-		{
-			for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
-			{
-				sinc.FracDelay = (double) ( FilterFracs - i ) / FilterFracs;
-				sinc.initFrac( CDSPSincFilterGen :: wftKaiser, Params, true );
-				sinc.generateFrac( p, &CDSPSincFilterGen :: calcWindowKaiser,
-					ElementSize );
-
-				normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
-				p += FilterSize;
-			}
+			normalizeFIRFilter( p, FilterLen, 1.0, ElementSize );
+			p += FilterSize;
 		}
 
 		const int TablePos2 = FilterSize;
@@ -194,6 +167,21 @@ public:
 				}
 			}
 		}
+	}
+
+	~CDSPFracDelayFilterBank()
+	{
+		delete Next;
+	}
+
+	/**
+	 * Function returns the number of fractional positions sampled by the
+	 * bank.
+	 */
+
+	int getFilterFracs() const
+	{
+		return( FilterFracs );
 	}
 
 	/**
@@ -497,9 +485,6 @@ public:
 	#if R8B_FASTTIMING
 		, FracStep( aSrcSampleRate / aDstSampleRate )
 	#endif // R8B_FASTTIMING
-	#if R8B_FLTTEST
-		, FilterBank( FilterLen, FilterFracs, 4, 8 )
-	#endif // R8B_FLTTEST
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -511,23 +496,37 @@ public:
 		Latency = (int) InitFracPos;
 		InitFracPos -= Latency;
 
-		if( getWholeStepping( SrcSampleRate, DstSampleRate, InStep, OutStep ))
-		{
-			InitFracPosW = (int) ( InitFracPos * OutStep );
-			LatencyFrac = InitFracPos - (double) InitFracPosW / OutStep;
-			FilterBankW = &CDSPFracDelayFilterBankCache :: getFilterBank(
-				FilterLen, OutStep, 1, 2 );
-		}
-		else
-		{
-			InitFracPosW = 0;
+		#if R8B_FLTTEST
+
+			IsWhole = false;
 			LatencyFrac = 0.0;
-			FilterBankW = NULL;
-		}
+			FilterBank = new CDSPFracDelayFilterBank( FilterLen,
+				( InterpFilterFracs == -1 ? FilterFracs : InterpFilterFracs ),
+				FilterElementSize, 8 );
+
+		#else // R8B_FLTTEST
+
+			IsWhole = getWholeStepping( SrcSampleRate, DstSampleRate, InStep,
+				OutStep );
+
+			if( IsWhole )
+			{
+				InitFracPosW = (int) ( InitFracPos * OutStep );
+				LatencyFrac = InitFracPos - (double) InitFracPosW / OutStep;
+				FilterBank = &CDSPFracDelayFilterBankCache :: getFilterBank(
+					FilterLen, OutStep, 1, 2 );
+			}
+			else
+			{
+				LatencyFrac = 0.0;
+				FilterBank = &FilterBankStatic;
+			}
+
+		#endif // R8B_FLTTEST
 
 		R8BCONSOLE( "CDSPFracInterpolator: src=%.2f dst=%.2f flen=%i "
 			"fracs=%i step=%.6f\n", SrcSampleRate, DstSampleRate, FilterLen,
-			( FilterBankW != NULL ? OutStep : FilterFracs ),
+			( IsWhole ? OutStep : FilterBank -> getFilterFracs() ),
 			aSrcSampleRate / aDstSampleRate );
 
 		clear();
@@ -535,10 +534,18 @@ public:
 
 	virtual ~CDSPFracInterpolator()
 	{
-		if( FilterBankW != NULL )
-		{
-			FilterBankW -> unref();
-		}
+		#if R8B_FLTTEST
+
+			delete FilterBank;
+
+		#else // R8B_FLTTEST
+
+			if( IsWhole )
+			{
+				( (CDSPFracDelayFilterBank*) FilterBank ) -> unref();
+			}
+
+		#endif // R8B_FLTTEST
 	}
 
 	virtual int getLatency() const
@@ -568,7 +575,7 @@ public:
 
 		memset( &Buf[ ReadPos ], 0, fll * sizeof( double ));
 
-		if( FilterBankW != NULL )
+		if( IsWhole )
 		{
 			InPosFracW = InitFracPosW;
 		}
@@ -628,13 +635,13 @@ public:
 
 			// Produce as many output samples as possible.
 
-			if( FilterBankW != NULL )
+			if( IsWhole )
 			{
 				// Whole-number stepping.
 
 				while( BufLeft > fl2 )
 				{
-					const double* const ftp = &(*FilterBankW)[ InPosFracW ];
+					const double* const ftp = &(*FilterBank)[ InPosFracW ];
 					const double* const rp = Buf + ReadPos;
 					double s = 0.0;
 
@@ -658,30 +665,20 @@ public:
 			{
 				while( BufLeft > fl2 )
 				{
-					double x = InPosFrac * FilterFracs;
+					double x = InPosFrac * FilterBank -> getFilterFracs();
 					const int fti = (int) x; // Function table index.
 					x -= fti; // Coefficient for interpolation between
 						// adjacent fractional delay filters.
 					const double x2 = x * x;
-					const double* const ftp = &FilterBank[ fti ];
+					const double* const ftp = &(*FilterBank)[ fti ];
 					const double* const rp = Buf + ReadPos;
 					double s = 0.0;
 					int ii = 0;
 
-				#if R8B_FLTTEST
-					const double x3 = x2 * x;
-				#endif // R8B_FLTTEST
-
 					for( i = 0; i < FilterLen; i++ )
 					{
-					#if !R8B_FLTTEST
 						s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
 							ftp[ ii + 2 ] * x2 ) * rp[ i ];
-					#else // !R8B_FLTTEST
-						s += ( ftp[ ii ] + ftp[ ii + 1 ] * x +
-							ftp[ ii + 2 ] * x2 + ftp[ ii + 3 ] * x3 ) *
-							rp[ i ];
-					#endif // !R8B_FLTTEST
 
 						ii += FilterElementSize;
 					}
@@ -716,7 +713,7 @@ public:
 
 		#if !R8B_FASTTIMING
 
-			if( FilterBankW == NULL && InCounter > 1000 )
+			if( !IsWhole && InCounter > 1000 )
 			{
 				// Reset the interpolation position counter to achieve a
 				// higher sample timing precision.
@@ -732,19 +729,10 @@ public:
 	}
 
 private:
-#if !R8B_FLTTEST
 	static const int FilterElementSize = 3; ///< The number of "doubles" a
 		///< single filter tap consists of (includes interpolation
 		///< coefficients).
 		///<
-#else // !R8B_FLTTEST
-	static const int FilterElementSize = 4; ///< The number of "doubles" a
-		///< single filter tap consists of (includes interpolation
-		///< coefficients). During filter testing a higher precision
-		///< interpolation is used.
-		///<
-#endif // !R8B_FLTTEST
-
 	static const int fl2 = FilterLen >> 1; ///< Right-side (half) filter
 		///< length.
 		///<
@@ -776,6 +764,8 @@ private:
 		///<
 	double DstSampleRate; ///< Destination sample rate.
 		///<
+	bool IsWhole; ///< "True" if whole-number stepping is in use.
+		///<
 	int InStep; ///< Input whole-number stepping.
 		///<
 	int OutStep; ///< Output whole-number stepping (corresponds to filter bank
@@ -806,8 +796,8 @@ private:
 		///< whole-number stepping. Corresponds to the index into the filter
 		///< bank.
 		///<
-	CDSPFracDelayFilterBank* FilterBankW; ///< Whole-number stepping filter
-		///< bank. NULL if whole-number stepping is not in use.
+	const CDSPFracDelayFilterBank* FilterBank; ///< Filter bank in use, may be
+		///< whole-number stepping filter bank or static bank.
 		///<
 #if R8B_FASTTIMING
 	double FracStep; ///< Fractional sample timing step.
@@ -821,14 +811,8 @@ private:
 #endif // R8B_FASTTIMING
 
 #if !R8B_FLTTEST
-	static const CDSPFracDelayFilterBank FilterBank; ///< Filter bank object,
-		///< defined statically if no filter test is taking place.
-		///<
-#else // !R8B_FLTTEST
-
-public:
-	CDSPFracDelayFilterBank FilterBank; ///< Filter bank object, defined as a
-		///< member variable to allow for recalculation.
+	static const CDSPFracDelayFilterBank FilterBankStatic; ///< Filter bank
+		///< object, defined statically if no filter test is taking place.
 		///<
 #endif // !R8B_FLTTEST
 };
@@ -838,7 +822,8 @@ public:
 #if !R8B_FLTTEST
 template< int FilterLen, int FilterFracs >
 const CDSPFracDelayFilterBank CDSPFracInterpolator<
-	FilterLen, FilterFracs > :: FilterBank( FilterLen, FilterFracs, 3, 8 );
+	FilterLen, FilterFracs > :: FilterBankStatic( FilterLen, FilterFracs, 3,
+	8 );
 #endif // !R8B_FLTTEST
 
 // ---------------------------------------------------------------------------

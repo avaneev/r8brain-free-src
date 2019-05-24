@@ -55,7 +55,7 @@ VOXMAIN
 	VOXCHECK( inf.readData( InBufs, InBufSize, ReadCount ));
 
 	CRnd rnd;
-	rnd.init( getRndInitValue() );
+	rnd.init( 0 );
 
 	// Create reference signal which has 9/10 bandwidth of the input signal.
 
@@ -82,6 +82,10 @@ VOXMAIN
 	}
 
 	const double SrcSampleRate = 20.0;
+	double avgd = 0.0;
+	double maxd = 0.0;
+	int avgc = 0;
+	double avgperf = 0.0;
 	int k;
 
 	for( k = 21; k < 600; k++ )
@@ -113,6 +117,11 @@ VOXMAIN
 		const double r = calcRMS( &Ref[ 5000 ], &OutBuf2[ 5000 ],
 			InBufSize - 10000 );
 
+		avgd += r * r;
+		maxd = max( maxd, r );
+		avgperf += perf;
+		avgc++;
+
 		printf( "%3.0f/%3.0f\t", DstSampleRate, SrcSampleRate );
 
 		if( r == 0 )
@@ -126,6 +135,10 @@ VOXMAIN
 
 		printf( "\t%.2f\tMflops\n", perf );
 	}
+
+	printf( "Average diff %.2f\n", 10.0 * log( avgd / avgc ) / log( 10.0 ));
+	printf( "Max diff %.2f\n", 20.0 * log( maxd ) / log( 10.0 ));
+	printf( "Average perf %.2f Mflops\n", avgperf / avgc );
 
 	VOXRET;
 }

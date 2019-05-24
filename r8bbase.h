@@ -83,7 +83,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "3.0"
+#define R8B_VERSION "3.1"
 
 #if !defined( M_PI )
 	/**

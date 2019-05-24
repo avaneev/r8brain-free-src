@@ -19,6 +19,10 @@
 
 namespace r8b {
 
+#if R8B_FLTTEST
+	int InterpFilterFracs = -1;
+#endif // R8B_FLTTEST
+
 CSyncObject CDSPRealFFTKeeper :: StateSync;
 CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
 CSyncObject CDSPFIRFilterCache :: StateSync;
