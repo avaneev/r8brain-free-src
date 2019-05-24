@@ -15,6 +15,7 @@ const double StopFractionEnd = 4.0; // Stop-band part of the spectrum end.
 int FilterLen = 24; // Filter length.
 const int Oversample = 20; // Spectrum oversampling ratio.
 const int OptDepth = 9; // BiteOptDeep optimizer depth.
+bool DoPrintLin = false; // Print max linear part non-linearity?
 
 class CWinOpt : public CBiteOptDeep
 {
@@ -93,6 +94,11 @@ public:
 			cost1 = max( p, cost1 );
 		}
 
+		if( DoPrintLin )
+		{
+			printf( "/%.3f\n", cost1 );
+		}
+
 		const int Count2 = 2000;
 		double cost2 = -1000.0;
 		const double th1 = M_PI * StopFraction / Oversample;
@@ -135,9 +141,13 @@ int main()
 
 		if( IsKaiser )
 		{
-			printf( "\t\t\t{ %.16f, %.16f }, // %i @ %.2f\n",
+			printf( "\t\t\t{ %.16f, %.16f }, // %i @ %.2f",
 				opt.getBestParams()[ 0 ], opt.getBestParams()[ 1 ], FilterLen,
 				opt.getBestCost() );
+
+			DoPrintLin = true;
+			opt.optcost( opt.getBestParams() );
+			DoPrintLin = false;
 		}
 		else
 		{
