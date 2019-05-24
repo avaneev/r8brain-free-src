@@ -93,6 +93,7 @@ public:
 		OutOffset = ( Filter -> isZeroPhase() ? Filter -> getLatency() : 0 );
 		LatencyFrac = Filter -> getLatencyFrac() + PrevLatency * UpFactor;
 		Latency = (int) LatencyFrac;
+		const int InLatency = Latency;
 		LatencyFrac -= Latency;
 		LatencyFrac /= DownFactor;
 
@@ -127,20 +128,20 @@ public:
 					InputLen -= ilc;
 					Latency -= ilc;
 
-					if( DoConsumeLatency && !Filter -> isZeroPhase() )
-					{
-						// Correct InputDelay for filter's latency.
+					// Correct InputDelay for input and filter's latency.
 
-						const int lc = Filter -> getLatency() &
-							( DownFactor - 1 );
+					if( DoConsumeLatency )
+					{
+						const int lc = ( InLatency +
+							( Filter -> isZeroPhase() ? 0 :
+							Filter -> getLatency() )) & ( DownFactor - 1 );
 
 						if( lc > 0 )
 						{
 							InputDelay = DownFactor - lc;
 						}
 					}
-
-					if( !DoConsumeLatency )
+					else
 					{
 						const int sh = Latency % DownFactor;
 						InputDelay = sh;

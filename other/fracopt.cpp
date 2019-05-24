@@ -10,7 +10,7 @@
 typedef r8b :: CDSPResampler24 CResamp;
 
 const double InSampleRate = 44100.0;
-const double SineFreq = 10000.0;
+const double SineFreq = 16000.0;
 const int InBufSize = 70000;
 r8b :: CFixedBuffer< double > InBuf( InBufSize );
 
