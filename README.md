@@ -61,6 +61,14 @@ By defining the R8B_IPP 1 configuration macro it is possible to enable IPP
 front-end for FFT functions, instead of Ooura FFT.  IPP makes sample rate
 conversion faster by 18% in average.
 
+If a larger initial processing delay and a very minor sample timing error are
+not an issue, for the most efficiency you can define these macros in
+`r8bconf.h` or during compilation:
+
+    #define R8B_IPP 1
+    #define R8B_FASTTIMING 1
+    #define R8B_EXTFFT 1
+
 The code of this library was commented in the [Doxygen](http://www.doxygen.org/)
 style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
