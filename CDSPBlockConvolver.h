@@ -93,7 +93,7 @@ public:
 		OutOffset = ( Filter -> isZeroPhase() ? Filter -> getLatency() : 0 );
 		LatencyFrac = Filter -> getLatencyFrac() + PrevLatency * UpFactor;
 		Latency = (int) LatencyFrac;
-		const int InLatency = Latency;
+		const int InLatency = Latency + Filter -> getLatency() - OutOffset;
 		LatencyFrac -= Latency;
 		LatencyFrac /= DownFactor;
 
@@ -130,22 +130,15 @@ public:
 
 					// Correct InputDelay for input and filter's latency.
 
-					if( DoConsumeLatency )
-					{
-						const int lc = ( InLatency +
-							( Filter -> isZeroPhase() ? 0 :
-							Filter -> getLatency() )) & ( DownFactor - 1 );
+					const int lc = InLatency & ( DownFactor - 1 );
 
-						if( lc > 0 )
-						{
-							InputDelay = DownFactor - lc;
-						}
-					}
-					else
+					if( lc > 0 )
 					{
-						const int sh = Latency % DownFactor;
-						InputDelay = sh;
-						Latency += sh;
+						InputDelay = DownFactor - lc;
+					}
+
+					if( !DoConsumeLatency )
+					{
 						Latency /= DownFactor;
 					}
 				}
@@ -379,7 +372,7 @@ private:
 		///< 1.
 		///<
 	int InputDelay; ///< Additional input delay, in samples. Used to make the
-		///< output latency divisible by DownShift. Used only if UpShift <= 0
+		///< output delay divisible by DownShift. Used only if UpShift <= 0
 		///< and DownShift > 0.
 		///<
 	CFixedBuffer< double > WorkBlocks; ///< Previous input data, input and

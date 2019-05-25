@@ -119,6 +119,10 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 3.2:
+
+* Minor fix to the latency consumption mechanism.
+
 Version 3.1:
 
 * Reoptimized fractional delay filter's windowing function.
