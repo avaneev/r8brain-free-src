@@ -6,7 +6,7 @@
 typedef r8b :: CDSPResampler24 CResamp;
 
 /**
- * @file masstest.cpp
+ * @file zerotest.cpp
  *
  * @brief Mass zeroing test - checks for sample rate conversion precision by
  * upsampling and downsampling a reference signal.

@@ -143,9 +143,10 @@ public:
 			{
 				const int c = ( BufLeft - fl2 + 1 ) >> 1;
 
-				( *this.*convfn )( op, c );
+				double* const opend = op + c;
+				( *convfn )( op, opend, flt, Buf + fll, ReadPos );
 
-				op += c;
+				op = opend;
 				BufLeft -= c + c;
 			}
 		}
@@ -209,18 +210,19 @@ private:
 		///<
 	int LatencyLeft; ///< Latency left to remove.
 		///<
-	typedef void( CDSPHBDownsampler :: *CConvolveFn )( double* op,
-		int c ); ///< Convolution funtion type.
+	typedef void( *CConvolveFn )( double* op, double* const opend,
+		const double* const flt, const double* const rp0, int& ReadPos ); ///<
+		///< Convolution funtion type.
 		///<
 	CConvolveFn convfn; ///< Convolution function in use.
 		///<
 
 #define R8BHBC1( fn ) \
-	void fn( double* op, int c ) \
+	static void fn( double* op, double* const opend, const double* const flt, \
+		const double* const rp0, int& ReadPos ) \
 	{ \
-		const double* const rp0 = Buf + fll; \
 		int rpos = ReadPos; \
-		while( c > 0 ) \
+		while( op < opend ) \
 		{ \
 			const double* const rp = rp0 + rpos; \
 			*op = rp[ 0 ] +
@@ -228,7 +230,6 @@ private:
 #define R8BHBC2 \
 			rpos = ( rpos + 2 ) & BufLenMask; \
 			op++; \
-			c--; \
 		} \
 		ReadPos = rpos; \
 	}

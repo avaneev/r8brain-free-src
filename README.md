@@ -131,6 +131,13 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 3.3:
+
+* Made minor fix to downsampling for some use cases of CDSPBlockConvolver,
+did not affect resampler.
+* Converted CDSPHBUpsampler and CDSPHBDownsampler's inner functions to
+static functions, which boosted high-ratio resampling performance measurably.
+
 Version 3.2:
 
 * Minor fix to the latency consumption mechanism.

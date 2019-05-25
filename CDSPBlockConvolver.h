@@ -314,7 +314,8 @@ public:
 			{
 				const int z = BlockLen2 >> DownShift;
 				CurInput[ 1 ] = Filter -> getKernelBlock()[ z ] *
-					CurInput[ z ];
+					CurInput[ z ] - Filter -> getKernelBlock()[ z + 1 ] *
+					CurInput[ z + 1 ];
 			}
 
 			(*fftout) -> inverse( CurInput );
@@ -435,8 +436,9 @@ private:
 		double* ip = ip0;
 		int l = l0 / UpFactor;
 		int lz = l0 - l * UpFactor;
+		const int upf = UpFactor;
 
-		if( UpFactor == 3 )
+		if( upf == 3 )
 		{
 			while( l > 0 )
 			{
@@ -444,12 +446,12 @@ private:
 				op[ 1 ] = 0.0;
 				op[ 2 ] = 0.0;
 				ip++;
-				op += UpFactor;
+				op += upf;
 				l--;
 			}
 		}
 		else
-		if( UpFactor == 5 )
+		if( upf == 5 )
 		{
 			while( l > 0 )
 			{
@@ -459,7 +461,7 @@ private:
 				op[ 3 ] = 0.0;
 				op[ 4 ] = 0.0;
 				ip++;
-				op += UpFactor;
+				op += upf;
 				l--;
 			}
 		}
@@ -470,13 +472,13 @@ private:
 				op[ 0 ] = *ip;
 				int j;
 
-				for( j = 1; j < UpFactor; j++ )
+				for( j = 1; j < upf; j++ )
 				{
 					op[ j ] = 0.0;
 				}
 
 				ip++;
-				op += UpFactor;
+				op += upf;
 				l--;
 			}
 		}
@@ -602,24 +604,24 @@ private:
 	{
 		const int bl1 = BlockLen2 >> UpShift;
 		const int bl2 = bl1 + bl1;
-
+		double* const p = CurInput;
 		int i;
 
 		for( i = bl1 + 2; i < bl2; i += 2 )
 		{
-			CurInput[ i ] = CurInput[ bl2 - i ];
-			CurInput[ i + 1 ] = -CurInput[ bl2 - i + 1 ];
+			p[ i ] = p[ bl2 - i ];
+			p[ i + 1 ] = -p[ bl2 - i + 1 ];
 		}
 
-		CurInput[ bl1 ] = CurInput[ 1 ];
-		CurInput[ bl1 + 1 ] = 0.0;
-		CurInput[ 1 ] = CurInput[ 0 ];
+		p[ bl1 ] = p[ 1 ];
+		p[ bl1 + 1 ] = 0.0;
+		p[ 1 ] = p[ 0 ];
 
 		for( i = 1; i < UpShift; i++ )
 		{
 			const int z = bl1 << i;
-			memcpy( &CurInput[ z ], CurInput, z * sizeof( double ));
-			CurInput[ z + 1 ] = 0.0;
+			memcpy( &p[ z ], p, z * sizeof( double ));
+			p[ z + 1 ] = 0.0;
 		}
 	}
 };
