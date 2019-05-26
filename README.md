@@ -90,7 +90,9 @@ the DLL file on Windows, requiring a processor with SSE2 support (Win64
 version includes AVX2 auto-dispatch code).  Delphi Pascal interface unit file
 for the DLL file is available.  DLL and C LIB files are distributed in the DLL
 folder on the project's home page.  On non-Windows systems it is preferrable
-to use the C++ library directly.
+to use the C++ library directly.  Note that the DLL internally uses Ooura FFT
+due to licensing constraints hence the conversion performance is not as fast
+as it could be with Intel IPP FFT.
 
 ## Real-time Applications ##
 The resampler class of this library was designed as asynchronous processor: it
