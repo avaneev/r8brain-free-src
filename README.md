@@ -119,10 +119,11 @@ The transition band is specified as the normalized spectral space of the input
 signal (or the output signal if the downsampling is performed) between the
 low-pass filter's -3 dB point and the Nyquist frequency, and ranges from
 0.5% to 45%.  Stop-band attenuation can be specified in the range 49 to 218
-decibel.
+decibel.  Both transition band and stop-band attenuation affect resampler's
+overall speed performance.
 
 This SRC library also implements a much faster "power of 2" resampling (e.g.
-2X, 4X, 8X, 16X, etc. upsampling and downsampling).
+2X, 4X, 8X, 16X, 3*2X, 3*4X, 3*8X, etc. upsampling and downsampling).
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/) and
@@ -133,6 +134,10 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 3.4:
+
+* Added a more efficient half-band filters for >= 256 resampling ratios.
+
 Version 3.3:
 
 * Made minor fix to downsampling for some use cases of CDSPBlockConvolver,
@@ -195,11 +200,10 @@ resampling ratios.
 ## Users ##
 This library is used by:
 
-  * [Combo Model V VSTi instrument](http://www.martinic.com/combov/)
-  * [WDM Asio Link Driver](http://midithru.net/Home/AsioLink)
-  * [Boogex Guitar Amp audio plugin](http://www.voxengo.com/product/boogex/)
-  * [OpenMPT](http://openmpt.org/)
-  * [Zynewave Podium](http://zynewave.com/podium/)
+  * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
+  * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
+  * [OpenMPT](https://openmpt.org/)
+  * [Zynewave Podium](https://zynewave.com/podium/)
   * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to

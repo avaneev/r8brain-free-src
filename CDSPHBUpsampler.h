@@ -200,6 +200,19 @@ public:
 		static const double* const FltPtrsE[ FltCountE ] = { HBKernel_1e,
 			HBKernel_2e, HBKernel_3e, HBKernel_4e };
 
+		static const int FltCountG = 3;
+		static const double HBKernel_1g[ 1 ] = { // att -93.9165 dB, frac 256.0
+			5.0001882524896712e-001 };
+		static const double HBKernel_2g[ 2 ] = { // att -185.4886 dB, frac 256.0
+			5.6250705922473820e-001, -6.2507059756319761e-002 };
+		static const double HBKernel_3g[ 3 ] = { // att -275.5531 dB, frac 256.0
+			5.8594191093025305e-001, -9.7662866644414148e-002,
+			1.1720955714177778e-002 };
+		static const double FltAttensG[ FltCountG ] = {
+			93.9165, 185.4886, 275.5531 };
+		static const double* const FltPtrsG[ FltCountG ] = { HBKernel_1g,
+			HBKernel_2g, HBKernel_3g };
+
 		int k = 0;
 
 		if( SteepIndex <= 0 )
@@ -250,6 +263,7 @@ public:
 			att = FltAttensD[ k ];
 		}
 		else
+		if( SteepIndex == 4 || SteepIndex == 5 )
 		{
 			while( k != FltCountE - 1 && FltAttensE[ k ] < ReqAtten )
 			{
@@ -259,6 +273,17 @@ public:
 			flt = FltPtrsE[ k ];
 			fltt = 1 + k;
 			att = FltAttensE[ k ];
+		}
+		else
+		{
+			while( k != FltCountG - 1 && FltAttensG[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsG[ k ];
+			fltt = 1 + k;
+			att = FltAttensG[ k ];
 		}
 	}
 
@@ -382,6 +407,19 @@ public:
 		static const double* const FltPtrsE[ FltCountE ] = { HBKernel_1e,
 			HBKernel_2e, HBKernel_3e };
 
+		static const int FltCountG = 3;
+		static const double HBKernel_1g[ 1 ] = { // att -101.2873 dB, frac 384.0
+			5.0000836666064941e-001 };
+		static const double HBKernel_2g[ 2 ] = { // att -199.5761 dB, frac 384.0
+			5.6250313744967606e-001, -6.2503137554676916e-002 };
+		static const double HBKernel_3g[ 3 ] = { // att -296.4833 dB, frac 384.0
+			5.8593945769687561e-001, -9.7659186594368730e-002,
+			1.1719728897494584e-002 };
+		static const double FltAttensG[ FltCountG ] = {
+			101.2873, 199.5761, 296.4833 };
+		static const double* const FltPtrsG[ FltCountG ] = { HBKernel_1g,
+			HBKernel_2g, HBKernel_3g };
+
 		int k = 0;
 
 		if( SteepIndex <= 0 )
@@ -432,6 +470,7 @@ public:
 			att = FltAttensD[ k ];
 		}
 		else
+		if( SteepIndex == 4 || SteepIndex == 5 )
 		{
 			while( k != FltCountE - 1 && FltAttensE[ k ] < ReqAtten )
 			{
@@ -441,6 +480,17 @@ public:
 			flt = FltPtrsE[ k ];
 			fltt = 1 + k;
 			att = FltAttensE[ k ];
+		}
+		else
+		{
+			while( k != FltCountG - 1 && FltAttensG[ k ] < ReqAtten )
+			{
+				k++;
+			}
+
+			flt = FltPtrsG[ k ];
+			fltt = 1 + k;
+			att = FltAttensG[ k ];
 		}
 	}
 

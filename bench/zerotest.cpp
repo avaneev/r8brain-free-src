@@ -68,11 +68,11 @@ VOXMAIN
 		const int Ref0Size = (int) ( InBufSize * 9.0 / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< CResamp* > Resamp1;
-		Resamp1 = new CResamp( 10.0, 9.0, MaxInLen, tb );
+		CPtrKeeper< r8b :: CDSPResampler24* > Resamp1;
+		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.0, MaxInLen, tb );
 
-		CPtrKeeper< CResamp* > Resamp2;
-		Resamp2 = new CResamp( 9.0, 10.0, MaxInLen, tb );
+		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
+		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( MaxInLen, &InBufs[ 0 ][ 0 ], InBufSize,
 			&Ref0[ 0 ], Ref0Size );

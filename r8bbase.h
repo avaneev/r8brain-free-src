@@ -54,7 +54,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 3.3
+ * @version 3.4
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -83,7 +83,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "3.3"
+#define R8B_VERSION "3.4"
 
 #if !defined( M_PI )
 	/**
