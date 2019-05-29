@@ -20,7 +20,7 @@
 
 #if !R8B_IPP && !R8B_PFFFT
 	#include "fft4g.h"
-#endif // !R8B_IPP
+#endif // !R8B_IPP && !R8B_PFFFT
 
 namespace r8b {
 

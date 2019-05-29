@@ -61,6 +61,7 @@
 #define R8BBASE_INCLUDED
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 #include "r8bconf.h"
@@ -397,12 +398,14 @@ private:
 	 * This macro forces provided pointer ptr to be aligned to align bytes.
 	 * Works with power-of-2 alignments only. If no alignment is necessary,
 	 * "align" bytes will be added to the pointer value.
+	 *
+	 * @tparam Tp Pointer type.
 	 */
 
-	template< class T >
-	inline T alignptr( const T ptr, const uintptr_t align )
+	template< class Tp >
+	inline Tp alignptr( const Tp ptr, const uintptr_t align )
 	{
-		return( (T) ( (uintptr_t) ptr + align -
+		return( (Tp) ( (uintptr_t) ptr + align -
 			( (uintptr_t) ptr & ( align - 1 ))) );
 	}
 };

@@ -78,6 +78,7 @@
 #define PFFFT_H
 
 #include <stddef.h> // for size_t
+#include <stdint.h> // Addition by AV.
 
 #ifdef __cplusplus
 extern "C" {
