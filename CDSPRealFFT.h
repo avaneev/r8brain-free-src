@@ -18,7 +18,7 @@
 
 #include "r8bbase.h"
 
-#if !R8B_IPP
+#if !R8B_IPP && !R8B_PFFFT
 	#include "fft4g.h"
 #endif // !R8B_IPP
 
@@ -159,41 +159,34 @@ public:
 	 * object's block length. Input blocks should have been produced with the
 	 * forward() function of *this object.
 	 *
-	 * @param ip1 Input data block 1.
-	 * @param ip2 Input data block 2.
-	 * @param[out] op Output data block, should not be equal to ip1 nor ip2.
+	 * @param aip1 Input data block 1.
+	 * @param aip2 Input data block 2.
+	 * @param[out] aop Output data block, should not be equal to aip1 nor
+	 * aip2.
 	 */
 
-	void multiplyBlocks( const double* const ip1, const double* const ip2,
-		double* const op ) const
+	void multiplyBlocks( const double* const aip1, const double* const aip2,
+		double* const aop ) const
 	{
+	#if R8B_FLOATFFT
+
+		const float* const ip1 = (const float*) aip1;
+		const float* const ip2 = (const float*) aip2;
+		float* const op = (float*) aop;
+
+	#else // R8B_FLOATFFT
+
+		const double* const ip1 = aip1;
+		const double* const ip2 = aip2;
+		double* const op = aop;
+
+	#endif // R8B_FLOATFFT
+
 	#if R8B_IPP
 
 		ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op, Len );
 
 	#else // R8B_IPP
-
-		#if R8B_FLOATFFT
-
-		const float* const ip1f = (const float*) ip1;
-		const float* const ip2f = (const float*) ip2;
-		float* const opf = (float*) op;
-
-		opf[ 0 ] = ip1f[ 0 ] * ip2f[ 0 ];
-		opf[ 1 ] = ip1f[ 1 ] * ip2f[ 1 ];
-
-		int i = 2;
-
-		while( i < Len )
-		{
-			opf[ i ] = ip1f[ i ] * ip2f[ i ] - ip1f[ i + 1 ] * ip2f[ i + 1 ];
-			opf[ i + 1 ] = ip1f[ i ] * ip2f[ i + 1 ] +
-				ip1f[ i + 1 ] * ip2f[ i ];
-
-			i += 2;
-		}
-
-		#else // R8B_FLOATFFT
 
 		op[ 0 ] = ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] = ip1[ 1 ] * ip2[ 1 ];
@@ -207,71 +200,6 @@ public:
 			i += 2;
 		}
 
-		#endif // R8B_FLOATFFT
-
-	#endif // R8B_IPP
-	}
-
-	/**
-	 * Function is similar to the multiplyBlocks() function, but instead of
-	 * replacing data in the output buffer, the data is summed with the output
-	 * buffer.
-	 *
-	 * @param ip1 Input data block 1.
-	 * @param ip2 Input data block 2.
-	 * @param[out] op Output data block, should not be equal to ip1 nor ip2.
-	 */
-
-	void multiplyBlocksAdd( const double* const ip1, const double* const ip2,
-		double* const op ) const
-	{
-	#if R8B_IPP
-
-		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
-		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
-
-		ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
-			(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
-			( Len >> 1 ) - 1 );
-
-	#else // R8B_IPP
-
-		#if R8B_FLOATFFT
-
-		const float* const ip1f = (const float*) ip1;
-		const float* const ip2f = (const float*) ip2;
-		float* const opf = (float*) op;
-
-		opf[ 0 ] += ip1f[ 0 ] * ip2f[ 0 ];
-		opf[ 1 ] += ip1f[ 1 ] * ip2f[ 1 ];
-
-		int i = 2;
-
-		while( i < Len )
-		{
-			opf[ i ] += ip1f[ i ] * ip2f[ i ] - ip1f[ i + 1 ] * ip2f[ i + 1 ];
-			opf[ i + 1 ] += ip1f[ i ] * ip2f[ i + 1 ] +
-				ip1f[ i + 1 ] * ip2f[ i ];
-
-			i += 2;
-		}
-
-		#else // R8B_FLOATFFT
-
-		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
-		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
-
-		int i = 2;
-
-		while( i < Len )
-		{
-			op[ i ] += ip1[ i ] * ip2[ i ] - ip1[ i + 1 ] * ip2[ i + 1 ];
-			op[ i + 1 ] += ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
-			i += 2;
-		}
-
-		#endif // R8B_FLOATFFT
-
 	#endif // R8B_IPP
 	}
 
@@ -280,37 +208,31 @@ public:
 	 * both data blocks should be equal to *this object's block length. Blocks
 	 * should have been produced with the forward() function of *this object.
 	 *
-	 * @param ip Input data block 1.
-	 * @param[in,out] op Output/input data block 2.
+	 * @param aip Input data block 1.
+	 * @param[in,out] aop Output/input data block 2.
 	 */
 
-	void multiplyBlocks( const double* const ip, double* const op ) const
+	void multiplyBlocks( const double* const aip, double* const aop ) const
 	{
+	#if R8B_FLOATFFT
+
+		const float* const ip = (const float*) aip;
+		float* const op = (float*) aop;
+		float t;
+
+	#else // R8B_FLOATFFT
+
+		const double* const ip = aip;
+		double* const op = aop;
+		double t;
+
+	#endif // R8B_FLOATFFT
+
 	#if R8B_IPP
 
 		ippsMulPerm_64f( (Ipp64f*) op, (Ipp64f*) ip, (Ipp64f*) op, Len );
 
 	#else // R8B_IPP
-
-		#if R8B_FLOATFFT
-
-		const float* const ipf = (const float*) ip;
-		float* const opf = (float*) op;
-
-		opf[ 0 ] *= ipf[ 0 ];
-		opf[ 1 ] *= ipf[ 1 ];
-
-		int i = 2;
-
-		while( i < Len )
-		{
-			const float t = opf[ i ] * ipf[ i ] - opf[ i + 1 ] * ipf[ i + 1 ];
-			opf[ i + 1 ] = opf[ i ] * ipf[ i + 1 ] + opf[ i + 1 ] * ipf[ i ];
-			opf[ i ] = t;
-			i += 2;
-		}
-
-		#else // R8B_FLOATFFT
 
 		op[ 0 ] *= ip[ 0 ];
 		op[ 1 ] *= ip[ 1 ];
@@ -319,13 +241,11 @@ public:
 
 		while( i < Len )
 		{
-			const double t = op[ i ] * ip[ i ] - op[ i + 1 ] * ip[ i + 1 ];
+			t = op[ i ] * ip[ i ] - op[ i + 1 ] * ip[ i + 1 ];
 			op[ i + 1 ] = op[ i ] * ip[ i + 1 ] + op[ i + 1 ] * ip[ i ];
 			op[ i ] = t;
 			i += 2;
 		}
-
-		#endif // R8B_FLOATFFT
 
 	#endif // R8B_IPP
 	}
@@ -337,44 +257,67 @@ public:
 	 * Blocks should have been produced with the forward() function of *this
 	 * object.
 	 *
-	 * @param ip Input data block 1, "zero-phase" response.
-	 * @param[in,out] op Output/input data block 2.
+	 * @param aip Input data block 1, "zero-phase" response. This block should
+	 * be first transformed via the convertToZ() function.
+	 * @param[in,out] aop Output/input data block 2.
 	 */
 
-	void multiplyBlocksZ( const double* const ip, double* const op ) const
+	void multiplyBlocksZ( const double* const aip, double* const aop ) const
 	{
-		#if R8B_FLOATFFT
+	#if R8B_FLOATFFT
 
-		const float* const ipf = (const float*) ip;
-		float* const opf = (float*) op;
+		const float* const ip = (const float*) aip;
+		float* const op = (float*) aop;
 
-		opf[ 0 ] *= ipf[ 0 ];
-		opf[ 1 ] *= ipf[ 1 ];
+	#else // R8B_FLOATFFT
 
-		int i = 2;
+		const double* const ip = aip;
+		double* const op = aop;
 
-		while( i < Len )
-		{
-			opf[ i ] *= ipf[ i ];
-			opf[ i + 1 ] *= ipf[ i ];
-			i += 2;
-		}
+	#endif // R8B_FLOATFFT
 
-		#else // R8B_FLOATFFT
+	#if R8B_IPP
 
-		op[ 0 ] *= ip[ 0 ];
-		op[ 1 ] *= ip[ 1 ];
+		ippsMul_64f_I( (const Ipp64f*) ip, (Ipp64f*) op, Len );
 
-		int i = 2;
+	#else // R8B_IPP
 
-		while( i < Len )
+		int i;
+
+		for( i = 0; i < Len; i++ )
 		{
 			op[ i ] *= ip[ i ];
-			op[ i + 1 ] *= ip[ i ];
-			i += 2;
 		}
 
-		#endif // R8B_FLOATFFT
+	#endif // R8B_IPP
+	}
+
+	/**
+	 * Function converts the specified forward-transformed block into
+	 * "zero-phase" form suitable for use with the multiplyBlocksZ() function.
+	 *
+	 * @param[in,out] ap Block to transform.
+	 */
+
+	void convertToZ( double* const ap ) const
+	{
+	#if R8B_FLOATFFT
+
+		float* const p = (float*) ap;
+
+	#else // R8B_FLOATFFT
+
+		double* const p = ap;
+
+	#endif // R8B_FLOATFFT
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			p[ i + 1 ] = p[ i ];
+			i += 2;
+		}
 	}
 
 private:

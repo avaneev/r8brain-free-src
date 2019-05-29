@@ -152,6 +152,11 @@ r8brain-free-src is bundled with the following code:
 [Homepage](https://bitbucket.org/jpommier/pffft)
 
 ## Change log ##
+Version 3.7:
+
+* Used ippsMul_64f_I() in the CDSPRealFFT::multiplyBlockZ() function for a
+minor conversion speed increase in Intel IPP mode.
+
 Version 3.6:
 
 * Added memory alignment to allocated buffers which boosts performance by 1.5%

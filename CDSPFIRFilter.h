@@ -528,6 +528,11 @@ private:
 
 		ffto -> forward( KernelBlock );
 
+		if( IsZeroPhase )
+		{
+			ffto -> convertToZ( KernelBlock );
+		}
+
 		R8BCONSOLE( "CDSPFIRFilter: flt_len=%i latency=%i nfreq=%.4f "
 			"tb=%.1f att=%.1f gain=%.3f\n", KernelLen, Latency,
 			ReqNormFreq, ReqTransBand, ReqAtten, ReqGain );
