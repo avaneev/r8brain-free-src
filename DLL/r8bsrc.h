@@ -17,7 +17,7 @@
  * 64-bit systems. Pointer types, including the CR8BResampler type, have
  * 32-bit size on 32-bit system and 64-bit size on 64-bit system.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 

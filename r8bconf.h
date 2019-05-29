@@ -168,4 +168,27 @@
 	#define R8B_EXTFFT 0
 #endif // !defined( R8B_EXTFFT )
 
+#if !defined( R8B_PFFFT )
+	/**
+	 * When defined as 1, enables PFFFT routines which are fast, but limited
+	 * to 24-bit precision.
+	 */
+
+	#define R8B_PFFFT 0
+#endif // !defined( R8B_PFFFT )
+
+#if R8B_PFFFT
+	#include "pffft.h"
+	#define R8B_FLOATFFT 1
+#endif // R8B_PFFFT
+
+#if !defined( R8B_FLOATFFT )
+	/**
+	 * The R8B_FLOATFFT definition enables double-to-float buffer conversion
+	 * for FFT operations for algorithms that work with "float" values.
+	 */
+
+	#define R8B_FLOATFFT 0
+#endif // !defined( R8B_FLOATFFT )
+
 #endif // R8BCONF_INCLUDED

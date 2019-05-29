@@ -204,6 +204,7 @@ private:
 	CFixedBuffer< double > KernelBlock; ///< FIR filter buffer, capacity
 		///< equals to 1 << ( BlockLenBits + 1 ). Second part of the buffer
 		///< contains zero-padding to allow alias-free convolution.
+		///< Memory-aligned.
 		///<
 
 	CDSPFIRFilter()

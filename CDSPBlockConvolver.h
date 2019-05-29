@@ -170,7 +170,8 @@ public:
 
 		WorkBlocks.alloc( BlockLen2 * 2 + PrevInputLen );
 		CurInput = &WorkBlocks[ 0 ];
-		CurOutput = &WorkBlocks[ BlockLen2 ];
+		CurOutput = &WorkBlocks[ BlockLen2 ]; // CurInput and
+			// CurOutput are memory-aligned.
 		PrevInput = &WorkBlocks[ BlockLen2 * 2 ];
 
 		clear();
@@ -296,7 +297,11 @@ public:
 
 			if( UpShift > 0 )
 			{
-				mirrorInputSpectrum();
+				#if R8B_FLOATFFT
+					mirrorInputSpectrum( (float*) CurInput );
+				#else // R8B_FLOATFFT
+					mirrorInputSpectrum( CurInput );
+				#endif // R8B_FLOATFFT
 			}
 
 			if( Filter -> isZeroPhase() )
@@ -313,9 +318,16 @@ public:
 			if( DownShift > 0 )
 			{
 				const int z = BlockLen2 >> DownShift;
-				CurInput[ 1 ] = Filter -> getKernelBlock()[ z ] *
-					CurInput[ z ] - Filter -> getKernelBlock()[ z + 1 ] *
-					CurInput[ z + 1 ];
+
+				#if R8B_FLOATFFT
+					float* const kb = (float*) Filter -> getKernelBlock();
+					float* const op = (float*) CurInput;
+				#else // R8B_FLOATFFT
+					const double* const kb = Filter -> getKernelBlock();
+					double* const op = CurInput;
+				#endif // R8B_FLOATFFT
+
+				op[ 1 ] = kb[ z ] * op[ z ] - kb[ z + 1 ] * op[ z + 1 ];
 			}
 
 			(*fftout) -> inverse( CurInput );
@@ -598,13 +610,15 @@ private:
 	 * Function performs input spectrum mirroring which is used to perform a
 	 * fast "power of 2" upsampling. Such mirroring is equivalent to insertion
 	 * of zeros into the input signal.
+	 *
+	 * @param p Spectrum data block to mirror.
 	 */
 
-	void mirrorInputSpectrum()
+	template< class T >
+	void mirrorInputSpectrum( T* const p )
 	{
 		const int bl1 = BlockLen2 >> UpShift;
 		const int bl2 = bl1 + bl1;
-		double* const p = CurInput;
 		int i;
 
 		for( i = bl1 + 2; i < bl2; i += 2 )
@@ -620,7 +634,7 @@ private:
 		for( i = 1; i < UpShift; i++ )
 		{
 			const int z = bl1 << i;
-			memcpy( &p[ z ], p, z * sizeof( double ));
+			memcpy( &p[ z ], p, z * sizeof( T ));
 			p[ z + 1 ] = 0.0;
 		}
 	}

@@ -89,11 +89,27 @@ public:
 
 	void forward( double* const p ) const
 	{
+	#if R8B_FLOATFFT
+
+		float* const op = (float*) p;
+		int i;
+
+		for( i = 0; i < Len; i++ )
+		{
+			op[ i ] = (float) p[ i ];
+		}
+
+	#endif // R8B_FLOATFFT
+
 	#if R8B_IPP
 
 		ippsFFTFwd_RToPerm_64f( p, p, SPtr, WorkBuffer );
 
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+
+		pffft_transform_ordered( setup, op, op, work, PFFFT_FORWARD );
+
+	#else // R8B_PFFFT
 
 		ooura_fft :: rdft( Len, 1, p, wi.getPtr(), wd.getPtr() );
 
@@ -113,11 +129,28 @@ public:
 
 		ippsFFTInv_PermToR_64f( p, p, SPtr, WorkBuffer );
 
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+
+		pffft_transform_ordered( setup, (float*) p, (float*) p, work,
+			PFFFT_BACKWARD );
+
+	#else // R8B_PFFFT
 
 		ooura_fft :: rdft( Len, -1, p, wi.getPtr(), wd.getPtr() );
 
 	#endif // R8B_IPP
+
+	#if R8B_FLOATFFT
+
+		const float* const ip = (const float*) p;
+		int i;
+
+		for( i = Len - 1; i >= 0; i-- )
+		{
+			p[ i ] = ip[ i ];
+		}
+
+	#endif // R8B_FLOATFFT
 	}
 
 	/**
@@ -140,6 +173,28 @@ public:
 
 	#else // R8B_IPP
 
+		#if R8B_FLOATFFT
+
+		const float* const ip1f = (const float*) ip1;
+		const float* const ip2f = (const float*) ip2;
+		float* const opf = (float*) op;
+
+		opf[ 0 ] = ip1f[ 0 ] * ip2f[ 0 ];
+		opf[ 1 ] = ip1f[ 1 ] * ip2f[ 1 ];
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			opf[ i ] = ip1f[ i ] * ip2f[ i ] - ip1f[ i + 1 ] * ip2f[ i + 1 ];
+			opf[ i + 1 ] = ip1f[ i ] * ip2f[ i + 1 ] +
+				ip1f[ i + 1 ] * ip2f[ i ];
+
+			i += 2;
+		}
+
+		#else // R8B_FLOATFFT
+
 		op[ 0 ] = ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] = ip1[ 1 ] * ip2[ 1 ];
 
@@ -151,6 +206,8 @@ public:
 			op[ i + 1 ] = ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
 			i += 2;
 		}
+
+		#endif // R8B_FLOATFFT
 
 	#endif // R8B_IPP
 	}
@@ -168,16 +225,41 @@ public:
 	void multiplyBlocksAdd( const double* const ip1, const double* const ip2,
 		double* const op ) const
 	{
+	#if R8B_IPP
+
 		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
-
-	#if R8B_IPP
 
 		ippsAddProduct_64fc( (const Ipp64fc*) ( ip1 + 2 ),
 			(const Ipp64fc*) ( ip2 + 2 ), (Ipp64fc*) ( op + 2 ),
 			( Len >> 1 ) - 1 );
 
 	#else // R8B_IPP
+
+		#if R8B_FLOATFFT
+
+		const float* const ip1f = (const float*) ip1;
+		const float* const ip2f = (const float*) ip2;
+		float* const opf = (float*) op;
+
+		opf[ 0 ] += ip1f[ 0 ] * ip2f[ 0 ];
+		opf[ 1 ] += ip1f[ 1 ] * ip2f[ 1 ];
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			opf[ i ] += ip1f[ i ] * ip2f[ i ] - ip1f[ i + 1 ] * ip2f[ i + 1 ];
+			opf[ i + 1 ] += ip1f[ i ] * ip2f[ i + 1 ] +
+				ip1f[ i + 1 ] * ip2f[ i ];
+
+			i += 2;
+		}
+
+		#else // R8B_FLOATFFT
+
+		op[ 0 ] += ip1[ 0 ] * ip2[ 0 ];
+		op[ 1 ] += ip1[ 1 ] * ip2[ 1 ];
 
 		int i = 2;
 
@@ -187,6 +269,8 @@ public:
 			op[ i + 1 ] += ip1[ i ] * ip2[ i + 1 ] + ip1[ i + 1 ] * ip2[ i ];
 			i += 2;
 		}
+
+		#endif // R8B_FLOATFFT
 
 	#endif // R8B_IPP
 	}
@@ -208,6 +292,26 @@ public:
 
 	#else // R8B_IPP
 
+		#if R8B_FLOATFFT
+
+		const float* const ipf = (const float*) ip;
+		float* const opf = (float*) op;
+
+		opf[ 0 ] *= ipf[ 0 ];
+		opf[ 1 ] *= ipf[ 1 ];
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			const float t = opf[ i ] * ipf[ i ] - opf[ i + 1 ] * ipf[ i + 1 ];
+			opf[ i + 1 ] = opf[ i ] * ipf[ i + 1 ] + opf[ i + 1 ] * ipf[ i ];
+			opf[ i ] = t;
+			i += 2;
+		}
+
+		#else // R8B_FLOATFFT
+
 		op[ 0 ] *= ip[ 0 ];
 		op[ 1 ] *= ip[ 1 ];
 
@@ -220,6 +324,8 @@ public:
 			op[ i ] = t;
 			i += 2;
 		}
+
+		#endif // R8B_FLOATFFT
 
 	#endif // R8B_IPP
 	}
@@ -237,6 +343,25 @@ public:
 
 	void multiplyBlocksZ( const double* const ip, double* const op ) const
 	{
+		#if R8B_FLOATFFT
+
+		const float* const ipf = (const float*) ip;
+		float* const opf = (float*) op;
+
+		opf[ 0 ] *= ipf[ 0 ];
+		opf[ 1 ] *= ipf[ 1 ];
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			opf[ i ] *= ipf[ i ];
+			opf[ i + 1 ] *= ipf[ i ];
+			i += 2;
+		}
+
+		#else // R8B_FLOATFFT
+
 		op[ 0 ] *= ip[ 0 ];
 		op[ 1 ] *= ip[ 1 ];
 
@@ -248,40 +373,8 @@ public:
 			op[ i + 1 ] *= ip[ i ];
 			i += 2;
 		}
-	}
 
-	/**
-	 * Function performs in-place spectrum squaring. May cause aliasing
-	 * if the filter was not zero-padded before the forward() function call.
-	 *
-	 * @param[in,out] p Pointer to data block to square, length should be
-	 * equal to *this object's getLen(). This data block should contain
-	 * complex spectrum data, previously obtained via the forward() function.
-	 */
-
-	void sqr( double* const p ) const
-	{
-		p[ 0 ] *= p[ 0 ];
-		p[ 1 ] *= p[ 1 ];
-
-	#if R8B_IPP
-
-		ippsSqr_64fc( (Ipp64fc*) ( p + 2 ), (Ipp64fc*) ( p + 2 ),
-			( Len >> 1 ) - 1 );
-
-	#else // R8B_IPP
-
-		int i = 2;
-
-		while( i < Len )
-		{
-			const double r = p[ i ] * p[ i ] - p[ i + 1 ] * p[ i + 1 ];
-			p[ i + 1 ] = p[ i ] * ( p[ i + 1 ] + p[ i + 1 ]);
-			p[ i ] = r;
-			i += 2;
-		}
-
-	#endif // R8B_IPP
+		#endif // R8B_FLOATFFT
 	}
 
 private:
@@ -302,7 +395,12 @@ private:
 			///<
 		CFixedBuffer< unsigned char > WorkBuffer; ///< Working buffer.
 			///<
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+		PFFFT_Setup* setup; ///< PFFFT setup object.
+			///<
+		CFixedBuffer< float > work; ///< Working buffer.
+			///<
+	#else // R8B_PFFFT
 		CFixedBuffer< int > wi; ///< Working buffer (ints).
 			///<
 		CFixedBuffer< double > wd; ///< Working buffer (doubles).
@@ -362,7 +460,9 @@ private:
 		, Len( 1 << aLenBits )
 	#if R8B_IPP
 		, InvMulConst( 1.0 / Len )
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+		, InvMulConst( 1.0 / Len )
+	#else // R8B_PFFFT
 		, InvMulConst( 2.0 / Len )
 	#endif // R8B_IPP
 	{
@@ -382,7 +482,12 @@ private:
 		ippsFFTInit_R_64f( &SPtr, LenBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, SpecBuffer, InitBuffer );
 
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+
+		setup = pffft_new_setup( Len, PFFFT_REAL );
+		work.alloc( Len );
+
+	#else // R8B_PFFFT
 
 		wi.alloc( (int) ceil( 2.0 + sqrt( (double) ( Len >> 1 ))));
 		wi[ 0 ] = 0;
@@ -393,6 +498,10 @@ private:
 
 	~CDSPRealFFT()
 	{
+		#if R8B_PFFFT
+			pffft_destroy_setup( setup );
+		#endif // R8B_PFFFT
+
 		delete Next;
 	}
 };
@@ -577,18 +686,28 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	// Create the "log |c|" spectrum while saving the original power spectrum
 	// in the "ip2" buffer.
 
-	ip2[ 0 ] = ip[ 0 ];
-	ip[ 0 ] = log( fabs( ip[ 0 ]) + 1e-50 );
-	ip2[ Len2 ] = ip[ 1 ];
-	ip[ 1 ] = log( fabs( ip[ 1 ]) + 1e-50 );
+	#if R8B_FLOATFFT
+		float* const aip = (float*) &ip[ 0 ];
+		float* const aip2 = (float*) &ip2[ 0 ];
+		const float nzbias = 1e-35;
+	#else // R8B_FLOATFFT
+		double* const aip = &ip[ 0 ];
+		double* const aip2 = &ip2[ 0 ];
+		const double nzbias = 1e-300;
+	#endif // R8B_FLOATFFT
+
+	aip2[ 0 ] = aip[ 0 ];
+	aip[ 0 ] = log( fabs( aip[ 0 ]) + nzbias );
+	aip2[ Len2 ] = aip[ 1 ];
+	aip[ 1 ] = log( fabs( aip[ 1 ]) + nzbias );
 
 	for( i = 1; i < Len2; i++ )
 	{
-		ip2[ i ] = sqrt( ip[ i * 2 ] * ip[ i * 2 ] +
-			ip[ i * 2 + 1 ] * ip[ i * 2 + 1 ]);
+		aip2[ i ] = sqrt( aip[ i * 2 ] * aip[ i * 2 ] +
+			aip[ i * 2 + 1 ] * aip[ i * 2 + 1 ]);
 
-		ip[ i * 2 ] = log( ip2[ i ] + 1e-100 );
-		ip[ i * 2 + 1 ] = 0.0;
+		aip[ i * 2 ] = log( aip2[ i ] + nzbias );
+		aip[ i * 2 + 1 ] = 0.0;
 	}
 
 	// Convert to cepstrum and apply discrete Hilbert transform.
@@ -618,14 +737,13 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	ffto -> forward( ip );
 
-	ip[ 0 ] = ip2[ 0 ];
-	ip[ 1 ] = ip2[ Len2 ];
+	aip[ 0 ] = aip2[ 0 ];
+	aip[ 1 ] = aip2[ Len2 ];
 
 	for( i = 1; i < Len2; i++ )
 	{
-		const double p = ip2[ i ];
-		ip[ i * 2 + 0 ] = cos( ip[ i * 2 + 1 ]) * p;
-		ip[ i * 2 + 1 ] = sin( ip[ i * 2 + 1 ]) * p;
+		aip[ i * 2 + 0 ] = cos( aip[ i * 2 + 1 ]) * aip2[ i ];
+		aip[ i * 2 + 1 ] = sin( aip[ i * 2 + 1 ]) * aip2[ i ];
 	}
 
 	ffto -> inverse( ip );

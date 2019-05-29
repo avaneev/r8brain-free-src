@@ -54,7 +54,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 3.5
+ * @version 3.6
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -83,7 +83,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "3.5"
+#define R8B_VERSION "3.6"
 
 #if !defined( M_PI )
 	/**
@@ -267,6 +267,9 @@ public:
  * This class manages memory space only - it does not perform element class
  * construction nor destruction operations.
  *
+ * This class applies 256-bit memory address alignment to the allocated data
+ * block.
+ *
  * @param T The class of the stored elements (e.g. "double").
  */
 
@@ -277,7 +280,8 @@ class CFixedBuffer : public R8B_MEMALLOCCLASS
 
 public:
 	CFixedBuffer()
-		: Data( NULL )
+		: Data0( NULL )
+		, Data( NULL )
 	{
 	}
 
@@ -292,14 +296,15 @@ public:
 	{
 		R8BASSERT( Capacity > 0 || Capacity == 0 );
 
-		Data = (T*) allocmem( Capacity * sizeof( T ));
+		Data0 = allocmem( Capacity * sizeof( T ) + Alignment );
+		Data = (T*) alignptr( Data0, Alignment );
 
-		R8BASSERT( Data != NULL || Capacity == 0 );
+		R8BASSERT( Data0 != NULL || Capacity == 0 );
 	}
 
 	~CFixedBuffer()
 	{
-		freemem( Data );
+		freemem( Data0 );
 	}
 
 	/**
@@ -313,10 +318,11 @@ public:
 	{
 		R8BASSERT( Capacity > 0 || Capacity == 0 );
 
-		freemem( Data );
-		Data = (T*) allocmem( Capacity * sizeof( T ));
+		freemem( Data0 );
+		Data0 = allocmem( Capacity * sizeof( T ) + Alignment );
+		Data = (T*) alignptr( Data0, Alignment );
 
-		R8BASSERT( Data != NULL || Capacity == 0 );
+		R8BASSERT( Data0 != NULL || Capacity == 0 );
 	}
 
 	/**
@@ -333,15 +339,19 @@ public:
 		R8BASSERT( PrevCapacity >= 0 );
 		R8BASSERT( NewCapacity >= 0 );
 
-		T* const NewData = (T*) allocmem( NewCapacity * sizeof( T ));
+		void* const NewData0 = allocmem( NewCapacity * sizeof( T ) +
+			Alignment );
+
+		T* const NewData = (T*) alignptr( NewData0, Alignment );
 
 		memcpy( NewData, Data, ( PrevCapacity > NewCapacity ?
 			NewCapacity : PrevCapacity ) * sizeof( T ));
 
-		freemem( Data );
+		freemem( Data0 );
+		Data0 = NewData0;
 		Data = NewData;
 
-		R8BASSERT( Data != NULL || NewCapacity == 0 );
+		R8BASSERT( Data0 != NULL || NewCapacity == 0 );
 	}
 
 	/**
@@ -350,7 +360,8 @@ public:
 
 	void free()
 	{
-		freemem( Data );
+		freemem( Data0 );
+		Data0 = NULL;
 		Data = NULL;
 	}
 
@@ -375,8 +386,25 @@ public:
 	}
 
 private:
-	T* Data; ///< Element buffer pointer.
+	static const size_t Alignment = 32; ///< Data buffer alignment, in bytes.
 		///<
+	void* Data0; ///< Buffer pointer, original unaligned.
+		///<
+	T* Data; ///< Element buffer pointer, aligned.
+		///<
+
+	/**
+	 * This macro forces provided pointer ptr to be aligned to align bytes.
+	 * Works with power-of-2 alignments only. If no alignment is necessary,
+	 * "align" bytes will be added to the pointer value.
+	 */
+
+	template< class T >
+	inline T alignptr( const T ptr, const uintptr_t align )
+	{
+		return( (T) ( (uintptr_t) ptr + align -
+			( (uintptr_t) ptr & ( align - 1 ))) );
+	}
 };
 
 /**

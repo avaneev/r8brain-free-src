@@ -69,20 +69,30 @@ not an issue, for the most efficiency you can define these macros in
     #define R8B_FASTTIMING 1
     #define R8B_EXTFFT 1
 
+If you do not have access to Intel IPP then you may consider using PFFFT which
+is only slightly slower than Intel IPP FFT in performance, however since PFFFT
+works with single-precision floats, the overall resampler's precision will be
+limited to 24-bit sample rate conversions. To use the PFFFT, define the
+`R8B_PFFFT` macro, and compile and include the supplied `pffft.cpp` file, to
+your project build.
+
+    #define R8B_PFFFT 1
+
 The code of this library was commented in the [Doxygen](http://www.doxygen.org/)
 style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`61.0*n_cores` Mflops (`80.5*n_cores` for Intel IPP FFT) when converting 1
-channel of 24-bit audio from 44100 to 96000 sample rate (2% transition band),
-on an Intel Core i7-7700K processor-based 64-bit AVX2-enabled system without
-overclocking.  This approximately translates to a real-time resampling of
-`635*n_cores` audio streams, at 100% CPU load.  Time performance when
-converting to other sample rates may vary greatly.  When comparing performance
-of this resampler library to another library make sure that the competing
-library is also tuned to produce a fully linear-phase response, has similar
-stop-band characteristics, and similar sample timing precision.
+`61.0*n_cores` Mflops (`80.5*n_cores` for Intel IPP FFT and PFFFT) when
+converting 1 channel of 24-bit audio from 44100 to 96000 sample rate
+(2% transition band), on an Intel Core i7-7700K processor-based 64-bit
+AVX2-enabled system without overclocking.  This approximately translates to a
+real-time resampling of `635*n_cores` audio streams, at 100% CPU load.  Time
+performance when converting to other sample rates may vary greatly.  When
+comparing performance of this resampler library to another library make sure
+that the competing library is also tuned to produce a fully linear-phase
+response, has similar stop-band characteristics, and similar sample timing
+precision.
 
 ## Dynamic Link Library ##
 The functions of this SRC library are also accessible in simplified form via
@@ -90,9 +100,8 @@ the DLL file on Windows, requiring a processor with SSE2 support (Win64
 version includes AVX2 auto-dispatch code).  Delphi Pascal interface unit file
 for the DLL file is available.  DLL and C LIB files are distributed in the DLL
 folder on the project's home page.  On non-Windows systems it is preferrable
-to use the C++ library directly.  Note that the DLL internally uses Ooura FFT
-due to licensing constraints hence the conversion performance is not as fast
-as it could be with Intel IPP FFT.
+to use the C++ library directly.  Note that the DLL was compiled with the
+PFFFT enabled.
 
 ## Real-time Applications ##
 The resampler class of this library was designed as asynchronous processor: it
@@ -133,7 +142,22 @@ and 64-bit Windows, macOS and CentOS Linux.
 All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
+## Acknowledgements ##
+
+r8brain-free-src is bundled with the following code:
+
+* FFT routines Copyright(C) 1996-2001 Takuya OOURA.
+[Homepage](http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html)
+* PFFFT Copyright (c) 2013 Julien Pommier.
+[Homepage](https://bitbucket.org/jpommier/pffft)
+
 ## Change log ##
+Version 3.6:
+
+* Added memory alignment to allocated buffers which boosts performance by 1.5%
+when Intel IPP FFT is in use.
+* Implemented PFFFT support.
+
 Version 3.5:
 
 * Improved resampling speed very slightly.
