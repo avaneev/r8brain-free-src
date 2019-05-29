@@ -301,7 +301,8 @@ public:
 					DstSampleRate, LatencyFrac ));
 
 				const double tb = 100.0 * ( 1.0 - SrcSampleRate * div /
-					DstSampleRate ) / 1.8;
+					DstSampleRate ) / 1.7; // Divide TransBand by a constant
+					// that assures a linear response in the pass-band.
 
 				addProcessor( new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 1.0 / num, tb,
@@ -325,21 +326,22 @@ public:
 
 		// Use downsampling steps, including power-of-2 downsampling.
 
-		const double CheckSR = DstSampleRate * 4;
+		double CheckSR = DstSampleRate * 4.0;
 		int c = 0;
-		int SrcSRDiv = 1;
 		double FinGain = 1.0;
 
-		while( CheckSR * SrcSRDiv <= SrcSampleRate )
+		while( CheckSR <= SrcSampleRate )
 		{
 			c++;
-			SrcSRDiv *= 2;
+			CheckSR *= 2.0;
 			FinGain *= 0.5;
 		}
 
+		const int SrcSRDiv = ( 1 << c );
 		int downf;
 		double NormFreq;
 		bool UseInterp = true;
+		bool IsThird = false;
 
 		for( downf = 2; downf <= 3; downf++ )
 		{
@@ -347,6 +349,7 @@ public:
 			{
 				NormFreq = 1.0 / downf;
 				UseInterp = false;
+				IsThird = ( downf == 3 );
 				break;
 			}
 		}
@@ -355,9 +358,8 @@ public:
 		{
 			downf = 1;
 			NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
+			IsThird = ( NormFreq * 3.0 <= 1.0 );
 		}
-
-		const bool IsThird = ( NormFreq <= 1.0 / 3.0 );
 
 		for( i = 0; i < c; i++ )
 		{

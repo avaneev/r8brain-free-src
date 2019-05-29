@@ -134,6 +134,11 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Change log ##
+Version 3.5:
+
+* Improved resampling speed very slightly.
+* Updated the `r8bfreesrc` benchmark tool to support RF64 WAV files.
+
 Version 3.4:
 
 * Added a more efficient half-band filters for >= 256 resampling ratios.
