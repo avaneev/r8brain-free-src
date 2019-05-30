@@ -1,11 +1,11 @@
 # r8brain-free-src #
 ## Introduction ##
 Open source (under the MIT license) high-quality professional audio sample
-rate converter (SRC) (resampling) library.  Features routines for SRC, both
-up- and downsampling, to/from any sample rate, including non-integer sample
-rates: it can be also used for conversion to/from SACD sample rate and even
-go beyond that.  SRC routines were implemented in multi-platform C++ code, and
-have a high level of optimality.
+rate converter (SRC) (resampling) C++ library.  Features routines for SRC,
+both up- and downsampling, to/from any sample rate, including non-integer
+sample rates: it can be also used for conversion to/from SACD sample rate and
+even go beyond that.  SRC routines were implemented in a multi-platform C++
+code, and have a high level of optimality.
 
 The structure of this library's objects is such that they can be frequently
 created and destroyed in large applications with a minimal performance impact
@@ -57,9 +57,9 @@ Windows) and the "pthread" library on macOS and Linux.
 The library is able to process signal of any scale and loudness: it is not
 limited to just a "usual" -1.0 to 1.0 range.
 
-By defining the R8B_IPP 1 configuration macro it is possible to enable IPP
-front-end for FFT functions, instead of Ooura FFT.  IPP makes sample rate
-conversion faster by 18% in average.
+By defining the R8B_IPP 1 configuration macro it is possible to enable Intel
+IPP front-end for FFT functions, instead of Ooura FFT.  IPP makes sample rate
+conversion faster by 23% in average.
 
 If a larger initial processing delay and a very minor sample timing error are
 not an issue, for the most efficiency you can define these macros in
@@ -85,16 +85,16 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`61.0*n_cores` Mflops (`80.5*n_cores` for Intel IPP FFT and PFFFT) when
+`61.4*n_cores` Mflops (`83.9*n_cores` for Intel IPP FFT) when
 converting 1 channel of 24-bit audio from 44100 to 96000 sample rate
 (2% transition band), on an Intel Core i7-7700K processor-based 64-bit
 AVX2-enabled system without overclocking.  This approximately translates to a
-real-time resampling of `635*n_cores` audio streams, at 100% CPU load.  Time
-performance when converting to other sample rates may vary greatly.  When
-comparing performance of this resampler library to another library make sure
-that the competing library is also tuned to produce a fully linear-phase
-response, has similar stop-band characteristics, and similar sample timing
-precision.
+real-time resampling of `639*n_cores` (`874*n_cores`) audio streams, at 100%
+CPU load.  Time performance when converting to other sample rates may vary
+greatly.  When comparing performance of this resampler library to another
+library make sure that the competing library is also tuned to produce a fully
+linear-phase response, has similar stop-band characteristics, and similar
+sample timing precision.
 
 ## Dynamic Link Library ##
 The functions of this SRC library are also accessible in simplified form via
@@ -131,10 +131,10 @@ signal (or the output signal if the downsampling is performed) between the
 low-pass filter's -3 dB point and the Nyquist frequency, and ranges from
 0.5% to 45%.  Stop-band attenuation can be specified in the range 49 to 218
 decibel.  Both transition band and stop-band attenuation affect resampler's
-overall speed performance.
+overall speed performance and initial output delay.
 
 This SRC library also implements a much faster "power of 2" resampling (e.g.
-2X, 4X, 8X, 16X, 3*2X, 3*4X, 3*8X, etc. upsampling and downsampling).
+2X, 4X, 8X, 16X, 3, 3*2X, 3*4X, 3*8X, etc. upsampling and downsampling).
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/) and
