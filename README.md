@@ -134,7 +134,7 @@ decibel.  Both transition band and stop-band attenuation affect resampler's
 overall speed performance and initial output delay.
 
 This SRC library also implements a much faster "power of 2" resampling (e.g.
-2X, 4X, 8X, 16X, 3, 3*2X, 3*4X, 3*8X, etc. upsampling and downsampling).
+2X, 4X, 8X, 16X, 3, 3**2X, 3**4X, 3**8X, etc. upsampling and downsampling).
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/) and
@@ -148,7 +148,7 @@ The memory footprint is quite modest.
 
 r8brain-free-src is bundled with the following code:
 
-* FFT routines Copyright(C) 1996-2001 Takuya OOURA.
+* FFT routines Copyright (c) 1996-2001 Takuya OOURA.
 [Homepage](http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html)
 * PFFFT Copyright (c) 2013 Julien Pommier.
 [Homepage](https://bitbucket.org/jpommier/pffft)
