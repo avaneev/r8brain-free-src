@@ -134,7 +134,7 @@ decibel.  Both transition band and stop-band attenuation affect resampler's
 overall speed performance and initial output delay.
 
 This SRC library also implements a much faster "power of 2" resampling (e.g.
-2X, 4X, 8X, 16X, 3, 3**2X, 3**4X, 3**8X, etc. upsampling and downsampling).
+2X, 4X, 8X, 16X, 3, 3\*2X, 3\*4X, 3\*8X, etc. upsampling and downsampling).
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/) and
