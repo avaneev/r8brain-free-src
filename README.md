@@ -71,10 +71,12 @@ not an issue, for the most efficiency you can define these macros in
 
 If you do not have access to Intel IPP then you may consider using PFFFT which
 is only slightly slower than Intel IPP FFT in performance, however since PFFFT
-works with single-precision floats, the overall resampler's precision will be
-limited to 24-bit sample rate conversions. To use the PFFFT, define the
-`R8B_PFFFT` macro, and compile and include the supplied `pffft.cpp` file, to
-your project build.
+works in single-precision resolution, the overall resampler's precision will
+be limited to 24-bit sample rate conversions. To use the PFFFT, define the
+`R8B_PFFFT` macro, and compile and include the supplied `pffft.cpp` file to
+your project build.  Note that, subjectively speaking, the sound produced with
+such lower-resolution FFT is not as good as with the higher-resolution Ooura
+FFT or Intel IPP FFT.
 
     #define R8B_PFFFT 1
 
