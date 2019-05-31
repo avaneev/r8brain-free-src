@@ -29,6 +29,19 @@ double calcRMS( const double* const p1, const double* const p2, const int l )
 	return( sqrt( s / l ));
 }
 
+void addSine( double* const p, const int l, const double Freq,
+	const double SampleRate )
+{
+	CSineGen sg;
+	sg.init( M_2PI * Freq / SampleRate, 0.5 );
+	int i;
+
+	for( i = 0; i < l; i++ )
+	{
+		p[ i ] += sg.gen();
+	}
+}
+
 VOXMAIN
 {
 	Args.setProgramDescription( "This utility program perform mass "
@@ -107,6 +120,9 @@ VOXMAIN
 		Resamp -> oneshot( MaxInLen, &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
 
 		const double perf = 1e-6 * ol / CSystem :: getClockDiffSec( t1 );
+
+		addSine( OutBuf, ol, ( SrcSampleRate + DstSampleRate ) * 0.25,
+			DstSampleRate );
 
 		Resamp = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
 		Resamp -> oneshot( MaxInLen, &OutBuf[ 0 ], ol, &OutBuf2[ 0 ],
