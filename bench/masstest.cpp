@@ -83,6 +83,7 @@ VOXMAIN
 
 	const int TestCount = 1000;
 	CFixedBuffer< double > OutBuf2( InBufSize );
+	double maxd = 0.0;
 	int k;
 
 	for( k = 0; k < TestCount; k++ )
@@ -114,8 +115,15 @@ VOXMAIN
 		const double r = calcRMS( &Ref[ 5000 ], &OutBuf2[ 5000 ],
 			InBufSize - 10000 );
 
+		if( r > maxd )
+		{
+			maxd = r;
+		}
+
 		printf( "z=%7.2f perf=%6.2f\n", 20.0 * log( r ) / log( 10.0 ), perf );
 	}
+
+	printf( "max diff %.2f\n", 20.0 * log( maxd ) / log( 10.0 ));
 
 	VOXRET;
 }

@@ -84,7 +84,7 @@ public:
 
 	static double getLPMaxTransBand()
 	{
-		return( 45.0 );
+		return( 56.0 );
 	}
 
 	/**
@@ -94,7 +94,7 @@ public:
 
 	static double getLPMinAtten()
 	{
-		return( 49.0 );
+		return( 52.0 );
 	}
 
 	/**
@@ -374,6 +374,18 @@ private:
 				-46, -51, -54, -59, -63, -69, -76, -83, -91, -98 };
 
 			atten -= AttenCorrs[ AttenCorr ] / AttenCorrScale;
+		}
+
+		// Last stage ReqAtten corrections.
+
+		if( tb > 0.5 )
+		{
+			atten -= 0.55;
+		}
+		else
+		if( tb > 0.45 )
+		{
+			atten -= 0.25;
 		}
 
 		pwr = 7.43932822146293e-8 * sqr( atten ) + 0.000102747434588003 *

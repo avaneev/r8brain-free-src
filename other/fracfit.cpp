@@ -9,7 +9,7 @@ static double SNR[ DefFracCount ] = { 51.7280, 67.1095, 81.8379, 96.4021,
 	209.0609, 222.5009 };
 
 static const int DefFracs[ DefFracCount ] = { 11, 17, 27, 47, 77, 115, 190,
-	257, 471, 759, 1311, 1870, 3394 };
+	257, 471, 759, 1311, 1870, 3190 };
 
 const int OptDepth = 9;
 bool DoPrint = false;

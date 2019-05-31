@@ -74,70 +74,15 @@ public:
 
 		// Kaiser window function Params, for half and third-band.
 
-		const int CoeffCount = 13;
-		static const double Coeffs[ CoeffCount ][ 3 ] = {
-			{ 2.6504246356892924, 1.9035845248358245, 51.7280 }, // 0.0516
-			{ 4.0759654812373016, 1.5747323142948524, 67.1095 }, // 0.0048
-			{ 4.9036508646352033, 1.6207644759455790, 81.8379 }, // 0.0009
-			{ 5.6131421124830716, 1.6947677220415129, 96.4021 }, // 0.0002
-			{ 5.9433751253133691, 1.8730186383321272, 111.1300 }, // 0.0000
-			{ 6.8308658253825660, 1.8549555120377224, 125.4649 }, // 0.0000
-			{ 7.6648458853758372, 1.8565765953924642, 139.7378 }, // 0.0000
-			{ 8.2038730802326842, 1.9269521308895179, 154.0532 }, // 0.0000
-			{ 8.7865151489187561, 1.9775307528231671, 168.2101 }, // 0.0000
-			{ 9.5945013206755156, 1.9718457932433306, 182.1076 }, // 0.0000
-			{ 10.5163048616210250, 1.9504085061576968, 195.5668 }, // 0.0000
-			{ 10.2382664677006100, 2.1608878780497056, 209.0609 }, // 0.0000
-			{ 10.9976663155261660, 2.1536415815428249, 222.5009 }, // 0.0000
-		};
+		const double* const Params = getWinParams( ReqAtten, IsThird,
+			FilterLen );
 
-		const int CoeffCountThird = 10;
-		static const double CoeffsThird[ CoeffCountThird ][ 3 ] = {
-			{ 4.0738201365282452, 1.5774150265957998, 67.2431 }, // 0.0050
-			{ 4.9502289040040495, 1.7149006172407628, 86.4870 }, // 0.0008
-			{ 5.5995071332976192, 1.8930163359641823, 106.1171 }, // 0.0001
-			{ 6.3627287856776054, 1.9945748303811506, 125.2304 }, // 0.0000
-			{ 7.4299554386534528, 1.9893399585993299, 144.3469 }, // 0.0000
-			{ 8.0667710807396436, 2.0928202837610885, 163.4098 }, // 0.0000
-			{ 8.7469991933128526, 2.1640274270903488, 181.0694 }, // 0.0000
-			{ 10.0823164330540570, 2.0896732996403280, 199.2880 }, // 0.0000
-			{ 19.1718281840114810, 1.2030083075440616, 215.2990 }, // 0.0000
-			{ 21.0914128488567630, 1.1919045429676862, 233.9152 }, // 0.0000
-		};
-
-		const double* Params;
-		double att;
-		int i = 0;
-
-		if( IsThird )
-		{
-			while( i != CoeffCountThird - 1 &&
-				CoeffsThird[ i ][ 2 ] < ReqAtten )
-			{
-				i++;
-			}
-
-			Params = &CoeffsThird[ i ][ 0 ];
-			att = CoeffsThird[ i ][ 2 ];
-		}
-		else
-		{
-			while( i != CoeffCount - 1 && Coeffs[ i ][ 2 ] < ReqAtten )
-			{
-				i++;
-			}
-
-			Params = &Coeffs[ i ][ 0 ];
-			att = Coeffs[ i ][ 2 ];
-		}
-
-		FilterLen = ( i + 3 ) * 2;
 		FilterSize = FilterLen * ElementSize;
 
 		if( InitFilterFracs == -1 )
 		{
-			FilterFracs = (int) ceil( 1.779713312863583 *
-				exp( 0.033423088634687 * ReqAtten ));
+			FilterFracs = (int) ceil( 1.792462178761753 *
+				exp( 0.033300466782047 * ReqAtten ));
 
 			#if R8B_FLTTEST
 
@@ -170,6 +115,7 @@ public:
 
 		double* p = Table;
 		const int pc2 = InterpPoints / 2;
+		int i;
 
 		for( i = -pc2 + 1; i <= FilterFracs + pc2; i++ )
 		{
@@ -240,12 +186,27 @@ public:
 
 		R8BCONSOLE( "CDSPFracDelayFilterBank: fracs=%i order=%i taps=%i "
 			"att=%.1f third=%i\n", FilterFracs, ElementSize - 1, FilterLen,
-			att, (int) IsThird );
+			ReqAtten, (int) IsThird );
 	}
 
 	~CDSPFracDelayFilterBank()
 	{
 		delete Next;
+	}
+
+	/**
+	 * Function "rounds" the specified attenuation to the nearest effective
+	 * value.
+	 *
+	 * @param[in,out] att Required filter attentuation. Will be rounded to the
+	 * nearest value.
+	 * @param aIsThird "True" if one-third filter is required.
+	 */
+
+	static void roundReqAtten( double& att, const bool aIsThird )
+	{
+		int tmp;
+		getWinParams( att, aIsThird, tmp );
 	}
 
 	/**
@@ -314,6 +275,79 @@ private:
 	int RefCount; ///< The number of references made to *this filter bank.
 		///< Not considered for "static" filter bank objects.
 		///<
+
+	/**
+	 * Function returns windowing function parameters for the specified
+	 * attenuation and filter type.
+	 *
+	 * @param[in,out] att Required filter attentuation. Will be rounded to the
+	 * nearest value.
+	 * @param aIsThird "True" if one-third filter is required.
+	 * @param[out] fltlen Resulting filter length.
+	 */
+
+	static const double* getWinParams( double& att, const bool aIsThird,
+		int& fltlen )
+	{
+		const int CoeffCount = 13;
+		static const double Coeffs[ CoeffCount ][ 3 ] = {
+			{ 2.6504246356892924, 1.9035845248358245, 51.7280 }, // 0.0516
+			{ 4.0759654812373016, 1.5747323142948524, 67.1095 }, // 0.0048
+			{ 4.9036508646352033, 1.6207644759455790, 81.8379 }, // 0.0009
+			{ 5.6131421124830716, 1.6947677220415129, 96.4021 }, // 0.0002
+			{ 5.9433751253133691, 1.8730186383321272, 111.1300 }, // 0.0000
+			{ 6.8308658253825660, 1.8549555120377224, 125.4649 }, // 0.0000
+			{ 7.6648458853758372, 1.8565765953924642, 139.7378 }, // 0.0000
+			{ 8.2038730802326842, 1.9269521308895179, 154.0532 }, // 0.0000
+			{ 8.7865151489187561, 1.9775307528231671, 168.2101 }, // 0.0000
+			{ 9.5945013206755156, 1.9718457932433306, 182.1076 }, // 0.0000
+			{ 10.5163048616210250, 1.9504085061576968, 195.5668 }, // 0.0000
+			{ 10.2382664677006100, 2.1608878780497056, 209.0609 }, // 0.0000
+			{ 10.9976663155261660, 2.1536415815428249, 222.5009 }, // 0.0000
+		};
+
+		const int CoeffCountThird = 10;
+		static const double CoeffsThird[ CoeffCountThird ][ 3 ] = {
+			{ 4.0738201365282452, 1.5774150265957998, 67.2431 }, // 0.0050
+			{ 4.9502289040040495, 1.7149006172407628, 86.4870 }, // 0.0008
+			{ 5.5995071332976192, 1.8930163359641823, 106.1171 }, // 0.0001
+			{ 6.3627287856776054, 1.9945748303811506, 125.2304 }, // 0.0000
+			{ 7.4299554386534528, 1.9893399585993299, 144.3469 }, // 0.0000
+			{ 8.0667710807396436, 2.0928202837610885, 163.4098 }, // 0.0000
+			{ 8.7469991933128526, 2.1640274270903488, 181.0694 }, // 0.0000
+			{ 10.0823164330540570, 2.0896732996403280, 199.2880 }, // 0.0000
+			{ 19.1718281840114810, 1.2030083075440616, 215.2990 }, // 0.0000
+			{ 21.0914128488567630, 1.1919045429676862, 233.9152 }, // 0.0000
+		};
+
+		const double* Params;
+		int i = 0;
+
+		if( aIsThird )
+		{
+			while( i != CoeffCountThird - 1 && CoeffsThird[ i ][ 2 ] < att )
+			{
+				i++;
+			}
+
+			Params = &CoeffsThird[ i ][ 0 ];
+			att = CoeffsThird[ i ][ 2 ];
+		}
+		else
+		{
+			while( i != CoeffCount - 1 && Coeffs[ i ][ 2 ] < att )
+			{
+				i++;
+			}
+
+			Params = &Coeffs[ i ][ 0 ];
+			att = Coeffs[ i ][ 2 ];
+		}
+
+		fltlen = ( i + 3 ) * 2;
+
+		return( Params );
+	}
 };
 
 /**
@@ -358,8 +392,10 @@ public:
 
 	static CDSPFracDelayFilterBank& getFilterBank( const int aFilterFracs,
 		const int aElementSize, const int aInterpPoints,
-		const double ReqAtten, const bool IsThird, const bool IsStatic )
+		double ReqAtten, const bool IsThird, const bool IsStatic )
 	{
+		CDSPFracDelayFilterBank :: roundReqAtten( ReqAtten, IsThird );
+
 		R8BSYNC( StateSync );
 
 		if( IsStatic )

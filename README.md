@@ -54,14 +54,14 @@ The library is able to process signal of any scale and loudness: it is not
 limited to just a "usual" -1.0 to 1.0 range.
 
 By defining the `R8B_IPP` configuration macro it is possible to enable Intel
-IPP front-end for FFT functions, instead of Ooura FFT.  IPP makes sample rate
-conversion faster by 23% in average.
+IPP front-end for FFT functions, instead of Ooura FFT.  IPP FFT makes sample
+rate conversion faster by 23% on average.
 
     #define R8B_IPP 1
 
 If a larger initial processing delay and a very minor sample timing error are
-not an issue, for the most efficiency you can define these macros in
-the beginning of the `r8bconf.h` file or during compilation:
+not an issue, for the most efficiency you can define these macros at
+the beginning of the `r8bconf.h` file, or during compilation:
 
     #define R8B_IPP 1
     #define R8B_FASTTIMING 1
@@ -127,9 +127,12 @@ attenuation in decibel.
 The transition band is specified as the normalized spectral space of the input
 signal (or the output signal if the downsampling is performed) between the
 low-pass filter's -3 dB point and the Nyquist frequency, and ranges from
-0.5% to 45%.  Stop-band attenuation can be specified in the range 49 to 218
+0.5% to 56%.  Stop-band attenuation can be specified in the range 52 to 218
 decibel.  Both transition band and stop-band attenuation affect resampler's
-overall speed performance and initial output delay.
+overall speed performance and initial output delay.  For your information,
+transition frequency range spans 170% of the specified transition band,
+which means that for 2% transition band, frequency response below
+0.966\*Nyquist is linear.
 
 This SRC library also implements a much faster "power of 2" resampling (e.g.
 2X, 4X, 8X, 16X, 3X, 3\*2X, 3\*4X, 3\*8X, etc. upsampling and downsampling).
@@ -143,7 +146,6 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Acknowledgements ##
-
 r8brain-free-src is bundled with the following code:
 
 * FFT routines Copyright (c) 1996-2001 Takuya OOURA.
@@ -151,7 +153,27 @@ r8brain-free-src is bundled with the following code:
 * PFFFT Copyright (c) 2013 Julien Pommier.
 [Homepage](https://bitbucket.org/jpommier/pffft)
 
+## Users ##
+This library is used by:
+
+  * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
+  * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
+  * [OpenMPT](https://openmpt.org/)
+  * [Zynewave Podium](https://zynewave.com/podium/)
+  * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
+
+Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
+your software product to the list of users. This list is important at
+maintaining confidence in this library among the interested parties.
+
 ## Change log ##
+Version 4.1:
+
+* Updated allowed ReqAtten range to 52-218, ReqTransBand 0.5-56. It is
+possible to specify filter parameters slightly beyond these values, but the
+resulting filter will be slightly out of specification as well.
+* Optimized static filter banks allocation.
+
 Version 4.0:
 
 * A major overhaul of interpolation classes: now templated parameters are not
@@ -238,16 +260,3 @@ Version 1.7:
 resampling ratios.
 * Added `bench` tools.
 * Removed getInLenBeforeOutStart() due to incorrect calculation.
-
-## Users ##
-This library is used by:
-
-  * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
-  * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
-  * [OpenMPT](https://openmpt.org/)
-  * [Zynewave Podium](https://zynewave.com/podium/)
-  * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
-
-Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
-your software product to the list of users. This list is important at
-maintaining confidence in this library among the interested parties.
