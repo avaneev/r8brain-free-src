@@ -127,7 +127,7 @@ attenuation in decibel.
 The transition band is specified as the normalized spectral space of the input
 signal (or the output signal if the downsampling is performed) between the
 low-pass filter's -3 dB point and the Nyquist frequency, and ranges from
-0.5% to 56%.  Stop-band attenuation can be specified in the range 52 to 218
+0.5% to 48%.  Stop-band attenuation can be specified in the range 49 to 218
 decibel.  Both transition band and stop-band attenuation affect resampler's
 overall speed performance and initial output delay.  For your information,
 transition frequency range spans 170% of the specified transition band,

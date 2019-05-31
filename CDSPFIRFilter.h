@@ -84,7 +84,7 @@ public:
 
 	static double getLPMaxTransBand()
 	{
-		return( 56.0 );
+		return( 48.0 );
 	}
 
 	/**
@@ -94,7 +94,7 @@ public:
 
 	static double getLPMinAtten()
 	{
-		return( 52.0 );
+		return( 49.0 );
 	}
 
 	/**
