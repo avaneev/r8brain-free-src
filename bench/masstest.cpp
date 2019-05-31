@@ -79,7 +79,7 @@ VOXMAIN
 	}
 
 	CRnd rnd;
-	rnd.init( getRndInitValue() );
+	rnd.init( RndInitValue.get() );
 
 	const int TestCount = 1000;
 	CFixedBuffer< double > OutBuf2( InBufSize );

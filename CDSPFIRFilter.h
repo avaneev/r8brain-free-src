@@ -28,6 +28,7 @@ enum EDSPFilterPhaseResponse
 	fprLinearPhase = 0, ///< Linear-phase response. Features a linear-phase
 		///< high-latency response, with the latency expressed as integer
 		///< value.
+		///<
 	fprMinPhase ///< Minimum-phase response. Features a minimal latency
 		///< response, but the response's phase is non-linear. The latency is
 		///< usually expressed as non-integer value, and usually is small, but
@@ -37,7 +38,10 @@ enum EDSPFilterPhaseResponse
 		///< filter being transformed: as it was measured, the skew happens
 		///< purely at random, and in most cases it is within tolerable range.
 		///< In a small (1%) random subset of cases the skew is bigger and
-		///< cannot be predicted.
+		///< cannot be predicted. Minimum-phase transform requires 64-bit
+		///< floating point FFT precision, results with 32-bit float FFT are
+		///< far from optimal.
+		///<
 };
 
 /**

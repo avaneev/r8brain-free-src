@@ -40,16 +40,8 @@ namespace r8b {
  *
  * Use the CDSPResampler24 class for 24-bit resampling (including 32-bit
  * floating point resampling).
- *
- * @tparam CInterpClass Interpolator class that should be used by the
- * resampler. The desired interpolation quality can be defined via the
- * template parameters of the interpolator class. See
- * r8b::CDSPFracInterpolator and r8b::CDSPFracDelayFilterBank for description
- * of the template parameters.
  */
 
-template< class CInterpClass =
-	CDSPFracInterpolator< R8B_FLTLEN, R8B_FLTFRACS > >
 class CDSPResampler : public CDSPProcessor
 {
 public:
@@ -297,8 +289,8 @@ public:
 					num = 2;
 				}
 
-				addProcessor( new CInterpClass( SrcSampleRate2 * div,
-					DstSampleRate, LatencyFrac ));
+				addProcessor( new CDSPFracInterpolator( SrcSampleRate2 * div,
+					DstSampleRate, ReqAtten, false, LatencyFrac ));
 
 				const double tb = 100.0 * ( 1.0 - SrcSampleRate * div /
 					DstSampleRate ) / 1.7; // Divide TransBand by a constant
@@ -316,8 +308,8 @@ public:
 			}
 			else
 			{
-				addProcessor( new CInterpClass( SrcSampleRate2,
-					DstSampleRate, LatencyFrac ));
+				addProcessor( new CDSPFracInterpolator( SrcSampleRate2,
+					DstSampleRate, ReqAtten, false, LatencyFrac ));
 			}
 
 			createTmpBuffers();
@@ -378,8 +370,8 @@ public:
 
 		if( UseInterp )
 		{
-			addProcessor( new CInterpClass( SrcSampleRate,
-				DstSampleRate * SrcSRDiv, LatencyFrac ));
+			addProcessor( new CDSPFracInterpolator( SrcSampleRate,
+				DstSampleRate * SrcSRDiv, ReqAtten, IsThird, LatencyFrac ));
 		}
 
 		createTmpBuffers();
@@ -675,8 +667,7 @@ private:
  * details.
  */
 
-class CDSPResampler16 :
-	public CDSPResampler< CDSPFracInterpolator< 18, 137 > >
+class CDSPResampler16 : public CDSPResampler
 {
 public:
 	/**
@@ -692,8 +683,8 @@ public:
 
 	CDSPResampler16( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 18, 137 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 136.45, fprLinearPhase )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
+			136.45, fprLinearPhase )
 	{
 	}
 };
@@ -707,8 +698,7 @@ public:
  * with a less SNR. See the r8b::CDSPResampler class for details.
  */
 
-class CDSPResampler16IR :
-	public CDSPResampler< CDSPFracInterpolator< 14, 67 > >
+class CDSPResampler16IR : public CDSPResampler
 {
 public:
 	/**
@@ -724,8 +714,8 @@ public:
 
 	CDSPResampler16IR( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 14, 67 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 109.56, fprLinearPhase )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
+			109.56, fprLinearPhase )
 	{
 	}
 };
@@ -738,8 +728,7 @@ public:
  * filter. See the r8b::CDSPResampler class for details.
  */
 
-class CDSPResampler24 :
-	public CDSPResampler< CDSPFracInterpolator< 24, 673 > >
+class CDSPResampler24 : public CDSPResampler
 {
 public:
 	/**
@@ -755,8 +744,8 @@ public:
 
 	CDSPResampler24( const double SrcSampleRate, const double DstSampleRate,
 		const int MaxInLen, const double ReqTransBand = 2.0 )
-		: CDSPResampler< CDSPFracInterpolator< 24, 673 > >( SrcSampleRate,
-			DstSampleRate, MaxInLen, ReqTransBand, 180.15, fprLinearPhase )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen, ReqTransBand,
+			180.15, fprLinearPhase )
 	{
 	}
 };

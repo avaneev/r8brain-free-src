@@ -21,15 +21,19 @@ namespace r8b {
 
 #if R8B_FLTTEST
 	int InterpFilterFracs = -1;
+	int InterpFilterFracsThird = -1;
 #endif // R8B_FLTTEST
 
 CSyncObject CDSPRealFFTKeeper :: StateSync;
 CDSPRealFFT :: CObjKeeper CDSPRealFFTKeeper :: FFTObjects[ 31 ];
+
 CSyncObject CDSPFIRFilterCache :: StateSync;
 CPtrKeeper< CDSPFIRFilter* > CDSPFIRFilterCache :: Objects;
 int CDSPFIRFilterCache :: ObjCount = 0;
+
 CSyncObject CDSPFracDelayFilterBankCache :: StateSync;
 CPtrKeeper< CDSPFracDelayFilterBank* > CDSPFracDelayFilterBankCache :: Objects;
+CPtrKeeper< CDSPFracDelayFilterBank* > CDSPFracDelayFilterBankCache :: StaticObjects;
 int CDSPFracDelayFilterBankCache :: ObjCount = 0;
 
 } // namespace r8b

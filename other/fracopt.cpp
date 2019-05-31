@@ -7,7 +7,16 @@
 #include <stdio.h>
 #include "../CDSPResampler.h"
 
-typedef r8b :: CDSPResampler24 CResamp;
+class CResamp : public r8b :: CDSPResampler
+{
+public:
+	CResamp( const double SrcSampleRate, const double DstSampleRate,
+		const int MaxInLen, const double ReqTransBand = 2.0 )
+		: CDSPResampler( SrcSampleRate, DstSampleRate, MaxInLen,
+			ReqTransBand, 180.15, r8b :: fprLinearPhase )
+	{
+	}
+};
 
 const double InSampleRate = 44100.0;
 const double SineFreq = 16000.0;
@@ -49,9 +58,12 @@ int main()
 		}
 	}
 
-	for( r8b :: InterpFilterFracs = 21; r8b :: InterpFilterFracs<= 800;
-		r8b :: InterpFilterFracs += 9 )
+	int l;
+
+	for( l = 21; l <= 800; l += 9 )
 	{
+		r8b :: InterpFilterFracs = l;
+
 		const double SrcSampleRate = 20.0;
 		double avgd = 0.0;
 		double maxd = 0.0;

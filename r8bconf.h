@@ -127,7 +127,7 @@
 	 * cache size small.
 	 */
 
-	#define R8B_FRACBANK_CACHE_MAX 8
+	#define R8B_FRACBANK_CACHE_MAX 12
 #endif // !defined( R8B_FRACBANK_CACHE_MAX )
 
 #if !defined( R8B_FLTTEST )
