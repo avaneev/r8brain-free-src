@@ -1,3 +1,5 @@
+//$ nobt
+
 /* Copyright (c) 2013  Julien Pommier ( pommier@modartt.com )
 
    Based on original fortran 77 code from FFTPACKv4 from NETLIB

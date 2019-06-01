@@ -130,7 +130,7 @@ VOXMAIN
 			WriteCount = (int) ol;
 		}
 
-		outf.writeData( &opp[ 0 ], WriteCount );
+		VOXCHECK( outf.writeData( &opp[ 0 ], WriteCount ));
 		ol -= WriteCount;
 	}
 

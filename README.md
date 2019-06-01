@@ -167,6 +167,10 @@ your software product to the list of users. This list is important at
 maintaining confidence in this library among the interested parties.
 
 ## Change log ##
+Version 4.3:
+
+* Added //$ markers for internal debugging purposes.
+
 Version 4.2:
 
 * Backed-off max transition band to 45 and MinAtten to 49.
