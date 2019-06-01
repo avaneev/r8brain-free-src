@@ -167,6 +167,13 @@ your software product to the list of users. This list is important at
 maintaining confidence in this library among the interested parties.
 
 ## Change log ##
+Version 4.2:
+
+* Backed-off max transition band to 45 and MinAtten to 49.
+* Implemented Wave64 and AIFF file input in the `r8bfreesrc` bench tool. The
+tool is now compiled with the `R8B_IPP 1` and `R8B_EXTFFT 1` macros to
+demonstrate the maximal achievable performance.
+
 Version 4.1:
 
 * Updated allowed ReqAtten range to 52-218, ReqTransBand 0.5-56. It is

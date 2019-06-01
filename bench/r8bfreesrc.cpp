@@ -14,16 +14,18 @@
  * pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
 VOXMAIN
 {
 	Args.setProgramDescription( "This utility program perform sample rate "
-		"conversion of the source WAV sound file." );
+		"conversion of the source WAV/Wave64/AIF sound file." );
 
-	Args.addReqArg( argtFileName, "in-file", "The input WAV filename." );
+	Args.addReqArg( argtFileName, "in-file",
+		"The input WAV/Wave64/AIF filename." );
+
 	Args.addReqArg( argtFileName, "out-file", "The output WAV filename." );
 	Args.addReqArg( argtDouble, "out-sample-rate", "The output sample rate "
 		"(e.g. 96000)." );
@@ -58,6 +60,9 @@ VOXMAIN
 	CWaveFile outf;
 	outf.inheritFormat( inf );
 	outf.SampleRate = OutSampleRate;
+	outf.inheritCuePoints( inf );
+	outf.inheritInfo( inf );
+
 	VOXCHECK( outf.saveFile( *Args.getArgValue( "out-file" ).ValueStr ));
 
 	const int InBufCapacity = 2048;
