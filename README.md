@@ -167,6 +167,10 @@ your software product to the list of users. This list is important at
 maintaining confidence in this library among the interested parties.
 
 ## Change log ##
+Version 4.4:
+
+* Fixed the "Declaration hides a member" Intel C++ compiler warnings.
+
 Version 4.3:
 
 * Added //$ markers for internal debugging purposes.
