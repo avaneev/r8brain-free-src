@@ -20,6 +20,8 @@ function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
 alternative being only the whole number-factored SRC, which can be slower.
 
+Please consider supporting the author on [Patreon](https://www.patreon.com/aleksey_vaneev).
+
 ## Requirements ##
 C++ compiler and system with the "double" floating point type (53-bit
 mantissa) support.  No explicit code for the "float" type is present in this
