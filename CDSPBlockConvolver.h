@@ -322,13 +322,13 @@ public:
 
 				#if R8B_FLOATFFT
 					float* const kb = (float*) Filter -> getKernelBlock();
-					float* const op = (float*) CurInput;
+					float* const op_ = (float*) CurInput;
 				#else // R8B_FLOATFFT
 					const double* const kb = Filter -> getKernelBlock();
-					double* const op = CurInput;
+					double* const op_ = CurInput;
 				#endif // R8B_FLOATFFT
 
-				op[ 1 ] = kb[ z ] * op[ z ] - kb[ z + 1 ] * op[ z + 1 ];
+				op_[ 1 ] = kb[ z ] * op_[ z ] - kb[ z + 1 ] * op_[ z + 1 ];
 			}
 
 			(*fftout) -> inverse( CurInput );
