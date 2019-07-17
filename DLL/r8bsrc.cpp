@@ -9,7 +9,7 @@
  * files of the latest version can be downloaded at project's home page:
  * https://github.com/avaneev/r8brain-free-src
  *
- * r8brain-free-src Copyright (c) 2013-2018 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -24,6 +24,33 @@
 #include "r8bsrc.h"
 #include "../CDSPResampler.h"
 using namespace r8b;
+
+#if defined( __INTEL_COMPILER )
+
+// Auto-dispatch init "hack" in Intel C++ Compiler to make AVX2 auto-dispatch
+// code work on AMD processors.
+
+extern "C" {
+	extern long long __intel_cpu_feature_indicator; // CPU feature bits
+	extern long long __intel_cpu_feature_indicator_x; // CPU feature bits
+	void __intel_cpu_features_init_x(); // checks CPU features without discriminating by CPU brand
+}
+
+class CAutoDispatchInit
+{
+public:
+	CAutoDispatchInit()
+	{
+		__intel_cpu_feature_indicator = 0;
+		__intel_cpu_feature_indicator_x = 0;
+		__intel_cpu_features_init_x();
+		__intel_cpu_feature_indicator = __intel_cpu_feature_indicator_x;
+	}
+};
+
+CAutoDispatchInit AutoDispatchInit;
+
+#endif // defined( __INTEL_COMPILER )
 
 extern "C" {
 

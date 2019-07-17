@@ -332,7 +332,7 @@ public:
 
 		const int SrcSRDiv = ( 1 << c );
 		int downf;
-		double NormFreq;
+		double NormFreq = 0.5;
 		bool UseInterp = true;
 		bool IsThird = false;
 
