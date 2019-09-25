@@ -58,11 +58,8 @@ VOXMAIN
 		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
 
-		Resamp1 -> oneshot( MaxInLen, &InBuf[ 0 ], InBufSize, &Ref0[ 0 ],
-			Ref0Size );
-
-		Resamp2 -> oneshot( MaxInLen, &Ref0[ 0 ], Ref0Size,
-			&Ref[ 0 ], InBufSize );
+		Resamp1 -> oneshot( &InBuf[ 0 ], InBufSize, &Ref0[ 0 ], Ref0Size );
+		Resamp2 -> oneshot( &Ref0[ 0 ], Ref0Size, &Ref[ 0 ], InBufSize );
 	}
 
 	const double SrcSampleRate = 20.0;
@@ -93,11 +90,9 @@ VOXMAIN
 			Resamp2 = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
 				MaxInLen, tb, ReqAtten );
 
-			Resamp1 -> oneshot( MaxInLen, &Ref[ 0 ], InBufSize,
-				&OutBuf1[ 0 ], ol1 );
-
-			Resamp2 -> oneshot( MaxInLen, &OutBuf1[ 0 ], ol1,
-				&OutBuf2[ 0 ], InBufSize );
+			Resamp1 -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf1[ 0 ], ol1 );
+			Resamp2 -> oneshot( &OutBuf1[ 0 ], ol1, &OutBuf2[ 0 ],
+				InBufSize );
 
 			const double r = calcRMS( &Ref[ BufSkip ], &OutBuf2[ BufSkip ],
 				InBufSize - BufSkip * 2 );

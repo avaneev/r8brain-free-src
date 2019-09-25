@@ -84,11 +84,10 @@ VOXMAIN
 		CPtrKeeper< CResamp* > Resamp2;
 		Resamp2 = new CResamp( 8.0, 10.0, MaxInLen, tb );
 
-		Resamp1 -> oneshot( MaxInLen, &InBufs[ 0 ][ 0 ], InBufSize,
-			&Ref0[ 0 ], Ref0Size );
+		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
+			Ref0Size );
 
-		Resamp2 -> oneshot( MaxInLen, &Ref0[ 0 ], Ref0Size,
-			&Ref[ 0 ], InBufSize );
+		Resamp2 -> oneshot( &Ref0[ 0 ], Ref0Size, &Ref[ 0 ], InBufSize );
 	}
 
 	CRnd rnd;
@@ -117,7 +116,7 @@ VOXMAIN
 
 		CPtrKeeper< CResamp* > Resamp;
 		Resamp = new CResamp( SrcSampleRate, DstSampleRate, MaxInLen, tb );
-		Resamp -> oneshot( MaxInLen, &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
+		Resamp -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
 
 		const double perf = 1e-6 * ol / CSystem :: getClockDiffSec( t1 );
 
@@ -125,8 +124,7 @@ VOXMAIN
 			DstSampleRate );
 
 		Resamp = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
-		Resamp -> oneshot( MaxInLen, &OutBuf[ 0 ], ol, &OutBuf2[ 0 ],
-			InBufSize );
+		Resamp -> oneshot( &OutBuf[ 0 ], ol, &OutBuf2[ 0 ], InBufSize );
 
 		const double r = calcRMS( &Ref[ 5000 ], &OutBuf2[ 5000 ],
 			InBufSize - 10000 );
