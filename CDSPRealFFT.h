@@ -19,9 +19,9 @@
 
 #include "r8bbase.h"
 
-#if !R8B_IPP && !R8B_PFFFT
+#if !R8B_IPP && !R8B_PFFFT && !R8B_PFFFT_DOUBLE
 	#include "fft4g.h"
-#endif // !R8B_IPP && !R8B_PFFFT
+#endif // !R8B_IPP && !R8B_PFFFT && !R8B_PFFFT_DOUBLE
 
 namespace r8b {
 
@@ -106,6 +106,10 @@ public:
 
 		ippsFFTFwd_RToPerm_64f( p, p, SPtr, WorkBuffer );
 
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_transform_ordered(setup, p, p, work, PFFFTD_FORWARD);
+
 	#elif R8B_PFFFT
 
 		pffft_transform_ordered( setup, op, op, work, PFFFT_FORWARD );
@@ -129,6 +133,10 @@ public:
 	#if R8B_IPP
 
 		ippsFFTInv_PermToR_64f( p, p, SPtr, WorkBuffer );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_transform_ordered(setup, p, p, work, PFFFTD_BACKWARD);
 
 	#elif R8B_PFFFT
 
@@ -339,6 +347,11 @@ private:
 			///<
 		CFixedBuffer< unsigned char > WorkBuffer; ///< Working buffer.
 			///<
+	#elif R8B_PFFFT_DOUBLE
+		PFFFTD_Setup* setup; ///< PFFFTD setup object.
+			///<
+		CFixedBuffer< double > work; ///< Working buffer.
+			///<
 	#elif R8B_PFFFT
 		PFFFT_Setup* setup; ///< PFFFT setup object.
 			///<
@@ -404,9 +417,11 @@ private:
 		, Len( 1 << aLenBits )
 	#if R8B_IPP
 		, InvMulConst( 1.0 / Len )
-	#elif R8B_PFFFT
+	#elif R8B_PFFFT 
 		, InvMulConst( 1.0 / Len )
-	#else // R8B_PFFFT
+	#elif R8B_PFFFT_DOUBLE 
+		, InvMulConst(1.0 / Len)
+	#else // R8B_PFFFT_DOUBLE
 		, InvMulConst( 2.0 / Len )
 	#endif // R8B_IPP
 	{
@@ -426,6 +441,11 @@ private:
 		ippsFFTInit_R_64f( &SPtr, LenBits, IPP_FFT_NODIV_BY_ANY,
 			ippAlgHintFast, SpecBuffer, InitBuffer );
 
+	#elif R8B_PFFFT_DOUBLE
+
+		setup = pffftd_new_setup(Len, PFFFTD_REAL);
+		work.alloc(Len);
+
 	#elif R8B_PFFFT
 
 		setup = pffft_new_setup( Len, PFFFT_REAL );
@@ -442,6 +462,10 @@ private:
 
 	~CDSPRealFFT()
 	{
+		#if R8B_PFFFT_DOUBLE
+				pffftd_destroy_setup(setup);
+		#endif // R8B_PFFFT_DOUBLE
+
 		#if R8B_PFFFT
 			pffft_destroy_setup( setup );
 		#endif // R8B_PFFFT

@@ -168,6 +168,19 @@
 	#define R8B_EXTFFT 0
 #endif // !defined( R8B_EXTFFT )
 
+#if !defined( R8B_PFFFT_DOUBLE )
+	 /**
+	  * When defined as 1, enables PFFFTD routines which are reasonably fast,  
+	  * as long as they are compiled with AVX instructions enabled.
+	  */
+
+#define R8B_PFFFT_DOUBLE 0
+#endif // !defined( R8B_PFFFT_DOUBLE )
+
+#if R8B_PFFFT_DOUBLE
+#include "pffft-double.h"
+#endif // R8B_PFFFT_DOUBLE
+
 #if !defined( R8B_PFFFT )
 	/**
 	 * When defined as 1, enables PFFFT routines which are fast, but limited
