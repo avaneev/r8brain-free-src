@@ -344,9 +344,13 @@ public:
 			Alignment );
 
 		T* const NewData = (T*) alignptr( NewData0, Alignment );
+		const size_t CopySize = ( PrevCapacity > NewCapacity ?
+			NewCapacity : PrevCapacity ) * sizeof( T );
 
-		memcpy( NewData, Data, ( PrevCapacity > NewCapacity ?
-			NewCapacity : PrevCapacity ) * sizeof( T ));
+		if( CopySize > 0 )
+		{
+			memcpy( NewData, Data, CopySize );
+		}
 
 		freemem( Data0 );
 		Data0 = NewData0;
