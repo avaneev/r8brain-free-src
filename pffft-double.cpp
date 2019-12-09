@@ -73,9 +73,10 @@
 
 #ifdef COMPILER_MSVC
 #  define _USE_MATH_DEFINES
-#include <malloc.h>
+#  include <malloc.h>
+#  pragma warning( disable : 4244 4305 4204 4456 )
 #else
-#include <alloca.h>
+#  include <alloca.h>
 #endif
 
 #include "pffft-double.h"
@@ -177,7 +178,7 @@ return [ b[0], b[1], a[2], a[3] ]
 */
 #  define VSWAPHL(a,b)	\
    _mm256_insertf128_pd(_mm256_castpd128_pd256(_mm256_castpd256_pd128(b)), _mm256_extractf128_pd(a, 1), 1)
-#  define VALIGNED(ptr) ((((long)(ptr)) & 0x1F) == 0)
+#  define VALIGNED(ptr) ((((uintptr_t)(ptr)) & 0x1F) == 0)
 #else
 #define PFFFTD_SIMD_DISABLE
 #endif
@@ -192,7 +193,7 @@ typedef double v4sd;
 #  define VMADD(a,b,c) ((a)*(b)+(c))
 #  define VSUB(a,b) ((a)-(b))
 #  define LD_PS1(p) (p)
-#  define VALIGNED(ptr) ((((long)(ptr)) & 0x3) == 0)
+#  define VALIGNED(ptr) ((((uintptr_t)(ptr)) & 0x3) == 0)
 #endif
 
 // shortcuts for complex multiplcations
