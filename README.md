@@ -3,7 +3,7 @@
 Open source (under the MIT license) high-quality professional audio sample
 rate converter (SRC) (resampling) C++ library.  Features routines for SRC,
 both up- and downsampling, to/from any sample rate, including non-integer
-sample rates: it can be also used for conversion to/from SACD sample rate and
+sample rates: it can be also used for conversion to/from SACD sample rate, and
 even go beyond that.  SRC routines were implemented in a multi-platform C++
 code, and have a high level of optimality.
 
@@ -14,7 +14,7 @@ objects: the fast Fourier transform and FIR filter objects.
 
 The SRC algorithm at first produces 2X oversampled (relative to the source
 sample rate, or the destination sample rate if the downsampling is performed)
-signal and then performs interpolation using a bank of short (14 to 24 taps,
+signal, then performs interpolation using a bank of short (14 to 24 taps,
 depending on the required precision) polynomial-interpolated sinc
 function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
@@ -39,7 +39,8 @@ The sample rate converter (resampler) is represented by the
 **r8b::CDSPResampler** class, which is a single front-end class for the
 whole library.  You do not basically need to use nor understand any other
 classes beside this class.  Several derived classes that have varying levels
-of precision are also available.
+of precision are also available (for full-resolution 16-bit and 24-bit
+resampling).
 
 The code of the library resides in the "r8b" C++ namespace, effectively
 isolating it from all other code.  The code is thread-safe.  A separate
@@ -56,7 +57,7 @@ The library is able to process signal of any scale and loudness: it is not
 limited to just a "usual" -1.0 to 1.0 range.
 
 By defining the `R8B_IPP` configuration macro it is possible to enable Intel
-IPP front-end for FFT functions, instead of Ooura FFT.  IPP FFT makes sample
+IPP back-end for FFT functions, instead of Ooura FFT.  IPP FFT makes sample
 rate conversion faster by 23% on average.
 
     #define R8B_IPP 1
@@ -73,7 +74,7 @@ If you do not have access to Intel IPP then you may consider enabling PFFFT
 which is only slightly slower than Intel IPP FFT in performance, however since
 PFFFT works in single-precision resolution, the overall resampler's precision
 will be limited to 24-bit sample rate conversions. To use the PFFFT, define
-the `R8B_PFFFT` macro, and compile and include the supplied `pffft.cpp` file
+the `R8B_PFFFT` macro, compile and include the supplied `pffft.cpp` file
 to your project build.
 
     #define R8B_PFFFT 1
@@ -158,10 +159,14 @@ This library is used by:
 
   * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
   * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
+  * [r8brain free sample rate converter](https://www.voxengo.com/product/r8brain/)
   * [OpenMPT](https://openmpt.org/)
   * [Zynewave Podium](https://zynewave.com/podium/)
   * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
   * [Voice Aloud Reader](https://play.google.com/store/apps/details?id=com.hyperionics.avarLic)
+  * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
+  * [Phonometrica](http://www.phonometrica-ling.org/index.html)
+  * [Ripcord](https://cancel.fm/ripcord/)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
