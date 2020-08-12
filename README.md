@@ -22,8 +22,6 @@ function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
 alternative being only the whole number-factored SRC, which can be slower.
 
-Please consider supporting the author on [Patreon](https://www.patreon.com/aleksey_vaneev).
-
 ## Requirements ##
 
 C++ compiler and system with the "double" floating point type (53-bit
@@ -167,19 +165,19 @@ r8brain-free-src is bundled with the following code:
 
 This library is used by:
 
-  * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
-  * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
-  * [r8brain free sample rate converter](https://www.voxengo.com/product/r8brain/)
-  * [OpenMPT](https://openmpt.org/)
-  * [Zynewave Podium](https://zynewave.com/podium/)
-  * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
-  * [Voice Aloud Reader](https://play.google.com/store/apps/details?id=com.hyperionics.avarLic)
-  * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
-  * [Phonometrica](http://www.phonometrica-ling.org/index.html)
-  * [Ripcord](https://cancel.fm/ripcord/)
-  * [Curvessor](https://github.com/unevens/Curvessor)
-  * [Overdraw](https://github.com/unevens/Overdraw)
-  * [Fresponze](https://github.com/Vertver/Fresponze)
+* [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
+* [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
+* [r8brain free sample rate converter](https://www.voxengo.com/product/r8brain/)
+* [OpenMPT](https://openmpt.org/)
+* [Zynewave Podium](https://zynewave.com/podium/)
+* [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
+* [Voice Aloud Reader](https://play.google.com/store/apps/details?id=com.hyperionics.avarLic)
+* [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
+* [Phonometrica](http://www.phonometrica-ling.org/index.html)
+* [Ripcord](https://cancel.fm/ripcord/)
+* [Curvessor](https://github.com/unevens/Curvessor)
+* [Overdraw](https://github.com/unevens/Overdraw)
+* [Fresponze](https://github.com/Vertver/Fresponze)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
