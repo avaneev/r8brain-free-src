@@ -1,5 +1,7 @@
 # r8brain-free-src #
+
 ## Introduction ##
+
 Open source (under the MIT license) high-quality professional audio sample
 rate converter (SRC) (resampling) C++ library.  Features routines for SRC,
 both up- and downsampling, to/from any sample rate, including non-integer
@@ -23,6 +25,7 @@ alternative being only the whole number-factored SRC, which can be slower.
 Please consider supporting the author on [Patreon](https://www.patreon.com/aleksey_vaneev).
 
 ## Requirements ##
+
 C++ compiler and system with the "double" floating point type (53-bit
 mantissa) support.  No explicit code for the "float" type is present in this
 library, because as practice has shown the "float"-based code performs
@@ -31,10 +34,12 @@ library does not have dependencies beside the standard C library, the
 "windows.h" on Windows and the "pthread.h" on macOS and Linux.
 
 ## Links ##
+
 * [Documentation](https://www.voxengo.com/public/r8brain-free-src/Documentation/)
 * [Discussion](http://www.kvraudio.com/forum/viewtopic.php?t=389711)
 
 ## Usage Information ##
+
 The sample rate converter (resampler) is represented by the
 **r8b::CDSPResampler** class, which is a single front-end class for the
 whole library.  You do not basically need to use nor understand any other
@@ -96,6 +101,7 @@ linear-phase response, has similar stop-band characteristics, and similar
 sample timing precision.
 
 ## Dynamic Link Library ##
+
 The functions of this SRC library are also accessible in simplified form via
 the DLL file on Windows, requiring a processor with SSE2 support (Win64
 version includes AVX2 auto-dispatch code).  Delphi Pascal interface unit file
@@ -105,6 +111,7 @@ to use the C++ library directly.  Note that the DLL was compiled with the
 PFFFT enabled.
 
 ## Real-time Applications ##
+
 The resampler class of this library was designed as an asynchronous processor:
 it may produce any number of output samples, depending on the input sample
 data length and the resampling parameters.  The resampler must be fed with the
@@ -119,6 +126,7 @@ the `example.cpp`, for real-time resampling a "pull" method should be used
 which calls resampling process until output buffer is filled.
 
 ## Notes ##
+
 When using the **r8b::CDSPResampler** class directly, you may select the
 transition band/steepness of the low-pass (reconstruction) filter, expressed
 as a percentage of the full spectral bandwidth of the input signal (or the
@@ -147,6 +155,7 @@ All code is fully "inline", without the need to compile many source files.
 The memory footprint is quite modest.
 
 ## Acknowledgements ##
+
 r8brain-free-src is bundled with the following code:
 
 * FFT routines Copyright (c) 1996-2001 Takuya OOURA.
@@ -155,6 +164,7 @@ r8brain-free-src is bundled with the following code:
 [Homepage](https://bitbucket.org/jpommier/pffft)
 
 ## Users ##
+
 This library is used by:
 
   * [Combo Model V VSTi instrument](https://www.martinic.com/combov/)
@@ -177,9 +187,12 @@ maintaining confidence in this library among the interested parties.
 
 ## Other ##
 
-[Follow the author on Twitter](https://twitter.com/AlekseyVaneev)
+[Follow me on Twitter](https://twitter.com/AlekseyVaneev)
+
+[Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change log ##
+
 Version 4.6:
 
 * Removed the `MaxInLen` parameter from the `oneshot()` function.
