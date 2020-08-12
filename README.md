@@ -167,10 +167,17 @@ This library is used by:
   * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
   * [Phonometrica](http://www.phonometrica-ling.org/index.html)
   * [Ripcord](https://cancel.fm/ripcord/)
+  * [Curvessor](https://github.com/unevens/Curvessor)
+  * [Overdraw](https://github.com/unevens/Overdraw)
+  * [Fresponze](https://github.com/Vertver/Fresponze)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
 maintaining confidence in this library among the interested parties.
+
+## Other ##
+
+[Follow the author on Twitter](https://twitter.com/AlekseyVaneev)
 
 ## Change log ##
 Version 4.6:
