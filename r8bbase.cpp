@@ -10,7 +10,7 @@
  * You may also need to include to your project: the "Kernel32" library
  * (on Windows) and the "pthread" library on Mac OS X and Linux.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 

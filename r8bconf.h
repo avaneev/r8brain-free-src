@@ -9,7 +9,7 @@
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -178,7 +178,6 @@
 #endif // !defined( R8B_PFFFT )
 
 #if R8B_PFFFT
-	#include "pffft.h"
 	#define R8B_FLOATFFT 1
 #endif // R8B_PFFFT
 

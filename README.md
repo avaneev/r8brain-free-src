@@ -178,6 +178,7 @@ This library is used by:
 * [Curvessor](https://github.com/unevens/Curvessor)
 * [Overdraw](https://github.com/unevens/Overdraw)
 * [Fresponze](https://github.com/Vertver/Fresponze)
+* [TensorVox](https://github.com/ZDisket/TensorVox)
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
@@ -190,6 +191,11 @@ maintaining confidence in this library among the interested parties.
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change log ##
+
+Version 4.7:
+
+* Added `#ifndef _USE_MATH_DEFINES` to `pffft.cpp`.
+* Moved `#include "pffft.h"` to `CDSPRealFFT.h`.
 
 Version 4.6:
 

@@ -10,7 +10,7 @@
  * kept in a global list after use for future reusal. Such approach minimizes
  * time necessary to initialize the FFT object of the required length.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -22,6 +22,10 @@
 #if !R8B_IPP && !R8B_PFFFT
 	#include "fft4g.h"
 #endif // !R8B_IPP && !R8B_PFFFT
+
+#if R8B_PFFFT
+	#include "pffft.h"
+#endif // R8B_PFFFT
 
 namespace r8b {
 
