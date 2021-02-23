@@ -78,7 +78,8 @@ which is only slightly slower than Intel IPP FFT in performance, however since
 PFFFT works in single-precision resolution, the overall resampler's precision
 will be limited to 24-bit sample rate conversions. To use the PFFFT, define
 the `R8B_PFFFT` macro, compile and include the supplied `pffft.cpp` file
-to your project build.
+to your project build. Note that for mission-critical professional audio
+applications, using PFFFT is not recommended as its peak error is quite large.
 
     #define R8B_PFFFT 1
 
@@ -192,6 +193,11 @@ maintaining confidence in this library among the interested parties.
 
 ## Change log ##
 
+Version 4.8:
+
+* Added a limit to the intermediate filter's transition band, to keep the
+latency under control at any resampling ratio.
+
 Version 4.7:
 
 * Added `#ifndef _USE_MATH_DEFINES` to `pffft.cpp`.
@@ -200,7 +206,7 @@ Version 4.7:
 Version 4.6:
 
 * Removed the `MaxInLen` parameter from the `oneshot()` function.
-* Increased intermediate low-pass filter's transition band slightly, for more
+* Decreased intermediate low-pass filter's transition band slightly, for more
 stable quality.
 
 Version 4.5:

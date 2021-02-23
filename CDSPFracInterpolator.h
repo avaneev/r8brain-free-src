@@ -8,7 +8,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
  * See the "License.txt" file for license.
  */
 
@@ -242,7 +242,7 @@ public:
 	}
 
 	/**
-	 * This function should be called when the filter obtained via the
+	 * This function should be called when the filter bank obtained via the
 	 * filter bank cache is no longer needed.
 	 */
 
@@ -560,7 +560,7 @@ inline bool findGCD( double l, double s, double& GCD )
 /**
  * Function evaluates source and destination sample rate ratio and returns
  * the required input and output stepping. Function returns "false" if
- * *this class cannot be used to perform interpolation using these sample
+ * whole stepping cannot be used to perform interpolation using these sample
  * rates.
  *
  * @param SSampleRate Source sample rate.
