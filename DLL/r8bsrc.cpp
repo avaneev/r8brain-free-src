@@ -36,21 +36,27 @@ extern "C" {
 	void __intel_cpu_features_init_x(); // checks CPU features without discriminating by CPU brand
 }
 
+#endif // defined( __INTEL_COMPILER )
+
 class CAutoDispatchInit
 {
 public:
 	CAutoDispatchInit()
 	{
+		#if defined( __INTEL_COMPILER )
 		__intel_cpu_feature_indicator = 0;
 		__intel_cpu_feature_indicator_x = 0;
 		__intel_cpu_features_init_x();
 		__intel_cpu_feature_indicator = __intel_cpu_feature_indicator_x;
+		#endif // defined( __INTEL_COMPILER )
+
+		#if R8B_IPP
+		ippInit();
+		#endif // R8B_IPP
 	}
 };
 
 CAutoDispatchInit AutoDispatchInit;
-
-#endif // defined( __INTEL_COMPILER )
 
 extern "C" {
 

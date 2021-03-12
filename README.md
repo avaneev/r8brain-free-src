@@ -107,7 +107,7 @@ version includes AVX2 auto-dispatch code).  Delphi Pascal interface unit file
 for the DLL file is available.  DLL and C LIB files are distributed in the DLL
 folder at the project's homepage.  On non-Windows systems it is preferrable
 to use the C++ library directly.  Note that the DLL was compiled with the
-PFFFT enabled.
+Intel IPP enabled.
 
 ## Real-time Applications ##
 
@@ -192,6 +192,12 @@ maintaining confidence in this library among the interested parties.
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change log ##
+
+Version 4.9:
+
+* Reoptimized half-band and fractional interpolation filters with a higher
+phase-linearity constraints. This did not impact the average speed
+performance.
 
 Version 4.8:
 

@@ -21,7 +21,6 @@ namespace r8b {
 
 #if R8B_FLTTEST
 	int InterpFilterFracs = -1;
-	int InterpFilterFracsThird = -1;
 #endif // R8B_FLTTEST
 
 CSyncObject CDSPRealFFTKeeper :: StateSync;

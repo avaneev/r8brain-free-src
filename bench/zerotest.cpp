@@ -67,14 +67,15 @@ VOXMAIN
 	{
 		const int MaxInLen = 521;
 		const double tb = 2.0;
-		const int Ref0Size = (int) ( InBufSize * 9.2 / 10.0 );
+		const double bw = 9.3;
+		const int Ref0Size = (int) ( InBufSize * bw / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
 		CPtrKeeper< r8b :: CDSPResampler24* > Resamp1;
-		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.2, MaxInLen, tb );
+		Resamp1 = new r8b :: CDSPResampler24( 10.0, bw, MaxInLen, tb );
 
 		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
-		Resamp2 = new r8b :: CDSPResampler24( 9.2, 10.0, MaxInLen, tb );
+		Resamp2 = new r8b :: CDSPResampler24( bw, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
 			Ref0Size );
@@ -93,7 +94,7 @@ VOXMAIN
 	for( k = 21; k < 600; k++ )
 	{
 		const int MaxInLen = (int) ( 50 + rnd.getUniform() * 1500 );
-		const double tb = 0.5 + rnd.getUniform() * 4.0;
+		const double tb = 0.5 + rnd.getUniform() * 4.5;
 
 		const double DstSampleRate = k;
 		const int ol1 = (int) ( InBufSize * DstSampleRate / SrcSampleRate );

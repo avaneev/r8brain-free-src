@@ -77,14 +77,15 @@ VOXMAIN
 	{
 		const int MaxInLen = 521;
 		const double tb = 2.0;
-		const int Ref0Size = (int) ( InBufSize * 9.2 / 10.0 );
+		const double bw = 9.3;
+		const int Ref0Size = (int) ( InBufSize * bw / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
 		CPtrKeeper< CResamp* > Resamp1;
-		Resamp1 = new CResamp( 10.0, 9.2, MaxInLen, tb );
+		Resamp1 = new CResamp( 10.0, bw, MaxInLen, tb );
 
 		CPtrKeeper< CResamp* > Resamp2;
-		Resamp2 = new CResamp( 9.2, 10.0, MaxInLen, tb );
+		Resamp2 = new CResamp( bw, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
 			Ref0Size );
@@ -108,7 +109,7 @@ VOXMAIN
 		const double SrcSampleRate = 1.0;
 		const double DstSampleRate = 1.0 + 44.0 * rnd.getUniform();
 
-		const double tb = 0.5 + 5.0 * rnd.getUniform();
+		const double tb = 0.5 + 4.5 * rnd.getUniform();
 		const int MaxInLen = 50 + (int) ( 2000 * rnd.getUniform() );
 
 		printf( "Iteration %3i dst=%8.4f tb=%7.4f inlen=%4i ",
