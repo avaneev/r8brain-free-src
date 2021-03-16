@@ -195,9 +195,9 @@ maintaining confidence in this library among the interested parties.
 
 Version 4.9:
 
-* Reoptimized half-band and fractional interpolation filters with a higher
-phase-linearity constraints. This did not impact the average speed
-performance.
+* Reoptimized half-band and fractional interpolation filters with a stricter
+frequency response linearity constraints. This did not impact the average
+speed performance.
 
 Version 4.8:
 
