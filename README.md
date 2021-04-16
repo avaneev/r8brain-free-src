@@ -22,6 +22,9 @@ function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
 alternative being only the whole number-factored SRC, which can be slower.
 
+P.S. Please credit the creator of this library in your documentation in the
+following way: "Sample rate converter designed by Aleksey Vaneev of Voxengo".
+
 ## Requirements ##
 
 C++ compiler and system with the "double" floating point type (53-bit
