@@ -77,14 +77,23 @@ the beginning of the `r8bconf.h` file, or during compilation:
     #define R8B_EXTFFT 1
 
 If you do not have access to Intel IPP then you may consider enabling PFFFT
-which is only slightly slower than Intel IPP FFT in performance, however since
-PFFFT works in single-precision resolution, the overall resampler's precision
-will be limited to 24-bit sample rate conversions. To use the PFFFT, define
-the `R8B_PFFFT` macro, compile and include the supplied `pffft.cpp` file
-to your project build. Note that for mission-critical professional audio
-applications, using PFFFT is not recommended as its peak error is quite large.
+which is only slightly slower than Intel IPP FFT in performance. There are
+two macro available: `R8B_PFFFT` and `R8B_PFFFT_DOUBLE`. The first macro
+enables PFFFT that works in single-precision resolution, thus limiting the
+overall resampler's precision to 24-bit sample rate conversions (for
+mission-critical professional audio applications, using the `R8B_PFFFT` is not
+recommended as its peak error is quite large). The second macro enables PFFFT
+implementation that works in double-precision resolution, making use of SSE2
+and AVX intrinsics, yielding precision that is equal to Intel IPP and
+Ooura FFT implementations.
+
+To use the PFFFT, define the `R8B_PFFFT` or `R8B_PFFFT_DOUBLE` macro, compile
+and include the supplied `pffft.cpp` file, or the `c` files from the
+`pffft_double` folder, to your project build.
 
     #define R8B_PFFFT 1
+    or
+    #define R8B_PFFFT_DOUBLE 1
 
 The code of this library was commented in the [Doxygen](http://www.doxygen.org/)
 style.  To generate the documentation locally you may run the
@@ -164,6 +173,8 @@ r8brain-free-src is bundled with the following code:
 [Homepage](http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html)
 * PFFFT Copyright (c) 2013 Julien Pommier.
 [Homepage](https://bitbucket.org/jpommier/pffft)
+* PFFFT DOUBLE Copyright (c) 2020 Hayati Ayguen, Dario Mambro.
+[Homepage](https://github.com/unevens/pffft)
 
 ## Users ##
 
@@ -195,6 +206,11 @@ maintaining confidence in this library among the interested parties.
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change log ##
+
+Version 4.10:
+
+* Implemented `PFFFT DOUBLE` implementation support. Now available via the
+`R8B_PFFFT_DOUBLE` macro.
 
 Version 4.9:
 
