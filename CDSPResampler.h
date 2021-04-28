@@ -64,7 +64,7 @@ public:
 	 * have to specify a higher ReqAtten value if you need a totally clean
 	 * high-frequency content. On the other hand, it may not be reasonable to
 	 * have a high-frequency content cleaner than the input signal itself: if
-	 * the input signal is 16-bit, setting ReqAtten to 150 will make its
+	 * the input signal is 16-bit, setting ReqAtten to 180 will make its
 	 * high-frequency content 24-bit, but the original part of the signal will
 	 * remain 16-bit.
 	 *
@@ -99,9 +99,9 @@ public:
 	 * inclusive. The actual attenuation may be 0.40-4.46 dB higher. The
 	 * general formula for selecting the ReqAtten is 6.02 * Bits + 40, where
 	 * "Bits" is the bit resolution (e.g. 16, 24), "40" is an added resolution
-	 * for stationary signals, this value can be decreased to 20 to 10 if the
-	 * signal being resampled is mostly non-stationary (e.g. impulse
-	 * response).
+	 * for dynamic signals; this value can be decreased to 20 to 10 if the
+	 * signal being resampled is non-dynamic (e.g., an impulse response or
+	 * filter, with a non-steep frequency response).
 	 * @param ReqPhase Required filter's phase response. Note that this
 	 * setting does not affect interpolator's phase response which is always
 	 * linear-phase. Also note that if the "power of 2" resampling was engaged
