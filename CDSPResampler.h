@@ -703,8 +703,8 @@ public:
  *
  * This class defines resampling parameters suitable for 16-bit impulse
  * response resampling, using linear-phase low-pass filter. Impulse responses
- * usually do not feature stationary signal components and thus need resampler
- * with a less SNR. See the r8b::CDSPResampler class for details.
+ * are non-dynamic signals, and thus need resampler with a lesser SNR. See the
+ * r8b::CDSPResampler class for details.
  */
 
 class CDSPResampler16IR : public CDSPResampler
