@@ -12,7 +12,7 @@ typedef r8b :: CDSPResampler24 CResamp;
  * upsampling and downsampling a reference signal.
  *
  * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * See the "LICENSE" file for license.
  */
 
 double calcRMS( const double* const p1, const double* const p2, const int l,

@@ -10,7 +10,7 @@
  * combines all elements of this library into a single front-end class.
  *
  * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * See the "LICENSE" file for license.
  */
 
 #ifndef R8B_CDSPRESAMPLER_INCLUDED

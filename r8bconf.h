@@ -10,7 +10,7 @@
  * sample rate converter. You may redefine the macros here as you see fit.
  *
  * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * See the "LICENSE" file for license.
  */
 
 #ifndef R8BCONF_INCLUDED
@@ -23,27 +23,6 @@
 #else // defined( __APPLE__ )
 	#define R8B_LNX 1 // Assume Linux (Unix) platform by default.
 #endif // defined( __APPLE__ )
-
-#if !defined( R8B_FLTLEN )
-	/**
-	 * This macro defines the default fractional delay filter length. Macro is
-	 * used by the r8b::CDSPResampler class.
-	 */
-
-	#define R8B_FLTLEN 28
-#endif // !defined( R8B_FLTLEN )
-
-#if !defined( R8B_FLTFRACS )
-	/**
-	 * This macro defines the default number of fractional delay filters that
-	 * are sampled by the filter bank. Macro is used by the r8b::CDSPResampler
-	 * class. In order to get consistent results when resampling to/from
-	 * different sample rates, it is suggested to set this macro to a suitable
-	 * prime number.
-	 */
-
-	#define R8B_FLTFRACS 1733
-#endif // !defined( R8B_FLTFRACS )
 
 #if !defined( R8B_IPP )
 	/**

@@ -9,8 +9,8 @@
  *
  * @brief RMS comparison utility.
  *
- * r8brain-free-src Copyright (c) 2018-2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 VOXMAIN

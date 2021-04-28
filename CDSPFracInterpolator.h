@@ -9,7 +9,7 @@
  * This file includes fractional delay interpolator class.
  *
  * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * See the "LICENSE" file for license.
  */
 
 #ifndef R8B_CDSPFRACINTERPOLATOR_INCLUDED

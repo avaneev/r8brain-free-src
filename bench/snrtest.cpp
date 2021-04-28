@@ -9,8 +9,8 @@
  * precision at the ReqAtten levels. At some ReqAtten settings resampler
  * delivers a lower SNR, thus setting ReqAtten+9 is advisable.
  *
- * r8brain-free-src Copyright (c) 2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 double calcRMS( const double* const p1, const double* const p2, const int l )

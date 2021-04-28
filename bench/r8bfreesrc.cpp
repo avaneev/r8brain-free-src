@@ -14,8 +14,8 @@
  * pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 VOXMAIN

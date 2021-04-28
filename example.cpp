@@ -4,12 +4,12 @@
  * @brief An example C++ file that demonstrates resampler's usage.
  *
  * This is an example file which you won't be able to compile as it includes
- * some undisclosed program code. Please consider this example as a
- * pseudo-code demonstrating the use of the library. Here you can find an
+ * undisclosed WAVE audio file input-output code. Please consider this example
+ * as a pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 int main()
@@ -75,6 +75,4 @@ int main()
 	}
 
 	outf.finalize();
-
-	return( 0 );
 }

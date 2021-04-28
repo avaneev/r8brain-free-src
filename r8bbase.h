@@ -9,9 +9,6 @@
  * converter. This inclusion file contains implementations of several small
  * utility classes and functions used by the library.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
- * See the "License.txt" file for license.
- *
  * @mainpage
  *
  * @section intro_sec Introduction
@@ -54,7 +51,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 4.10
+ * @version 5.0
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -84,7 +81,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "4.10"
+#define R8B_VERSION "5.0"
 
 #if !defined( M_PI )
 	/**

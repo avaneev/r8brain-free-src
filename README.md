@@ -121,7 +121,7 @@ folder on the project's homepage.  On non-Windows systems it is preferrable
 to use the C++ library directly.  Note that the DLL was compiled with the
 Intel IPP enabled.
 
-## Real-time Applications ##
+## Real-Time Applications ##
 
 The resampler class of this library was designed as an asynchronous processor:
 it may produce any number of output samples, depending on the input sample
@@ -204,7 +204,15 @@ maintaining confidence in this library among the interested parties.
 
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
-## Change log ##
+## Change Log ##
+
+Version 5.0:
+
+* Removed a long-outdated macros from the `r8bconf.h` file.
+* Changed a conditional pre-processor directive in the `pf_sse2_double.h` file
+as per PFFFT DOUBLE author's suggestion, to allow SSE2 intrinsics in most
+compilers.
+* Fixed "License.txt" misnaming in the source files to "LICENSE".
 
 Version 4.10:
 

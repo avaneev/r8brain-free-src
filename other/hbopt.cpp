@@ -1,5 +1,8 @@
 // Half-band filter coefficient optimizer. Finds coefficients for the list of
 // fractions using the BiteOptDeep derivative-free optimization method.
+//
+// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// See the "LICENSE" file for license.
 
 #include <stdio.h>
 #include <math.h>

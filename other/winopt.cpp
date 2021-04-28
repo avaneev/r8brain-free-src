@@ -1,6 +1,9 @@
 // Window function parameters optimizer - finds parameters for the specified
 // filter bandwidth for Kaiser window functions using the BiteOptDeep
 // derivative-free optimization method.
+//
+// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// See the "LICENSE" file for license.
 
 #include <stdio.h>
 #include <math.h>

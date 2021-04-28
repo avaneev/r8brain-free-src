@@ -1,5 +1,8 @@
 // Fractional-delay interpolation test. Tests FilterFracs and interpolation
 // at different target SNRs.
+//
+// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// See the "LICENSE" file for license.
 
 #include "/libvox/Sources/Core/CWorkerThreadPool.h"
 using namespace vox;
