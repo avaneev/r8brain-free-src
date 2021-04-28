@@ -207,6 +207,12 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 5.2:
+
+* Modified `PFFFT` and `PFFFT DOUBLE` conditional pre-processor directives to
+always enable NEON on `aarch64`/`arm64` (this includes code built for
+Apple M1).
+
 Version 5.1:
 
 * Changed alignment in the `CFixedBuffer` class to 64 bytes. This improves AVX
