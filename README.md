@@ -88,11 +88,13 @@ AVX, and NEON intrinsics, yielding precision that is equal to both Intel IPP
 and Ooura FFT implementations.
 
 To use the PFFFT, define the `R8B_PFFFT` or `R8B_PFFFT_DOUBLE` macro, compile
-and include the supplied `pffft.cpp` file, or the `c` files from the
-`pffft_double` folder, to your project build.
+and include the supplied `pffft.cpp` file, or the `pffft_double.c` file from
+the `pffft_double` folder, to your project build.
 
     #define R8B_PFFFT 1
+
     or
+
     #define R8B_PFFFT_DOUBLE 1
 
 The code of this library was commented in the [Doxygen](http://www.doxygen.org/)
