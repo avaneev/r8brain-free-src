@@ -78,7 +78,7 @@
 #define PFFFT_H
 
 #include <stddef.h> // for size_t
-#include <stdint.h> // Addition by AV.
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,11 +90,16 @@ extern "C" {
   */
   typedef struct PFFFT_Setup PFFFT_Setup;
 
+#ifndef PFFFT_COMMON_ENUMS
+#define PFFFT_COMMON_ENUMS
+
   /* direction of the transform */
   typedef enum { PFFFT_FORWARD, PFFFT_BACKWARD } pffft_direction_t;
   
   /* type of transform */
   typedef enum { PFFFT_REAL, PFFFT_COMPLEX } pffft_transform_t;
+
+#endif
 
   /*
     prepare for performing transforms of size N -- the returned

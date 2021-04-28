@@ -160,9 +160,9 @@ This SRC library also implements a much faster "power of 2" resampling (e.g.
 which is engaged automatically if the resampling parameters permit.
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
-[Microsoft Visual C++](https://visualstudio.microsoft.com/) and
-[Intel C++](https://software.intel.com/en-us/c-compilers) compilers, on 32-
-and 64-bit Windows, macOS, and CentOS Linux.
+[Microsoft Visual C++](https://visualstudio.microsoft.com/),
+[LLVM](https://llvm.org/) and [Intel C++](https://software.intel.com/en-us/c-compilers)
+compilers, on 32- and 64-bit Windows, macOS, and CentOS Linux.
 
 Most code is "inline", without the need to compile many source files. The
 memory footprint is quite modest.
@@ -194,9 +194,10 @@ This library is used by:
 * [TensorVox](https://github.com/ZDisket/TensorVox)
 * [Curvessor](https://github.com/unevens/Curvessor)
 
-Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
-your software product to the list of users. This list is important at
-maintaining confidence in this library among the interested parties.
+Please send me a note via aleksey.vaneev@gmail.com and I will include a link
+to your software product to this list of users. This list is important in
+maintaining confidence in this library among the interested parties. The
+inclusion into this list is not mandatory.
 
 ## Other ##
 
@@ -205,6 +206,13 @@ maintaining confidence in this library among the interested parties.
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change Log ##
+
+Version 5.1:
+
+* Changed alignment in the `CFixedBuffer` class to 64 bytes. This improves AVX
+performance of the `PFFFT DOUBLE` implementation by a few percent.
+* Removed redundant files from the `pffft_double` folder, integrated the
+`pffft_common.c` file into the `pffft_double.c` file.
 
 Version 5.0:
 
