@@ -201,12 +201,6 @@ to your software product to this list of users. This list is important in
 maintaining confidence in this library among the interested parties. The
 inclusion into this list is not mandatory.
 
-## Other ##
-
-[Follow me on Twitter](https://twitter.com/AlekseyVaneev)
-
-[Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
-
 ## Change Log ##
 
 Version 5.2:
