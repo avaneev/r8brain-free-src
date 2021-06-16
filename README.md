@@ -184,6 +184,7 @@ r8brain-free-src is bundled with the following code:
 
 This library is used by:
 
+* [AUDIRVANA](https://audirvana.com/)
 * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
 * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
 * [OpenMPT](https://openmpt.org/)
