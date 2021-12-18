@@ -1,13 +1,15 @@
-# r8brain-free-src #
+# r8brain-free-src - High-Quality Resampler #
 
 ## Introduction ##
 
 Open source (under the MIT license) high-quality professional audio sample
-rate converter (SRC) (resampling) C++ library.  Features routines for SRC,
+rate converter (SRC) / resampler C++ library.  Features routines for SRC,
 both up- and downsampling, to/from any sample rate, including non-integer
 sample rates: it can be also used for conversion to/from SACD/DSD sample
 rates, and even go beyond that.  SRC routines were implemented in a
-multi-platform C++ code, and have a high level of optimality.
+multi-platform C++ code, and have a high level of optimality. Also suitable
+for fast general-purpose 1D time-series resampling / interpolation (with
+relaxed filter parameters).
 
 The structure of this library's objects is such that they can be frequently
 created and destroyed in large applications with a minimal performance impact
@@ -184,6 +186,7 @@ r8brain-free-src is bundled with the following code:
 
 This library is used by:
 
+* [REAPER](https://reaper.fm/)
 * [AUDIRVANA](https://audirvana.com/)
 * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
 * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
