@@ -69,11 +69,11 @@ int main()
 			double re;
 			double im;
 
-			calcFIRFilterResponse( &Kernel[ 0 ], l, M_PI * 0.5, re, im );
+			calcFIRFilterResponse( &Kernel[ 0 ], l, R8B_PId2, re, im );
 			const double g05 = g * log( re * re + im * im );
 
 			calcFIRFilterResponse( &Kernel[ 0 ], l,
-				M_PI * ( 1.0 - tb * 0.01 ) * 0.5, re, im );
+				R8B_PId2 * ( 1.0 - tb * 0.01 ), re, im );
 
 			const double gtb = g * log( re * re + im * im );
 			const double err = g05 + atten;

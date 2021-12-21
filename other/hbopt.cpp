@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "/projects/biteopt/biteopt.h"
+#include "../../biteopt/biteopt.h"
 #include "../CDSPSincFilterGen.h"
 
 const double Fractions[] = { 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, -1.0 };
@@ -65,7 +65,7 @@ public:
 
 		for( i = 0; i <= Count1; i++ )
 		{
-			const double th = M_PI * fr * i / Count1;
+			const double th = R8B_PI * fr * i / Count1;
 			r8b :: calcFIRFilterResponse( KernelBlock, KernelLen, th, re, im );
 			double p = fabs( _10ln10 * log( re * re + im * im ));
 
@@ -77,7 +77,7 @@ public:
 
 		for( i = 0; i <= Count2; i++ )
 		{
-			const double th = M_PI * ( 1.0 - fre * i / Count2 );
+			const double th = R8B_PI * ( 1.0 - fre * i / Count2 );
 			r8b :: calcFIRFilterResponse( KernelBlock, KernelLen, th, re, im );
 			double p = _10ln10 * log( re * re + im * im );
 
@@ -102,7 +102,7 @@ public:
 
 		for( i = 0; i < TapCount; i++ )
 		{
-			const double xpi = ( i * 2 + 1 ) * M_PI;
+			const double xpi = ( i * 2 + 1 ) * R8B_PI;
 			Sinc[ i ] = sin( xpi * 0.5 ) / xpi;
 		}
 

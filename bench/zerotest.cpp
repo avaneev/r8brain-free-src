@@ -1,6 +1,6 @@
-#include "/libvox/Sources/Audio/AudioMath.h"
-#include "/libvox/Sources/Core/AppMain.h"
-#include "/libvox/Sources/Other/CWaveFile.h"
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
 
 typedef r8b :: CDSPResampler24 CResamp;
@@ -43,7 +43,7 @@ VOXMAIN
 	CWaveFile inf;
 	VOXCHECK( inf.loadFile( *Args.getArgValue( "in-file" ).ValueStr ));
 
-	const int InBufSize = (int) min( (int64_t) 50000, inf.SampleCount );
+	const int InBufSize = (int) min( 50000LL, inf.SampleCount );
 
 	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
 	int i;
@@ -109,9 +109,7 @@ VOXMAIN
 		Resamp2 = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
 
 		const TClock t1( CSystem :: getClock() );
-
 		Resamp1 -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf1[ 0 ], ol1 );
-
 		const double perf = 1e-6 * ol1 / CSystem :: getClockDiffSec( t1 );
 
 		Resamp2 -> oneshot( &OutBuf1[ 0 ], ol1, &OutBuf2[ 0 ], InBufSize );

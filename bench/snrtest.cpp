@@ -1,5 +1,5 @@
-#include "/libvox/Sources/Audio/AudioMath.h"
-#include "/libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
 #include "../CDSPResampler.h"
 
 /**

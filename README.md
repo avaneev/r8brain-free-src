@@ -207,6 +207,15 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 5.3:
+
+* Optimized inner loops of the fractional interpolator, added SSE2 and NEON
+intrinsics, resulting in a measurable (8-25%) performance gain.
+* Optimized filter calculation functions: changed some divisions by a constant
+to multiplications.
+* Renamed M_PI macros to R8B_PI, to avoid macro collisions.
+* Removed redundant code and macros.
+
 Version 5.2:
 
 * Modified `PFFFT` and `PFFFT DOUBLE` conditional pre-processor directives to

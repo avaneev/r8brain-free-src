@@ -95,6 +95,10 @@
 #pragma warning( disable : 4244 4305 4204 4456 )
 #endif
 
+#ifndef M_PI
+  #define M_PI    3.14159265358979323846  /* pi */
+#endif
+
 /* 
    vector support macros: the rest of the code is independant of
    SSE/Altivec/NEON -- adding support for other platforms with 4-element

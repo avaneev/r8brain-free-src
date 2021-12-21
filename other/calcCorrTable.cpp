@@ -14,10 +14,10 @@
 #include "../CDSPFIRFilter.h"
 using namespace r8b;
 
-template< class T >
+template< typename T >
 inline T round( const T d )
 {
-	return( d < 0.0 ? -floor( (T) 0.5 - d ) : floor( d + (T) 0.5 ));
+	return( d < (T) 0 ? -floor( (T) 0.5 - d ) : floor( d + (T) 0.5 ));
 }
 
 int main()
@@ -94,7 +94,7 @@ int main()
 				double re;
 				double im;
 
-				calcFIRFilterResponse( &Kernel[ 0 ], l, M_PI * 0.5, re, im );
+				calcFIRFilterResponse( &Kernel[ 0 ], l, R8B_PId2, re, im );
 				const double g05 = g * log( re * re + im * im );
 
 				const int z = (int) floor(( ReqAtten - MinAtten ) *

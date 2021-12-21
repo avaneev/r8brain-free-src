@@ -1,7 +1,7 @@
-//$ bin "Win64/r8bfreesrc"
+///$ bin "Win64/r8bfreesrc"
 
-#include "/libvox/Sources/Core/AppMain.h"
-#include "/libvox/Sources/Other/CWaveFile.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
 
 /**

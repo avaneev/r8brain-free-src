@@ -4,7 +4,7 @@
 // r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
 // See the "LICENSE" file for license.
 
-#include "/libvox/Sources/Core/CWorkerThreadPool.h"
+#include "../../../../libvox/Sources/Core/CWorkerThreadPool.h"
 using namespace vox;
 
 #include <stdio.h>
@@ -62,7 +62,7 @@ inline double calcSineRMS( const double* const p1, const int l, const int o,
 
 	for( i = 0; i < l - o; i++ )
 	{
-		const double v = sin( i * 2.0 * M_PI * SineFreq * SrcSampleRate /
+		const double v = sin( i * R8B_2PI * SineFreq * SrcSampleRate /
 			( InSampleRate * DstSampleRate ));
 
 		if( i >= o )
@@ -127,7 +127,7 @@ int main()
 	{
 		for( i = 0; i < InBufSize; i++ )
 		{
-			InBuf[ i ] = sin( i * 2.0 * M_PI * SineFreq / InSampleRate );
+			InBuf[ i ] = sin( i * R8B_2PI * SineFreq / InSampleRate );
 		}
 	}
 

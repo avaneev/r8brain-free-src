@@ -29,8 +29,8 @@
 
 #else
 
-#error "Macro name collisions may happens with unknown compiler"
 #ifdef FORCE_INLINE
+#warning PFFFT: Macro name collision happened with unknown compiler
 #undef FORCE_INLINE
 #endif
 

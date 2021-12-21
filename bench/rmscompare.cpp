@@ -1,7 +1,7 @@
 //$ bin "Win64/rmscompare"
 
-#include "/libvox/Sources/Core/AppMain.h"
-#include "/libvox/Sources/Other/CWaveFile.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
 #include <stdint.h>
 
 /**

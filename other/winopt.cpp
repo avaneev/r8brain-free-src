@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "/projects/biteopt/biteopt.h"
+#include "../../biteopt/biteopt.h"
 #include "../CDSPSincFilterGen.h"
 
 const int Bandwidth = 2; // Filter's bandwidth (2 or 3).
@@ -47,7 +47,7 @@ public:
 	{
 		r8b :: CDSPSincFilterGen gen;
 		gen.Freq1 = 0.0;
-		gen.Freq2 = M_PI / Oversample;
+		gen.Freq2 = R8B_PI / Oversample;
 		gen.Len2 = FilterLen * 0.5 * Oversample;
 		gen.initBand( r8b :: CDSPSincFilterGen :: wftKaiser, p, true );
 
@@ -67,7 +67,7 @@ public:
 
 		for( i = 0; i <= Count1; i++ )
 		{
-			const double th = M_PI * LinFraction / Oversample * i / Count1;
+			const double th = R8B_PI * LinFraction / Oversample * i / Count1;
 			r8b :: calcFIRFilterResponse( KernelBlock, KernelLen, th, re, im );
 			double p = fabs( _10ln10 * log( re * re + im * im ));
 
@@ -76,8 +76,8 @@ public:
 
 		const int Count2 = 2000;
 		double cost2 = -1000.0;
-		const double th1 = M_PI * StopFraction / Oversample;
-		const double th2 = M_PI * StopFractionEnd / Oversample;
+		const double th1 = R8B_PI * StopFraction / Oversample;
+		const double th2 = R8B_PI * StopFractionEnd / Oversample;
 
 		for( i = 0; i <= Count2; i++ )
 		{

@@ -1,6 +1,6 @@
-#include "/libvox/Sources/Audio/AudioMath.h"
-#include "/libvox/Sources/Core/AppMain.h"
-#include "/libvox/Sources/Other/CWaveFile.h"
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
 
 typedef r8b :: CDSPResampler24 CResamp;
@@ -35,7 +35,7 @@ void addSine( double* const p, const int l, const double Freq,
 	const double SampleRate )
 {
 	CSineGen sg;
-	sg.init( M_2PI * Freq / SampleRate, 0.5 );
+	sg.init( R8B_2PI * Freq / SampleRate, 0.5 );
 	int i;
 
 	for( i = 0; i < l; i++ )
@@ -56,7 +56,7 @@ VOXMAIN
 	CWaveFile inf;
 	VOXCHECK( inf.loadFile( *Args.getArgValue( "in-file" ).ValueStr ));
 
-	const int InBufSize = (int) min( 50000, inf.SampleCount );
+	const int InBufSize = (int) min( 50000LL, inf.SampleCount );
 
 	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
 	int i;
@@ -101,6 +101,7 @@ VOXMAIN
 	double peakd = 0.0;
 	double maxr = 0.0;
 	double avgr = 0.0;
+	double avgperf = 0.0;
 	double avglatency = 0.0;
 	int k;
 
@@ -118,13 +119,12 @@ VOXMAIN
 		const int ol = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf( ol );
 
-		const TClock t1( CSystem :: getClock() );
-
 		CPtrKeeper< CResamp* > Resamp;
 		Resamp = new CResamp( SrcSampleRate, DstSampleRate, MaxInLen, tb );
 		avglatency += Resamp -> getInLenBeforeOutStart();
-		Resamp -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
 
+		const TClock t1( CSystem :: getClock() );
+		Resamp -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
 		const double perf = 1e-6 * ol / CSystem :: getClockDiffSec( t1 );
 
 //		addSine( OutBuf, ol, ( SrcSampleRate + DstSampleRate ) * 0.25,
@@ -142,6 +142,7 @@ VOXMAIN
 		}
 
 		avgr += r * r;
+		avgperf += perf;
 
 		printf( "z=%7.2f perf=%6.2f\n", 20.0 * log( r ) / log( 10.0 ), perf );
 	}
@@ -149,6 +150,7 @@ VOXMAIN
 	printf( "avg rms %.2f\n", 10.0 * log( avgr / TestCount ) / log( 10.0 ));
 	printf( "max rms %.2f\n", 20.0 * log( maxr ) / log( 10.0 ));
 	printf( "peak diff %.2f\n", 20.0 * log( peakd ) / log( 10.0 ));
+	printf( "avg perf %.2f Mflops\n", avgperf / TestCount );
 	printf( "avg latency %.0f\n", avglatency / TestCount );
 
 	VOXRET;
