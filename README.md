@@ -104,16 +104,15 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's directory.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`61.2*n_cores` Mflops (`83.3*n_cores` for Intel IPP FFT) when converting 1
+`31*n_cores` Mrops (`46*n_cores` for Intel IPP FFT) when converting 1
 channel of 24-bit audio from 44100 to 96000 sample rate (2% transition band),
-on an Intel Core i7-7700K processor-based 64-bit AVX2-enabled system without
-overclocking.  This approximately translates to a real-time resampling of
-`637*n_cores` (`868*n_cores`) audio streams, at 100% CPU load.  Speed
-performance when converting to other sample rates may vary greatly.  When
-comparing performance of this resampler library to another library make sure
-that the competing library is also tuned to produce a fully linear-phase
-response, has similar stop-band characteristics, and similar sample timing
-precision.
+on a Ryzen 3700X processor-based 64-bit system.  This approximately translates
+to a real-time resampling of `700*n_cores` (`1000*n_cores`) audio streams, at
+100% CPU load.  Speed performance when converting to other sample rates may
+vary greatly.  When comparing performance of this resampler library to another
+library make sure that the competing library is also tuned to produce a fully
+linear-phase response, has similar stop-band characteristics, and similar
+sample timing precision.
 
 ## Dynamic Link Library ##
 
@@ -206,6 +205,18 @@ maintaining confidence in this library among the interested parties. The
 inclusion into this list is not mandatory.
 
 ## Change Log ##
+
+Version 5.4:
+
+* Added compiler specializations to previously optimized inner loops.
+"Shuffled" SIMD interpolation code is not efficient on Apple M1. Intel C++
+Compiler vectorizes "whole stepping" interpolation as good as a
+manually-written SSE.
+* Reorganized SIMD instructions for a slightly better performance.
+* Changed internal buffer sizes of half-band resamplers (1-2% performance
+boost).
+* Fixed compiler warnings in PFFFT code.
+* Added several asserts to the code.
 
 Version 5.3:
 

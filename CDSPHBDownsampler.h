@@ -79,6 +79,8 @@ public:
 		Latency = (int) LatencyFrac;
 		LatencyFrac -= Latency;
 
+		R8BASSERT( Latency >= 0 );
+
 		R8BCONSOLE( "CDSPHBDownsampler: taps=%i third=%i att=%.1f io=1/2\n",
 			fltt, (int) IsThird, att );
 
@@ -171,7 +173,7 @@ public:
 	}
 
 private:
-	static const int BufLenBits = 8; ///< The length of the ring buffer,
+	static const int BufLenBits = 10; ///< The length of the ring buffer,
 		///< expressed as Nth power of 2. This value can be reduced if it is
 		///< known that only short input buffers will be passed to the
 		///< interpolator. The minimum value of this parameter is 5, and
@@ -223,7 +225,7 @@ private:
 		const double* const rp0, int& ReadPos0 ) \
 	{ \
 		int rpos = ReadPos0; \
-		while( op < opend ) \
+		while( op != opend ) \
 		{ \
 			const double* const rp = rp0 + rpos; \
 			*op = rp[ 0 ] +

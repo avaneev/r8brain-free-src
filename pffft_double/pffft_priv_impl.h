@@ -1818,7 +1818,7 @@ void FUNC_VALIDATE_SIMD_A() {
 
 static void pffft_assert1( float result, float ref, const char * vartxt, const char * functxt, int * numErrs, const char * f, int lineNo )
 {
-  if ( !( fabsf( result - ref ) < 0.01F ) )
+  if ( !( fabs( result - ref ) < 0.01 ) )
   {
     fprintf(stderr, "%s: assert for %s at %s(%d)\n  expected %f  value %f\n", functxt, vartxt, f, lineNo, ref, result);
     ++(*numErrs);

@@ -79,6 +79,7 @@
 #  include <alloca.h>
 #endif
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -149,7 +150,8 @@
 static void * Valigned_malloc(size_t nb_bytes) {
   void *p, *p0 = malloc(nb_bytes + MALLOC_V4SF_SIZE);
   if (!p0) return (void *) 0;
-  p = (void *) (((size_t) p0 + MALLOC_V4SF_SIZE) & (~((size_t) (MALLOC_V4SF_ALIGNMENT-1))));
+  p = (void *) (((uintptr_t) p0 + MALLOC_V4SF_SIZE) &
+    ~(uintptr_t) (MALLOC_V4SF_ALIGNMENT-1));
   *((void **) p - 1) = p0;
   return p;
 }

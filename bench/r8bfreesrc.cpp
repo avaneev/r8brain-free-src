@@ -92,6 +92,7 @@ VOXMAIN
 	int64_t ol = (int64_t) ( inf.SampleCount * OutSampleRate /
 		InSampleRate );
 
+	const int64_t ol0 = inf.SampleCount * inf.ChannelCount;
 	int64_t ool = 0;
 	double srct = 0.0;
 	CArray< double* > opp( inf.ChannelCount );
@@ -136,8 +137,8 @@ VOXMAIN
 
 	VOXCHECK( outf.finalize() );
 
-	printf( "Resampled in %.4f s, %.3f Mflops (excluding IO operations)\n",
-		srct, 1e-6 * ool / srct );
+	printf( "Resampled in %.4f s, %.3f Mrops (excluding IO operations)\n",
+		srct, 1e-6 * ol0 / srct );
 
 	VOXRET;
 }

@@ -125,13 +125,18 @@ VOXMAIN
 
 		const TClock t1( CSystem :: getClock() );
 		Resamp -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf[ 0 ], ol );
-		const double perf = 1e-6 * ol / CSystem :: getClockDiffSec( t1 );
+		double perf = 1e-6 * InBufSize /
+			CSystem :: getClockDiffSec( t1 );
 
 //		addSine( OutBuf, ol, ( SrcSampleRate + DstSampleRate ) * 0.25,
 //			DstSampleRate );
 
 		Resamp = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
+
+		const TClock t2( CSystem :: getClock() );
 		Resamp -> oneshot( &OutBuf[ 0 ], ol, &OutBuf2[ 0 ], InBufSize );
+		perf = ( perf + 1e-6 * InBufSize /
+			CSystem :: getClockDiffSec( t2 )) * 0.5;
 
 		const double r = calcRMS( &Ref[ 5000 ], &OutBuf2[ 5000 ],
 			InBufSize - 10000, peakd );
@@ -150,7 +155,7 @@ VOXMAIN
 	printf( "avg rms %.2f\n", 10.0 * log( avgr / TestCount ) / log( 10.0 ));
 	printf( "max rms %.2f\n", 20.0 * log( maxr ) / log( 10.0 ));
 	printf( "peak diff %.2f\n", 20.0 * log( peakd ) / log( 10.0 ));
-	printf( "avg perf %.2f Mflops\n", avgperf / TestCount );
+	printf( "avg perf %.2f Mrops\n", avgperf / TestCount );
 	printf( "avg latency %.0f\n", avglatency / TestCount );
 
 	VOXRET;

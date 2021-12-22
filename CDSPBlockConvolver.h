@@ -157,6 +157,8 @@ public:
 			}
 		}
 
+		R8BASSERT( Latency >= 0 );
+
 		fftin = new CDSPRealFFTKeeper( fftinBits );
 
 		if( fftoutBits == fftinBits )
