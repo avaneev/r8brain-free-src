@@ -51,7 +51,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 5.4
+ * @version 5.5
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -79,7 +79,7 @@
 	#define R8B_SSE2
 	#define R8B_SIMD_ISH
 
-#elif defined( __aarch64__ ) || defined( __arm64__ )
+#elif defined( __aarch64__ ) || defined( __arm64__ ) || defined( __ARM_NEON )
 
 	#include <arm_neon.h>
 
@@ -103,7 +103,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "5.4"
+#define R8B_VERSION "5.5"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -273,7 +273,7 @@ public:
  * This class applies 64-byte memory address alignment to the allocated data
  * block.
  *
- * @param T The type of the stored elements (e.g. "double").
+ * @tparam T The type of the stored elements (e.g. "double").
  */
 
 template< typename T >
@@ -423,7 +423,7 @@ private:
  * should be deleted together with the "keeper" by calling object's "delete"
  * operator.
  *
- * @param T Pointer type to operate with, must include the asterisk (e.g.
+ * @tparam T Pointer type to operate with, must include the asterisk (e.g.
  * "CDSPFIRFilter*").
  */
 
@@ -442,6 +442,7 @@ public:
 	 * Constructor assigns a pointer to object to *this keeper.
 	 *
 	 * @param aObject Pointer to object to keep, can be NULL.
+	 * @tparam T2 Object's pointer type.
 	 */
 
 	template< class T2 >
@@ -460,6 +461,7 @@ public:
 	 * keeped pointer will be reset and object deleted.
 	 *
 	 * @param aObject Pointer to object to keep, can be NULL.
+	 * @tparam T2 Object's pointer type.
 	 */
 
 	template< class T2 >
@@ -1072,6 +1074,7 @@ inline void calcSpline3p6Coeffs( double* const c, const double* const y )
 /**
  * @param v1 Value 1.
  * @param v2 Value 2.
+ * @tparam T Values' type.
  * @return The minimum of 2 values.
  */
 
@@ -1088,6 +1091,7 @@ inline T min( const T& v1, const T& v2 )
 /**
  * @param v1 Value 1.
  * @param v2 Value 2.
+ * @tparam T Values' type.
  * @return The maximum of 2 values.
  */
 

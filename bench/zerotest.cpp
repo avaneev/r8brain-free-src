@@ -122,7 +122,7 @@ VOXMAIN
 			InBufSize - 10000, peakd );
 
 		avgr += r * r;
-		avgperf += perf;
+		avgperf += perf * perf;
 		avgc++;
 
 		printf( "%3.0f/%3.0f\t", DstSampleRate, SrcSampleRate );
@@ -141,7 +141,7 @@ VOXMAIN
 
 	printf( "Average rms %.2f\n", 10.0 * log( avgr / avgc ) / log( 10.0 ));
 	printf( "Peak diff %.2f\n", 20.0 * log( peakd ) / log( 10.0 ));
-	printf( "Average perf %.2f Mrops\n", avgperf / avgc );
+	printf( "Average perf %.2f Mrops\n", sqrt( avgperf / avgc ));
 	printf( "Average latency %.0f\n", avglatency / avgc );
 
 	VOXRET;

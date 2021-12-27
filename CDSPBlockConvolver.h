@@ -615,6 +615,7 @@ private:
 	 * of zeros into the input signal.
 	 *
 	 * @param p Spectrum data block to mirror.
+	 * @tparam T Buffer's element type.
 	 */
 
 	template< typename T >

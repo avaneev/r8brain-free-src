@@ -494,8 +494,8 @@ public:
 	 * @param iplen Length of the input buffer in samples.
 	 * @param[out] op Output buffer pointer.
 	 * @param oplen Length of the output buffer in samples.
-	 * @tparam Tin Input buffer type.
-	 * @tparam Tout Output buffer type.
+	 * @tparam Tin Input buffer's element type.
+	 * @tparam Tout Output buffer's element type.
 	 */
 
 	template< typename Tin, typename Tout >

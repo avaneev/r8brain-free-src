@@ -8,8 +8,8 @@ typedef r8b :: CDSPResampler24 CResamp;
 /**
  * @file masstest.cpp
  *
- * @brief Mass randomized test of various combinations of sample rate
- * conversions, designed for Dr.Memory debugger.
+ * @brief Mass randomized/stochastic test of various combinations of sample
+ * rate conversions, designed for Dr.Memory debugger.
  *
  * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
  * See the "License.txt" file for license.
@@ -56,7 +56,7 @@ VOXMAIN
 	CWaveFile inf;
 	VOXCHECK( inf.loadFile( *Args.getArgValue( "in-file" ).ValueStr ));
 
-	const int InBufSize = (int) min( 50000LL, inf.SampleCount );
+	const int InBufSize = (int) min( (int64_t) 50000, inf.SampleCount );
 
 	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
 	int i;
@@ -69,7 +69,7 @@ VOXMAIN
 	int ReadCount;
 	VOXCHECK( inf.readData( InBufs, InBufSize, ReadCount ));
 
-	// Create reference signal which has 92% bandwidth of the input signal.
+	// Create reference signal which has 93% bandwidth of the input signal.
 
 	CFixedBuffer< double > Ref( InBufSize );
 
@@ -147,7 +147,7 @@ VOXMAIN
 		}
 
 		avgr += r * r;
-		avgperf += perf;
+		avgperf += perf * perf;
 
 		printf( "z=%7.2f perf=%6.2f\n", 20.0 * log( r ) / log( 10.0 ), perf );
 	}
@@ -155,7 +155,7 @@ VOXMAIN
 	printf( "avg rms %.2f\n", 10.0 * log( avgr / TestCount ) / log( 10.0 ));
 	printf( "max rms %.2f\n", 20.0 * log( maxr ) / log( 10.0 ));
 	printf( "peak diff %.2f\n", 20.0 * log( peakd ) / log( 10.0 ));
-	printf( "avg perf %.2f Mrops\n", avgperf / TestCount );
+	printf( "avg perf %.2f Mrops\n", sqrt( avgperf / TestCount ));
 	printf( "avg latency %.0f\n", avglatency / TestCount );
 
 	VOXRET;

@@ -206,6 +206,13 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 5.5:
+
+* Hardened positional logic of fractional filter calculation, removed
+redundant multiplications.
+* Removed unnecessary function templating from the `CDSPSincFilterGen` class.
+* Added the `__ARM_NEON` macro to NEON availability detection.
+
 Version 5.4:
 
 * Added compiler specializations to previously optimized inner loops.
