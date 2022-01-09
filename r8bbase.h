@@ -27,7 +27,7 @@
  *
  * The MIT License (MIT)
  * 
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -51,7 +51,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 5.5
+ * @version 5.6
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -103,7 +103,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "5.5"
+#define R8B_VERSION "5.6"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -259,6 +259,21 @@ public:
 };
 
 /**
+ * This function forces the provided "ptr" pointer to be aligned to
+ * "align" bytes. Works with power-of-2 alignments only.
+ *
+ * @param ptr Pointer to align.
+ * @param align Alignment, in bytes, power-of-2.
+ * @tparam T Pointer's element type.
+ */
+
+template< typename T >
+inline T* alignptr( T* const ptr, const uintptr_t align )
+{
+	return( (T*) (( (uintptr_t) ptr + align - 1 ) & ~( align - 1 )));
+}
+
+/**
  * @brief Templated memory buffer class for element buffers of fixed capacity.
  *
  * Fixed memory buffer object. Supports allocation of a fixed amount of
@@ -400,20 +415,6 @@ private:
 		///<
 	T* Data; ///< Element buffer pointer, aligned.
 		///<
-
-	/**
-	 * This function forces the provided "ptr" pointer to be aligned to
-	 * "align" bytes. Works with power-of-2 alignments only.
-	 *
-	 * @param ptr Pointer to align.
-	 * @param align Alignment, in bytes, power-of-2.
-	 */
-
-	static inline void* alignptr( const void* const ptr,
-		const uintptr_t align )
-	{
-		return( (void*) (( (uintptr_t) ptr + align - 1 ) & ~( align - 1 )));
-	}
 };
 
 /**

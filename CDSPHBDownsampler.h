@@ -8,7 +8,7 @@
  *
  * This file includes half-band downsampling convolver class.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -74,6 +74,8 @@ public:
 		fll = fltt * 2 - 1;
 		fl2 = fll;
 		flo = fll + fl2;
+		flb = BufLen - fll;
+		BufRP = Buf + fll;
 
 		LatencyFrac = PrevLatency * 0.5;
 		Latency = (int) LatencyFrac;
@@ -101,7 +103,7 @@ public:
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
-		return(( MaxInLen + 1 ) / 2 );
+		return(( MaxInLen + 1 ) >> 1 );
 	}
 
 	virtual void clear()
@@ -109,10 +111,9 @@ public:
 		LatencyLeft = Latency;
 		BufLeft = 0;
 		WritePos = 0;
-		ReadPos = BufLen - fll; // Set "read" position to
-			// account for filter's latency.
+		ReadPos = flb; // Set "read" position to account for filter's latency.
 
-		memset( &Buf[ ReadPos ], 0, fll * sizeof( double ));
+		memset( &Buf[ ReadPos ], 0, ( BufLen - flb ) * sizeof( Buf[ 0 ]));
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
@@ -125,16 +126,15 @@ public:
 		{
 			// Add new input samples to both halves of the ring buffer.
 
-			const int b = min( min( l, BufLen - WritePos ),
-				BufLen - fll - BufLeft );
+			const int b = min( min( l, BufLen - WritePos ), flb - BufLeft );
 
 			double* const wp1 = Buf + WritePos;
-			memcpy( wp1, ip, b * sizeof( double ));
+			memcpy( wp1, ip, b * sizeof( wp1[ 0 ]));
 
 			if( WritePos < flo )
 			{
 				const int c = min( b, flo - WritePos );
-				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
+				memcpy( wp1 + BufLen, wp1, c * sizeof( wp1[ 0 ]));
 			}
 
 			ip += b;
@@ -142,21 +142,25 @@ public:
 			l -= b;
 			BufLeft += b;
 
+			// Produce output.
+
 			if( BufLeft > fl2 )
 			{
 				const int c = ( BufLeft - fl2 + 1 ) >> 1;
 
 				double* const opend = op + c;
-				( *convfn )( op, opend, fltp, Buf + fll, ReadPos );
+				( *convfn )( op, opend, fltp, BufRP, ReadPos );
 
 				op = opend;
-				BufLeft -= c + c;
+				const int c2 = c + c;
+				ReadPos = ( ReadPos + c2 ) & BufLenMask;
+				BufLeft -= c2;
 			}
 		}
 
 		int ol = (int) ( op - op0 );
 
-		if( LatencyLeft > 0 )
+		if( LatencyLeft != 0 )
 		{
 			if( LatencyLeft >= ol )
 			{
@@ -198,6 +202,10 @@ private:
 		///<
 	int flo; ///< Overrun length.
 		///<
+	int flb; ///< Initial read position and maximal buffer write length.
+		///<
+	const double* BufRP; ///< Offseted Buf pointer at ReadPos=0.
+		///<
 	int Latency; ///< Initial latency that should be removed from the output.
 		///<
 	double LatencyFrac; ///< Fractional latency left on the output.
@@ -214,17 +222,16 @@ private:
 	int LatencyLeft; ///< Latency left to remove.
 		///<
 	typedef void( *CConvolveFn )( double* op, double* const opend,
-		const double* const flt, const double* const rp0, int& ReadPos0 ); ///<
-		///< Convolution funtion type.
+		const double* const flt, const double* const rp0, int rpos ); ///<
+		///< Convolution function type.
 		///<
 	CConvolveFn convfn; ///< Convolution function in use.
 		///<
 
 #define R8BHBC1( fn ) \
 	static void fn( double* op, double* const opend, const double* const flt, \
-		const double* const rp0, int& ReadPos0 ) \
+		const double* const rp0, int rpos ) \
 	{ \
-		int rpos = ReadPos0; \
 		while( op != opend ) \
 		{ \
 			const double* const rp = rp0 + rpos; \
@@ -234,7 +241,6 @@ private:
 			rpos = ( rpos + 2 ) & BufLenMask; \
 			op++; \
 		} \
-		ReadPos0 = rpos; \
 	}
 
 	R8BHBC1( convolve1 )

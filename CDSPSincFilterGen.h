@@ -9,7 +9,7 @@
  * This file includes the CDSPSincFilterGen class implementation that
  * generates FIR filters.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -325,7 +325,7 @@ public:
 	 * @param wfunc Window calculation function to use.
 	 */
 
-	void generateBand( double * op,
+	void generateBand( double* op,
 		CWindowFunc wfunc = &CDSPSincFilterGen :: calcWindowBlackman )
 	{
 		op += fl2;

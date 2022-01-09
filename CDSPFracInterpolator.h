@@ -8,7 +8,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -756,6 +756,7 @@ public:
 		fl2 = FilterLen >> 1;
 		fll = fl2 - 1;
 		flo = fll + fl2;
+		flb = BufLen - fll;
 
 		R8BASSERT(( 1 << BufLenBits ) >= FilterLen * 3 );
 
@@ -822,10 +823,10 @@ public:
 		LatencyLeft = Latency;
 		BufLeft = 0;
 		WritePos = 0;
-		ReadPos = BufLen - fll; // Set "read" position to account for filter's
+		ReadPos = flb; // Set "read" position to account for filter's
 			// latency at zero fractional delay.
 
-		memset( &Buf[ ReadPos ], 0, fll * sizeof( double ));
+		memset( &Buf[ ReadPos ], 0, ( BufLen - flb ) * sizeof( Buf[ 0 ]));
 
 		if( IsWhole )
 		{
@@ -848,7 +849,7 @@ public:
 		R8BASSERT( l >= 0 );
 		R8BASSERT( ip != op0 || l == 0 || SrcSampleRate > DstSampleRate );
 
-		if( LatencyLeft > 0 )
+		if( LatencyLeft != 0 )
 		{
 			if( LatencyLeft >= l )
 			{
@@ -867,16 +868,15 @@ public:
 		{
 			// Add new input samples to both halves of the ring buffer.
 
-			const int b = min( min( l, BufLen - WritePos ),
-				BufLen - fll - BufLeft );
+			const int b = min( min( l, BufLen - WritePos ), flb - BufLeft );
 
 			double* const wp1 = Buf + WritePos;
-			memcpy( wp1, ip, b * sizeof( double ));
+			memcpy( wp1, ip, b * sizeof( wp1[ 0 ]));
 
 			if( WritePos < flo )
 			{
 				const int c = min( b, flo - WritePos );
-				memcpy( wp1 + BufLen, wp1, c * sizeof( double ));
+				memcpy( wp1 + BufLen, wp1, c * sizeof( wp1[ 0 ]));
 			}
 
 			ip += b;
@@ -930,6 +930,8 @@ private:
 	int fll; ///< Input latency.
 		///<
 	int flo; ///< Overrun length.
+		///<
+	int flb; ///< Initial read position and maximal buffer write length.
 		///<
 	double Buf[ BufLen + 29 ]; ///< The ring buffer, including overrun
 		///< protection for maximal filter length.
@@ -985,7 +987,7 @@ private:
 #endif // R8B_FASTTIMING
 
 	typedef double*( CDSPFracInterpolator :: *CConvolveFn )( double* op ); ///<
-		///< Convolution funtion type.
+		///< Convolution function type.
 		///<
 	CConvolveFn convfn; ///< Convolution function in use.
 		///<
@@ -995,7 +997,7 @@ private:
 	 *
 	 * @param[out] op Output buffer.
 	 * @return Advanced "op" value.
-	 * @tparam fltlen Filter length.
+	 * @tparam fltlen Filter length, in taps.
 	 */
 
 	template< int fltlen >
@@ -1032,7 +1034,7 @@ private:
 
 			*op = vaddvq_f64( s );
 
-		#else // defined( R8B_NEON )
+		#else // SIMD
 
 			double s = 0.0;
 
@@ -1043,7 +1045,7 @@ private:
 
 			*op = s;
 
-		#endif // defined( R8B_NEON )
+		#endif // SIMD
 
 			op++;
 
@@ -1128,7 +1130,7 @@ private:
 
 			*op = vaddvq_f64( s );
 
-		#else // defined( R8B_NEON )
+		#else // SIMD
 
 			double s = 0.0;
 
@@ -1140,7 +1142,7 @@ private:
 
 			*op = s;
 
-		#endif // defined( R8B_NEON )
+		#endif // SIMD
 
 			op++;
 

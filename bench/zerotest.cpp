@@ -91,7 +91,7 @@ VOXMAIN
 	double avglatency = 0.0;
 	int k;
 
-	for( k = 21; k < 600; k++ )
+	for( k = 21; k <= 640; k++ )
 	{
 		const int MaxInLen = (int) ( 50 + rnd.getUniform() * 1500 );
 		const double tb = 0.5 + rnd.getUniform() * 4.5;
