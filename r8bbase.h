@@ -1176,7 +1176,8 @@ inline double asinh( const double v )
 /**
  * @param x Input value.
  * @return Calculated zero-th order modified Bessel function of the first kind
- * of the input value. Approximate value.
+ * of the input value. Approximate value. Coefficients by Abramowitz and
+ * Stegun.
  */
 
 inline double besselI0( const double x )

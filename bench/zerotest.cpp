@@ -43,7 +43,7 @@ VOXMAIN
 	CWaveFile inf;
 	VOXCHECK( inf.loadFile( *Args.getArgValue( "in-file" ).ValueStr ));
 
-	const int InBufSize = (int) min( 50000LL, inf.SampleCount );
+	const int InBufSize = (int) min( (int64_t) 50000, inf.SampleCount );
 
 	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
 	int i;
