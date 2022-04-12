@@ -26,12 +26,12 @@
 
 #ifdef R8B_DLL
 #if defined (__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#define R8BRAIN_API	__attribute__ ((visibility ("default")))
+#define R8BRAIN_API __attribute__((visibility ("default")))
 #else
 #ifdef R8B_DLL_EXPORT
 #define R8BRAIN_API __declspec(dllexport)
 #else
-#define R8BRAIN_API __declspec(dllexport)
+#define R8BRAIN_API __declspec(dllimport)
 #endif
 #endif
 #else
