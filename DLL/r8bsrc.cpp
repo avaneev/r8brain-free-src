@@ -60,7 +60,7 @@ CAutoDispatchInit AutoDispatchInit;
 
 extern "C" {
 
-CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
+CR8BResampler R8BRAIN_API r8b_create( const double SrcSampleRate,
 	const double DstSampleRate, const int MaxInLen, const double ReqTransBand,
 	const ER8BResamplerRes Res )
 {
@@ -80,17 +80,17 @@ CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
 		ReqTransBand ));
 }
 
-void _cdecl r8b_delete( CR8BResampler const rs )
+void R8BRAIN_API r8b_delete( CR8BResampler const rs )
 {
 	delete (CDSPProcessor*) rs;
 }
 
-void _cdecl r8b_clear( CR8BResampler const rs )
+void R8BRAIN_API r8b_clear( CR8BResampler const rs )
 {
 	( (CDSPProcessor*) rs ) -> clear();
 }
 
-int _cdecl r8b_process( CR8BResampler const rs, double* const ip0, int l,
+int R8BRAIN_API r8b_process( CR8BResampler const rs, double* const ip0, int l,
 	double*& op0 )
 {
 	return(( (CDSPProcessor*) rs ) -> process( ip0, l, op0 ));

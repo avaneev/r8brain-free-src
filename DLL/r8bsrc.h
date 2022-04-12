@@ -24,6 +24,20 @@
 #ifndef R8BSRC_INCLUDED
 #define R8BSRC_INCLUDED
 
+#ifdef R8B_DLL
+#if defined (__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+#define R8BRAIN_API	__attribute__ ((visibility ("default")))
+#else
+#ifdef R8B_DLL_EXPORT
+#define R8BRAIN_API __declspec(dllexport)
+#else
+#define R8BRAIN_API __declspec(dllexport)
+#endif
+#endif
+#else
+#define R8BRAIN_API _cdecl
+#endif
+
 /**
  * Resampler object handle.
  */
@@ -61,7 +75,7 @@ extern "C" {
  * @param Res Resampler's required resolution.
  */
 
-CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
+CR8BResampler R8BRAIN_API r8b_create( const double SrcSampleRate,
 	const double DstSampleRate, const int MaxInLen,
 	const double ReqTransBand, const ER8BResamplerRes Res );
 
@@ -72,7 +86,7 @@ CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
  * @param rs Resampler object to delete.
  */
 
-void _cdecl r8b_delete( CR8BResampler const rs );
+void R8BRAIN_API r8b_delete( CR8BResampler const rs );
 
 /**
  * Function clears (resets) the state of the resampler object and returns it
@@ -82,7 +96,7 @@ void _cdecl r8b_delete( CR8BResampler const rs );
  * @param rs Resampler object to clear.
  */
 
-void _cdecl r8b_clear( CR8BResampler const rs );
+void R8BRAIN_API r8b_clear( CR8BResampler const rs );
 
 /**
  * Function performs sample rate conversion.
@@ -111,7 +125,7 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * overflow of the bigger output buffer happens.
  */
 
-int _cdecl r8b_process( CR8BResampler const rs, double* const ip0, int l,
+int R8BRAIN_API r8b_process( CR8BResampler const rs, double* const ip0, int l,
 	double*& op0 );
 
 } // extern "C"
