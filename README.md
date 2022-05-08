@@ -206,6 +206,11 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 5.7:
+
+* Removed the `defined( __ARM_NEON )` macro detection so that the code
+compiles on non-ARM64 platforms.
+
 Version 5.6:
 
 * Added SSE and NEON implementations to `CDSPHBUpsampler` yielding 15%

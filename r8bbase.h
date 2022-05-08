@@ -51,7 +51,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 5.6
+ * @version 5.7
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -79,7 +79,7 @@
 	#define R8B_SSE2
 	#define R8B_SIMD_ISH
 
-#elif defined( __aarch64__ ) || defined( __arm64__ ) || defined( __ARM_NEON )
+#elif defined( __aarch64__ ) || defined( __arm64__ )
 
 	#include <arm_neon.h>
 
@@ -103,7 +103,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "5.6"
+#define R8B_VERSION "5.7"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.

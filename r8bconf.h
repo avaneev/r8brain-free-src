@@ -16,8 +16,6 @@
 #ifndef R8BCONF_INCLUDED
 #define R8BCONF_INCLUDED
 
-//#define R8B_PFFFT_DOUBLE 1
-
 #if !defined( R8B_IPP )
 	/**
 	 * Set the R8B_IPP macro definition to 1 to enable the use of Intel IPP's
