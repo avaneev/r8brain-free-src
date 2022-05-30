@@ -32,6 +32,10 @@
 	#include "pffft_double/pffft_double.h"
 #endif // R8B_PFFFT_DOUBLE
 
+#if R8B_VECLIB
+    #include <Accelerate/Accelerate.h>
+#endif
+
 namespace r8b {
 
 /**
@@ -123,7 +127,15 @@ public:
 
 		pffftd_transform_ordered( setup, p, p, work, PFFFT_FORWARD );
 
-	#else // R8B_PFFFT_DOUBLE
+	#elif R8B_VECLIB
+
+		DSPDoubleSplitComplex cpx = { work.getPtr(), work.getPtr() + LenOver2 };
+
+		vDSP_ctozD( (const DSPDoubleComplex *)p, 2, &cpx, 1, LenOver2 );
+		vDSP_fft_zripD( setup, &cpx, 1, LenBits, kFFTDirection_Forward );
+		vDSP_ztocD( &cpx, 1, (DSPDoubleComplex *)p, 2, LenOver2 );
+
+	#else // R8B_VECLIB
 
 		ooura_fft :: rdft( Len, 1, p, wi.getPtr(), wd.getPtr() );
 
@@ -152,7 +164,15 @@ public:
 
 		pffftd_transform_ordered( setup, p, p, work, PFFFT_BACKWARD );
 
-	#else // R8B_PFFFT_DOUBLE
+	#elif R8B_VECLIB
+
+		DSPDoubleSplitComplex cpx = { work.getPtr(), work.getPtr() + LenOver2 };
+
+		vDSP_ctozD( (const DSPDoubleComplex *)p, 2, &cpx, 1, LenOver2 );
+		vDSP_fft_zripD( setup, &cpx, 1, LenBits, kFFTDirection_Inverse );
+		vDSP_ztocD( &cpx, 1, (DSPDoubleComplex *)p, 2, LenOver2 );
+
+	#else // R8B_VECLIB
 
 		ooura_fft :: rdft( Len, -1, p, wi.getPtr(), wd.getPtr() );
 
@@ -299,7 +319,11 @@ public:
 
 	// SIMD implementations assume that pointers are address-aligned.
 
-	#if !R8B_FLOATFFT && defined( R8B_SSE2 )
+	#if R8B_VECLIB
+
+		vDSP_vmulD( ip, 1, op, 1, op, 1, Len );
+
+	#elif !R8B_FLOATFFT && defined( R8B_SSE2 )
 
 		int c8 = Len >> 3;
 
@@ -437,6 +461,13 @@ private:
 			///<
 		CFixedBuffer< double > work; ///< Working buffer.
 			///<
+	#elif R8B_VECLIB
+		int LenOver2; ///< Half of length.
+			///<
+		FFTSetupD setup; ///< vDSP setup object.
+			///<
+		CFixedBuffer< double > work; ///< Working buffer.
+			///<
 	#else // R8B_PFFFT_DOUBLE
 		CFixedBuffer< int > wi; ///< Working buffer (ints).
 			///<
@@ -501,6 +532,8 @@ private:
 		, InvMulConst( 1.0 / Len )
 	#elif R8B_PFFFT_DOUBLE
 		, InvMulConst( 1.0 / Len )
+	#elif R8B_VECLIB
+		, InvMulConst( 1.0 / ( Len * 4.0 ) )
 	#else // R8B_PFFFT_DOUBLE
 		, InvMulConst( 2.0 / Len )
 	#endif // R8B_IPP
@@ -531,7 +564,13 @@ private:
 		setup = pffftd_new_setup( Len, PFFFT_REAL );
 		work.alloc( Len );
 
-	#else // R8B_PFFFT_DOUBLE
+	#elif R8B_VECLIB
+
+		LenOver2 = Len >> 1;
+		setup = vDSP_create_fftsetupD(LenBits, kFFTRadix2);
+		work.alloc( Len );
+
+	#else // R8B_VECLIB
 
 		wi.alloc( (int) ceil( 2.0 + sqrt( (double) ( Len >> 1 ))));
 		wi[ 0 ] = 0;
@@ -546,7 +585,9 @@ private:
 			pffft_destroy_setup( setup );
 		#elif R8B_PFFFT_DOUBLE
 			pffftd_destroy_setup( setup );
-		#endif // R8B_PFFFT_DOUBLE
+		#elif R8B_VECLIB
+			vDSP_destroy_fftsetupD( setup );
+		#endif // R8B_VECLIB
 
 		delete Next;
 	}
