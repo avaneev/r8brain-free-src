@@ -206,6 +206,11 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 5.8:
+
+* Rearranged FFT macros, added `R8B_PFFFT` and `R8B_PFFFT_DOUBLE` collision
+check.
+
 Version 5.7:
 
 * Removed the `defined( __ARM_NEON )` macro detection so that the code

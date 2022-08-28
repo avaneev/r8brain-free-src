@@ -20,17 +20,13 @@
 
 #include "r8bbase.h"
 
-#if !R8B_IPP && !R8B_PFFFT && !R8B_PFFFT_DOUBLE
-	#include "fft4g.h"
-#endif // !R8B_IPP && !R8B_PFFFT && !R8B_PFFFT_DOUBLE
-
-#if R8B_PFFFT
-	#include "pffft.h"
-#endif // R8B_PFFFT
-
 #if R8B_PFFFT_DOUBLE
 	#include "pffft_double/pffft_double.h"
-#endif // R8B_PFFFT_DOUBLE
+#elif R8B_PFFFT
+	#include "pffft.h"
+#elif !R8B_IPP
+	#include "fft4g.h"
+#endif // !R8B_IPP
 
 namespace r8b {
 
