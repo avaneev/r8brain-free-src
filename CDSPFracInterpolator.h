@@ -917,21 +917,11 @@ private:
 		///< performed.
 		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
-		///< buffer. The actual length is twice as long to allow "beyond max
-		///< position" positioning.
+		///< buffer. The actual length is longer, to permit "beyond bounds"
+		///< positioning.
 		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
-		///<
-	int FilterLen; ///< Filter length, in taps. Even value.
-		///<
-	int fl2; ///< Right-side (half) filter length.
-		///<
-	int fll; ///< Input latency.
-		///<
-	int flo; ///< Overrun length.
-		///<
-	int flb; ///< Initial read position and maximal buffer write length.
 		///<
 	double Buf[ BufLen + 29 ]; ///< The ring buffer, including overrun
 		///< protection for maximal filter length.
@@ -939,13 +929,6 @@ private:
 	double SrcSampleRate; ///< Source sample rate.
 		///<
 	double DstSampleRate; ///< Destination sample rate.
-		///<
-	bool IsWhole; ///< "True" if whole-number stepping is in use.
-		///<
-	int InStep; ///< Input whole-number stepping.
-		///<
-	int OutStep; ///< Output whole-number stepping (corresponds to filter bank
-		///< size).
 		///<
 	double InitFracPos; ///< Initial fractional position, in samples, in the
 		///< range [0; 1).
@@ -957,6 +940,23 @@ private:
 		///<
 	double LatencyFrac; ///< Left-over fractional latency.
 		///<
+	int FilterLen; ///< Filter length, in taps. Even value.
+		///<
+	int fl2; ///< Right-side (half) filter length.
+		///<
+	int fll; ///< Input latency.
+		///<
+	int flo; ///< Overrun length.
+		///<
+	int flb; ///< Initial read position and maximal buffer write length.
+		///<
+	int InStep; ///< Input whole-number stepping.
+		///<
+	int OutStep; ///< Output whole-number stepping (corresponds to filter bank
+		///< size).
+		///<
+	int LatencyLeft; ///< Input latency left to remove.
+		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///<
 	int WritePos; ///< The current buffer write position. Incremented together
@@ -964,19 +964,16 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
-	int LatencyLeft; ///< Input latency left to remove.
-		///<
-	double InPosFrac; ///< Interpolation position (fractional part).
-		///<
 	int InPosFracW; ///< Interpolation position (fractional part) for
 		///< whole-number stepping. Corresponds to the index into the filter
 		///< bank.
 		///<
-	CDSPFracDelayFilterBank* FilterBank; ///< Filter bank in use, may be
-		///< whole-number stepping filter bank or static bank.
+	double InPosFrac; ///< Interpolation position (fractional part).
 		///<
+
 #if R8B_FASTTIMING
 	double FracStep; ///< Fractional sample timing step.
+		///<
 #else // R8B_FASTTIMING
 	int InCounter; ///< Interpolation step counter.
 		///<
@@ -985,6 +982,12 @@ private:
 	double InPosShift; ///< Interpolation position fractional shift.
 		///<
 #endif // R8B_FASTTIMING
+
+	CDSPFracDelayFilterBank* FilterBank; ///< Filter bank in use, may be
+		///< whole-number stepping filter bank or static bank.
+		///<
+	bool IsWhole; ///< "True" if whole-number stepping is in use.
+		///<
 
 	typedef double*( CDSPFracInterpolator :: *CConvolveFn )( double* op ); ///<
 		///< Convolution function type.

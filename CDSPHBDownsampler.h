@@ -185,8 +185,8 @@ private:
 		///< FilterLen.
 		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
-		///< buffer. The actual length is twice as long to allow "beyond max
-		///< position" positioning.
+		///< buffer. The actual length is longer, to permit "beyond bounds"
+		///< positioning.
 		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
@@ -194,7 +194,13 @@ private:
 	double Buf[ BufLen + 54 ]; ///< The ring buffer, including overrun
 		///< protection for the largest filter.
 		///<
+	const double* BufRP; ///< Offseted Buf pointer at ReadPos=0.
+		///<
 	const double* fltp; ///< Half-band filter taps.
+		///<
+	double LatencyFrac; ///< Fractional latency left on the output.
+		///<
+	int Latency; ///< Initial latency that should be removed from the output.
 		///<
 	int fll; ///< Input latency.
 		///<
@@ -204,11 +210,7 @@ private:
 		///<
 	int flb; ///< Initial read position and maximal buffer write length.
 		///<
-	const double* BufRP; ///< Offseted Buf pointer at ReadPos=0.
-		///<
-	int Latency; ///< Initial latency that should be removed from the output.
-		///<
-	double LatencyFrac; ///< Fractional latency left on the output.
+	int LatencyLeft; ///< Latency left to remove.
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation
@@ -219,8 +221,7 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
-	int LatencyLeft; ///< Latency left to remove.
-		///<
+
 	typedef void( *CConvolveFn )( double* op, double* const opend,
 		const double* const flt, const double* const rp0, int rpos ); ///<
 		///< Convolution function type.

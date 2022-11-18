@@ -379,7 +379,8 @@ public:
 
 	/**
 	 * Function converts the specified forward-transformed block into
-	 * "zero-phase" form suitable for use with the multiplyBlocksZ() function.
+	 * "zero-phase" form suitable for use with the multiplyBlocksZP()
+	 * function.
 	 *
 	 * @param[in,out] ap Block to transform.
 	 */
@@ -804,10 +805,7 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	if( DCGroupDelay != NULL )
 	{
-		double tmp;
-
-		calcFIRFilterResponseAndGroupDelay( Kernel, KernelLen, 0.0,
-			tmp, tmp, *DCGroupDelay );
+		*DCGroupDelay = calcFIRFilterGroupDelay( Kernel, KernelLen, 0.0 );
 	}
 }
 

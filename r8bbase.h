@@ -14,11 +14,13 @@
  * @section intro_sec Introduction
  *
  * Open source (under the MIT license) high-quality professional audio sample
- * rate converter (SRC) (resampling) library. Features routines for SRC, both
- * up- and downsampling, to/from any sample rate, including non-integer sample
- * rates: it can be also used for conversion to/from SACD sample rate and even
- * go beyond that. SRC routines were implemented in multi-platform C++ code,
- * and have a high level of optimality.
+ * rate converter (SRC) / resampler C++ library.  Features routines for SRC,
+ * both up- and downsampling, to/from any sample rate, including non-integer
+ * sample rates: it can be also used for conversion to/from SACD/DSD sample
+ * rates, and even go beyond that.  SRC routines were implemented in a
+ * multi-platform C++ code, and have a high level of optimality. Also suitable
+ * for fast general-purpose 1D time-series resampling / interpolation (with
+ * relaxed filter parameters).
  *
  * For more information, please visit
  * https://github.com/avaneev/r8brain-free-src
@@ -51,7 +53,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 5.8
+ * @version 5.9
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -103,7 +105,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "5.8"
+#define R8B_VERSION "5.9"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -135,7 +137,8 @@ namespace r8b {
 /**
  * A special macro that defines empty copy-constructor and copy operator with
  * the "private:" prefix. This macro should be used in classes that cannot be
- * copied in a standard C++ way.
+ * copied in a standard C++ way. It is also assumed that objects of such
+ * classes are non-relocatable.
  *
  * This macro does not need to be defined in classes derived from a class
  * where such macro was already used.
@@ -428,7 +431,7 @@ private:
  * "CDSPFIRFilter*").
  */
 
-template< class T >
+template< typename T >
 class CPtrKeeper
 {
 	R8BNOCTOR( CPtrKeeper );
@@ -446,7 +449,7 @@ public:
 	 * @tparam T2 Object's pointer type.
 	 */
 
-	template< class T2 >
+	template< typename T2 >
 	CPtrKeeper( T2 const aObject )
 		: Object( aObject )
 	{
@@ -465,7 +468,7 @@ public:
 	 * @tparam T2 Object's pointer type.
 	 */
 
-	template< class T2 >
+	template< typename T2 >
 	void operator = ( T2 const aObject )
 	{
 		reset();
@@ -536,7 +539,7 @@ public:
 	CSyncObject()
 	{
 		#if defined( _WIN32 )
-			InitializeCriticalSectionAndSpinCount( &CritSec, 4000 );
+			InitializeCriticalSectionAndSpinCount( &CritSec, 1000 );
 		#else // defined( _WIN32 )
 			pthread_mutexattr_t MutexAttrs;
 			pthread_mutexattr_init( &MutexAttrs );
@@ -660,7 +663,7 @@ protected:
  * synchronization object thus blocking execution of other threads that also
  * use the same R8BSYNC( obj ) macro. The blocked section begins with the
  * R8BSYNC( obj ) macro and finishes at the end of the current C++ code block.
- * Multiple R8BSYNC() macros may be defined from within the same code block.
+ * Multiple R8BSYNC() macros can be defined within the same code block.
  *
  * @param SyncObject An object of the CSyncObject type that is used for
  * synchronization.
@@ -871,31 +874,22 @@ inline void calcFIRFilterResponse( const double* flt, int fltlen,
 }
 
 /**
- * Function calculates frequency response and group delay of the specified FIR
- * filter at the specified circular frequency. The group delay is calculated
- * by evaluating the filter's response at close side-band frequencies of "th".
+ * Function calculates group delay of the specified FIR filter at the
+ * specified circular frequency. The group delay is calculated by evaluating
+ * the filter's response at close side-band frequencies of "th".
  *
  * @param flt FIR filter's coefficients.
  * @param fltlen Number of coefficients (taps) in the filter.
  * @param th Circular frequency [0; pi].
- * @param[out] re Resulting real part of the complex frequency response.
- * @param[out] im Resulting imaginary part of the complex frequency response.
- * @param[out] gd Resulting group delay at the specified frequency, in
- * samples.
+ * @return Resulting group delay at the specified frequency, in samples.
  */
 
-inline void calcFIRFilterResponseAndGroupDelay( const double* const flt,
-	const int fltlen, const double th, double& re, double& im, double& gd )
+inline double calcFIRFilterGroupDelay( const double* const flt,
+	const int fltlen, const double th )
 {
-	// Calculate response at "th".
-
-	calcFIRFilterResponse( flt, fltlen, th, re, im );
-
-	// Calculate response at close sideband frequencies.
-
 	const int Count = 2;
 	const double thd2 = 1e-9;
-	double ths[ Count ] = { th - thd2, th + thd2 };
+	double ths[ Count ] = { th - thd2, th + thd2 }; // Side-band frequencies.
 
 	if( ths[ 0 ] < 0.0 )
 	{
@@ -932,7 +926,8 @@ inline void calcFIRFilterResponseAndGroupDelay( const double* const flt,
 	}
 
 	const double thd = ths[ 1 ] - ths[ 0 ];
-	gd = ( ph1[ 1 ] - ph1[ 0 ]) / thd;
+
+	return(( ph1[ 1 ] - ph1[ 0 ]) / thd );
 }
 
 /**

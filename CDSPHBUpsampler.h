@@ -726,8 +726,8 @@ private:
 		///< FilterLen.
 		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
-		///< buffer. The actual length is twice as long to allow "beyond max
-		///< position" positioning.
+		///< buffer. The actual length is longer, to permit "beyond bounds"
+		///< positioning.
 		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
@@ -737,6 +737,8 @@ private:
 		///<
 	double FltBuf[ 14 + 2 ]; ///< Holder for half-band filter taps, used with
 		///< 16-byte address-aligning, for SIMD use.
+		///<
+	const double* BufRP; ///< Offseted Buf pointer at ReadPos=0.
 		///<
 	double* fltp; ///< Half-band filter taps, points to FltBuf.
 		///<
@@ -748,15 +750,11 @@ private:
 		///<
 	int flb; ///< Initial read position and maximal buffer write length.
 		///<
-	const double* BufRP; ///< Offseted Buf pointer at ReadPos=0.
-		///<
-	bool DoConsumeLatency; ///< "True" if the output latency should be
-		///< consumed. Does not apply to the fractional part of the latency
-		///< (if such part is available).
+	double LatencyFrac; ///< Fractional latency left on the output.
 		///<
 	int Latency; ///< Initial latency that should be removed from the output.
 		///<
-	double LatencyFrac; ///< Fractional latency left on the output.
+	int LatencyLeft; ///< Latency left to remove.
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below FilterLenD2Plus1, the interpolation
@@ -767,8 +765,11 @@ private:
 		///<
 	int ReadPos; ///< The current buffer read position.
 		///<
-	int LatencyLeft; ///< Latency left to remove.
+	bool DoConsumeLatency; ///< "True" if the output latency should be
+		///< consumed. Does not apply to the fractional part of the latency
+		///< (if such part is available).
 		///<
+
 	typedef void( *CConvolveFn )( double* op, double* const opend,
 		const double* const flt, const double* const rp0, int rpos ); ///<
 		///< Convolution function type.

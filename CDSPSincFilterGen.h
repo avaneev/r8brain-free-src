@@ -35,6 +35,10 @@ public:
 		///< a fractional value). Final physical kernel length will be
 		///< provided in the KernelLen variable. Len2 should be >= 2.
 		///<
+	double Len2i; ///< = 1.0 / Len2, initialized and used by some window
+		///< functions for optimization (should not be initialized by the
+		///< caller).
+		///<
 	int KernelLen; ///< Resulting length of the filter kernel, this variable
 		///< is set after the call to one of the "init" functions.
 		///<
@@ -245,15 +249,15 @@ public:
 
 	double calcWindowKaiser()
 	{
-		const double n = 1.0 - sqr( wn / Len2 + KaiserLen2Frac );
+		const double n = 1.0 - sqr( wn * Len2i + KaiserLen2Frac );
 		wn++;
 
-		if( n < 0.0 )
+		if( n <= 0.0 )
 		{
 			return( 0.0 );
 		}
 
-		return( besselI0( KaiserBeta * sqrt( n )) / KaiserDiv );
+		return( besselI0( KaiserBeta * sqrt( n )) * KaiserMul );
 	}
 
 	/**
@@ -262,7 +266,7 @@ public:
 
 	double calcWindowGaussian()
 	{
-		const double f = exp( -0.5 * sqr( wn / GaussianSigma +
+		const double f = exp( -0.5 * sqr( wn * GaussianSigmaI +
 			GaussianSigmaFrac ));
 
 		wn++;
@@ -527,9 +531,6 @@ private:
 		///<
 	CSineGen f2; ///< Sine function 2. Used in the generateBand() function.
 		///<
-	int wn; ///< Window function integer position. 0 - center of the window
-		///< function. This variable may not be used by some window functions.
-		///<
 	CSineGen w1; ///< Cosine wave 1 for window function.
 		///<
 	CSineGen w2; ///< Cosine wave 2 for window function.
@@ -544,7 +545,7 @@ private:
 			double KaiserBeta; ///< Kaiser window function's "Beta"
 				///< coefficient.
 				///<
-			double KaiserDiv; ///< Kaiser window function's divisor.
+			double KaiserMul; ///< Kaiser window function's divisor, inverse.
 				///<
 			double KaiserLen2Frac; ///< Equals FracDelay / Len2.
 				///<
@@ -552,13 +553,17 @@ private:
 
 		struct
 		{
-			double GaussianSigma; ///< Gaussian window function's "Sigma"
-				///< coefficient.
+			double GaussianSigmaI; ///< Gaussian window function's "Sigma"
+				///< coefficient, inverse.
 				///<
 			double GaussianSigmaFrac; ///< Equals FracDelay / GaussianSigma.
 				///<
 		};
 	};
+
+	int wn; ///< Window function integer position. 0 - center of the window
+		///< function. This variable may not be used by some window functions.
+		///<
 
 	/**
 	 * Function initializes Kaiser window function calculation. The FracDelay
@@ -588,8 +593,9 @@ private:
 			Power = ( UsePower ? fabs( Params[ 1 ]) : -1.0 );
 		}
 
-		KaiserDiv = besselI0( KaiserBeta );
-		KaiserLen2Frac = FracDelay / Len2;
+		KaiserMul = 1.0 / besselI0( KaiserBeta );
+		Len2i = 1.0 / Len2;
+		KaiserLen2Frac = FracDelay * Len2i;
 	}
 
 	/**
@@ -612,17 +618,18 @@ private:
 
 		if( Params == NULL )
 		{
-			GaussianSigma = 1.0;
+			GaussianSigmaI = 1.0;
 			Power = -1.0;
 		}
 		else
 		{
-			GaussianSigma = clampr( fabs( Params[ 0 ]), 1e-1, 100.0 );
+			GaussianSigmaI = clampr( fabs( Params[ 0 ]), 1e-1, 100.0 );
 			Power = ( UsePower ? fabs( Params[ 1 ]) : -1.0 );
 		}
 
-		GaussianSigma *= Len2;
-		GaussianSigmaFrac = FracDelay / GaussianSigma;
+		GaussianSigmaI *= Len2;
+		GaussianSigmaI = 1.0 / GaussianSigmaI;
+		GaussianSigmaFrac = FracDelay * GaussianSigmaI;
 	}
 
 	/**

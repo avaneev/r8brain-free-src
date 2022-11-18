@@ -26,22 +26,24 @@ namespace r8b {
 
 enum EDSPFilterPhaseResponse
 {
-	fprLinearPhase = 0, ///< Linear-phase response. Features a linear-phase
-		///< high-latency response, with the latency expressed as integer
+	fprLinearPhase = 0, ///< Linear-phase response. Features a linear-phase,
+		///< high-latency response, with the latency expressed as an integer
 		///< value.
 		///<
-	fprMinPhase ///< Minimum-phase response. Features a minimal latency
+	fprMinPhase ///< Minimum-phase response. Features a minimal-latency
 		///< response, but the response's phase is non-linear. The latency is
-		///< usually expressed as non-integer value, and usually is small, but
-		///< is never equal to zero. The minimum-phase filter is transformed
-		///< from the linear-phase filter. The transformation has precision
-		///< limits which may skew both the -3 dB point and attenuation of the
-		///< filter being transformed: as it was measured, the skew happens
-		///< purely at random, and in most cases it is within tolerable range.
-		///< In a small (1%) random subset of cases the skew is bigger and
-		///< cannot be predicted. Minimum-phase transform requires 64-bit
-		///< floating point FFT precision, results with 32-bit float FFT are
-		///< far from optimal.
+		///< usually expressed as a non-integer value, and is usually small,
+		///< but is never equal to zero. The minimum-phase filter is obtained
+		///< from a linear-phase filter. Note that since in the context of
+		///< r8brain-free-src other filters (interpolation, half-band) remain
+		///< linear-phase, the resulting phase will be "intermediate". The
+		///< minimum-phase transformation has precision limits: this may skew
+		///< both the -3 dB point and attenuation of the filter being
+		///< transformed: as it was measured, the skew happens purely at
+		///< random, and in most cases is within tolerable range. In a small
+		///< (1%) random subset of cases the skew is bigger and cannot be
+		///< predicted. Minimum-phase transform requires 64-bit floating-point
+		///< FFT; results with 32-bit float FFT are far from optimal.
 		///<
 };
 
@@ -147,7 +149,7 @@ public:
 	}
 
 	/**
-	 * @return Filter's block length, espressed as Nth power of 2. The actual
+	 * @return Filter's block length, expressed as Nth power of 2. The actual
 	 * length is twice as large due to zero-padding.
 	 */
 

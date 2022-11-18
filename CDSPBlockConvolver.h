@@ -65,8 +65,8 @@ public:
 		: Filter( &aFilter )
 		, UpFactor( aUpFactor )
 		, DownFactor( aDownFactor )
-		, DoConsumeLatency( aDoConsumeLatency )
 		, BlockLen2( 2 << Filter -> getBlockLenBits() )
+		, DoConsumeLatency( aDoConsumeLatency )
 	{
 		R8BASSERT( UpFactor > 0 );
 		R8BASSERT( DownFactor > 0 );
@@ -360,10 +360,6 @@ private:
 		///<
 	int DownFactor; ///< Downsampling factor.
 		///<
-	bool DoConsumeLatency; ///< "True" if the output latency should be
-		///< consumed. Does not apply to the fractional part of the latency
-		///< (if such part is available).
-		///<
 	int BlockLen2; ///< Equals block length * 2.
 		///<
 	int OutOffset; ///< Output offset, depends on filter's introduced latency.
@@ -374,10 +370,10 @@ private:
 	int InputLen; ///< The number of input samples that should be accumulated
 		///< before the input block is processed.
 		///<
-	int Latency; ///< Processing latency, in samples.
-		///<
 	double LatencyFrac; ///< Fractional latency, in samples, that is left in
 		///< the output signal.
+		///<
+	int Latency; ///< Processing latency, in samples.
 		///<
 	int UpShift; ///< "Power of 2" upsampling shift. Equals -1 if UpFactor is
 		///< not a "power of 2" value. Equals 0 if UpFactor equals 1.
@@ -389,10 +385,6 @@ private:
 	int InputDelay; ///< Additional input delay, in samples. Used to make the
 		///< output delay divisible by DownShift. Used only if UpShift <= 0
 		///< and DownShift > 0.
-		///<
-	CFixedBuffer< double > WorkBlocks; ///< Previous input data, input and
-		///< output data blocks, overall capacity = BlockLen2 * 2 +
-		///< PrevInputLen. Used in the flip-flop manner.
 		///<
 	double* PrevInput; ///< Previous input data buffer, capacity = BlockLen.
 		///<
@@ -412,6 +404,14 @@ private:
 		///< range 0 to DownFactor - 1). Not used if DownShift > 0.
 		///<
 	int DownSkipInit; ///< The initial DownSkip value after clear().
+		///<
+	CFixedBuffer< double > WorkBlocks; ///< Previous input data, input and
+		///< output data blocks, overall capacity = BlockLen2 * 2 +
+		///< PrevInputLen. Used in the flip-flop manner.
+		///<
+	bool DoConsumeLatency; ///< "True" if the output latency should be
+		///< consumed. Does not apply to the fractional part of the latency
+		///< (if such part is available).
 		///<
 
 	/**
@@ -625,14 +625,14 @@ private:
 		}
 
 		p[ bl1 ] = p[ 1 ];
-		p[ bl1 + 1 ] = 0.0;
+		p[ bl1 + 1 ] = (T) 0;
 		p[ 1 ] = p[ 0 ];
 
 		for( i = 1; i < UpShift; i++ )
 		{
 			const int z = bl1 << i;
 			memcpy( &p[ z ], p, z * sizeof( p[ 0 ]));
-			p[ z + 1 ] = 0.0;
+			p[ z + 1 ] = (T) 0;
 		}
 	}
 };

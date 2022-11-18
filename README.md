@@ -104,12 +104,12 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's folder.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`31.8*n_cores` Mrops (`44*n_cores` for Intel IPP FFT) when converting 1
-channel of 24-bit audio from 44100 to 96000 sample rate (2% transition band),
-on a Ryzen 3700X processor-based 64-bit system.  This approximately translates
-to a real-time resampling of `720*n_cores` (`1000*n_cores`) audio streams, at
-100% CPU load.  Speed performance when converting to other sample rates may
-vary greatly.  When comparing performance of this resampler library to another
+`32*n_cores` Mrops (`44*n_cores` for Intel IPP FFT) when converting 1 channel
+of 24-bit audio from 44100 to 96000 sample rate (2% transition band), on a
+Ryzen 3700X processor-based 64-bit system.  This approximately translates to a
+real-time resampling of `725*n_cores` (`1000*n_cores`) audio streams, at 100%
+CPU load.  Speed performance when converting to other sample rates may vary
+greatly.  When comparing performance of this resampler library to another
 library make sure that the competing library is also tuned to produce a fully
 linear-phase response, has similar stop-band characteristics and similar
 sample timing precision.
@@ -205,6 +205,14 @@ maintaining confidence in this library among the interested parties. The
 inclusion into this list is not mandatory.
 
 ## Change Log ##
+
+Version 5.9:
+
+* Optimized filter calculation (Kaiser window function) with negligible change
+in filtering results.
+* Optimized min-phase filter's group delay calculation.
+* Reduced "SpinCount" in Windows mutex to 1000.
+* Made non-essential changes across the codebase and comments.
 
 Version 5.8:
 
