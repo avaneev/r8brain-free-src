@@ -1,13 +1,33 @@
 // Program generates an inclusion file with SIMD variants of "convolve"
-// functions, for CDSPHBUpsampler.h.
+// functions, for CDSPHBUpsampler.h and CDSPHBDownsampler.h.
 
 #include <stdio.h>
+#define IS_UPSAMPLE 0
+
+void printScalar( const int n )
+{
+#if IS_UPSAMPLE
+	printf( "op[ 1 ] = flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ])" );
+#else // IS_UPSAMPLE
+	printf( "op[ 0 ] = rp1[ 0 ] + flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ])" );
+#endif // IS_UPSAMPLE
+
+	int i;
+
+	for( i = 1; i < n; i++ )
+	{
+		printf( "\n\t+ flt[ %i ] * ( rp[ %i ] + rp[ %i ])",
+			i, i + 1, -i );
+	}
+
+	printf( ";\n" );
+}
 
 void printSSE( const int n )
 {
 	if( n == 1 )
 	{
-		printf( "op[ 1 ] = flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]);\n" );
+		printScalar( 1 );
 		return;
 	}
 
@@ -51,6 +71,7 @@ void printSSE( const int n )
 		printf( "s1 = _mm_add_pd( s1, s3 );\n" );
 	}
 
+#if IS_UPSAMPLE
 	printf( "_mm_storel_pd( op + 1, _mm_add_pd( s1, "
 		"_mm_shuffle_pd( s1, s1, 1 )));\n" );
 
@@ -59,13 +80,27 @@ void printSSE( const int n )
 		printf( "op[ 1 ] += flt[ %i ] * ( rp[ %i ] + rp[ -%i ]);\n",
 			n - 1, n, n - 1 );
 	}
+#else // IS_UPSAMPLE
+	printf( "_mm_storel_pd( op, _mm_add_pd( s1, "
+		"_mm_shuffle_pd( s1, s1, 1 )));\n" );
+
+	if(( n & 1 ) != 0 )
+	{
+		printf( "op[ 0 ] += rp1[ 0 ] + flt[ %i ] * ( rp[ %i ] + rp[ -%i ]);\n",
+			n - 1, n, n - 1 );
+	}
+	else
+	{
+		printf( "op[ 0 ] += rp1[ 0 ];\n" );
+	}
+#endif // IS_UPSAMPLE
 }
 
 void printNEON( const int n )
 {
 	if( n == 1 )
 	{
-		printf( "op[ 1 ] = flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ]);\n" );
+		printScalar( 1 );
 		return;
 	}
 
@@ -99,6 +134,7 @@ void printNEON( const int n )
 		printf( "s1 = vaddq_f64( s1, s3 );\n" );
 	}
 
+#if IS_UPSAMPLE
 	if(( n & 1 ) != 0 )
 	{
 		printf( "op[ 1 ] = vaddvq_f64( s1 ) + "
@@ -108,21 +144,17 @@ void printNEON( const int n )
 	{
 		printf( "op[ 1 ] = vaddvq_f64( s1 );\n" );
 	}
-}
-
-void printScalar( const int n )
-{
-	printf( "op[ 1 ] = flt[ 0 ] * ( rp[ 1 ] + rp[ 0 ])" );
-
-	int i;
-
-	for( i = 1; i < n; i++ )
+#else // IS_UPSAMPLE
+	if(( n & 1 ) != 0 )
 	{
-		printf( "\n\t+ flt[ %i ] * ( rp[ %i ] + rp[ %i ])",
-			i, i + 1, -i );
+		printf( "op[ 0 ] = vaddvq_f64( s1 ) + rp1[ 0 ] + "
+			"flt[ %i ] * ( rp[ %i ] + rp[ -%i ]);\n", n - 1, n, n - 1 );
 	}
-
-	printf( ";\n" );
+	else
+	{
+		printf( "op[ 0 ] = vaddvq_f64( s1 ) + rp1[ 0 ];\n" );
+	}
+#endif // IS_UPSAMPLE
 }
 
 int main()

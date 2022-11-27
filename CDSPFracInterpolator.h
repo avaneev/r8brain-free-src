@@ -472,19 +472,30 @@ public:
 
 		if( IsStatic )
 		{
+			CDSPFracDelayFilterBank* PrevObj = NULL;
 			CDSPFracDelayFilterBank* CurObj = StaticObjects;
 
 			while( CurObj != NULL )
 			{
 				if( CurObj -> InitFilterFracs == aFilterFracs &&
+					CurObj -> IsThird == IsThird &&
 					CurObj -> ElementSize == aElementSize &&
 					CurObj -> InterpPoints == aInterpPoints &&
-					CurObj -> ReqAtten == ReqAtten &&
-					CurObj -> IsThird == IsThird )
+					CurObj -> ReqAtten == ReqAtten )
 				{
+					if( PrevObj != NULL )
+					{
+						// Move the object to the top of the list.
+
+						PrevObj -> Next = CurObj -> Next;
+						CurObj -> Next = StaticObjects.unkeep();
+						StaticObjects = CurObj;
+					}
+
 					return( *CurObj );
 				}
 
+				PrevObj = CurObj;
 				CurObj = CurObj -> Next;
 			}
 
@@ -507,10 +518,10 @@ public:
 		while( CurObj != NULL )
 		{
 			if( CurObj -> InitFilterFracs == aFilterFracs &&
+				CurObj -> IsThird == IsThird &&
 				CurObj -> ElementSize == aElementSize &&
 				CurObj -> InterpPoints == aInterpPoints &&
-				CurObj -> ReqAtten == ReqAtten &&
-				CurObj -> IsThird == IsThird )
+				CurObj -> ReqAtten == ReqAtten )
 			{
 				break;
 			}
@@ -866,17 +877,17 @@ public:
 
 		while( l > 0 )
 		{
-			// Add new input samples to both halves of the ring buffer.
+			// Copy new input samples to the ring buffer.
 
-			const int b = min( min( l, BufLen - WritePos ), flb - BufLeft );
+			const int b = min( l, min( BufLen - WritePos, flb - BufLeft ));
 
 			double* const wp1 = Buf + WritePos;
 			memcpy( wp1, ip, b * sizeof( wp1[ 0 ]));
+			const int ec = flo - WritePos;
 
-			if( WritePos < flo )
+			if( ec > 0 )
 			{
-				const int c = min( b, flo - WritePos );
-				memcpy( wp1 + BufLen, wp1, c * sizeof( wp1[ 0 ]));
+				memcpy( wp1 + BufLen, ip, min( b, ec ) * sizeof( wp1[ 0 ]));
 			}
 
 			ip += b;
@@ -942,13 +953,13 @@ private:
 		///<
 	int FilterLen; ///< Filter length, in taps. Even value.
 		///<
-	int fl2; ///< Right-side (half) filter length.
+	int fll; ///< Input latency (left-hand filter length).
 		///<
-	int fll; ///< Input latency.
+	int fl2; ///< Right-side (half) filter length.
 		///<
 	int flo; ///< Overrun length.
 		///<
-	int flb; ///< Initial read position and maximal buffer write length.
+	int flb; ///< Initial buffer read position.
 		///<
 	int InStep; ///< Input whole-number stepping.
 		///<

@@ -53,7 +53,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 5.9
+ * @version 6.0
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -105,7 +105,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "5.9"
+#define R8B_VERSION "6.0"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -539,7 +539,7 @@ public:
 	CSyncObject()
 	{
 		#if defined( _WIN32 )
-			InitializeCriticalSectionAndSpinCount( &CritSec, 1000 );
+			InitializeCriticalSectionAndSpinCount( &CritSec, 2000 );
 		#else // defined( _WIN32 )
 			pthread_mutexattr_t MutexAttrs;
 			pthread_mutexattr_init( &MutexAttrs );
@@ -990,13 +990,13 @@ inline void calcSpline3p8Coeffs( double* const c, const double xm3,
 {
 	c[ 0 ] = x0;
 	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
-		3.0 * ( x3 - xm3 )) / 76.0;
+		3.0 * ( x3 - xm3 )) * 1.31578947368421052e-2;
 
 	c[ 2 ] = ( 106.0 * ( xm1 + x1 ) + 10.0 * x3 + 6.0 * xm3 - 3.0 * x4 -
-		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) / 76.0;
+		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) * 1.31578947368421052e-2;
 
 	c[ 3 ] = ( 91.0 * ( x0 - x1 ) + 45.0 * ( x2 - xm1 ) +
-		13.0 * ( xm2 - x3 ) + 3.0 * ( x4 - xm3 )) / 76.0;
+		13.0 * ( xm2 - x3 ) + 3.0 * ( x4 - xm3 )) * 1.31578947368421052e-2;
 }
 
 /**
@@ -1022,10 +1022,10 @@ inline void calcSpline2p8Coeffs( double* const c, const double xm3,
 {
 	c[ 0 ] = x0;
 	c[ 1 ] = ( 61.0 * ( x1 - xm1 ) + 16.0 * ( xm2 - x2 ) +
-		3.0 * ( x3 - xm3 )) / 76.0;
+		3.0 * ( x3 - xm3 )) * 1.31578947368421052e-2;
 
 	c[ 2 ] = ( 106.0 * ( xm1 + x1 ) + 10.0 * x3 + 6.0 * xm3 - 3.0 * x4 -
-		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) / 76.0;
+		29.0 * ( xm2 + x2 ) - 167.0 * x0 ) * 1.31578947368421052e-2;
 }
 
 /**
@@ -1140,12 +1140,13 @@ inline double sqr( const double x )
 /**
  * @param v Input value.
  * @param p Power factor.
- * @return Returns pow() function's value with input value's sign check.
+ * @return Returns a precise, but generally approximate pow() function's value
+ * of absolute of input value.
  */
 
-inline double pows( const double v, const double p )
+inline double pow_a( const double v, const double p )
 {
-	return( v < 0.0 ? -pow( -v, p ) : pow( v, p ));
+	return( exp( p * log( fabs( v ) + 1e-300 )));
 }
 
 /**

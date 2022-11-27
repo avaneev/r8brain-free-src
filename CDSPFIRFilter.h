@@ -620,9 +620,9 @@ public:
 		{
 			if( CurObj -> ReqNormFreq == ReqNormFreq &&
 				CurObj -> ReqTransBand == ReqTransBand &&
+				CurObj -> ReqGain == ReqGain &&
 				CurObj -> ReqAtten == ReqAtten &&
-				CurObj -> ReqPhase == ReqPhase &&
-				CurObj -> ReqGain == ReqGain )
+				CurObj -> ReqPhase == ReqPhase )
 			{
 				break;
 			}

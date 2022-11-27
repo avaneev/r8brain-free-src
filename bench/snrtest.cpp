@@ -9,7 +9,7 @@
  * precision at the ReqAtten levels. At some ReqAtten settings resampler
  * delivers a lower SNR, thus setting ReqAtten+9 is advisable.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -102,10 +102,9 @@ VOXMAIN
 			avgc++;
 		}
 
-		printf( "ReqAtten=%.2f avg %.2f ", ReqAtten,
-			10.0 * log( avgd / avgc ) / log( 10.0 ));
-
-		printf( "max %.2f\n", 20.0 * log( maxd ) / log( 10.0 ));
+		printf( "ReqAtten=%.2f avg %.2f max %.2f\n", ReqAtten,
+			10.0 * log( avgd / avgc ) / log( 10.0 ),
+			20.0 * log( maxd ) / log( 10.0 ));
 	}
 
 	VOXRET;

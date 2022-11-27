@@ -1,4 +1,4 @@
-# r8brain-free-src - High-Quality Resampler #
+# r8brain-free-src - High-Quality, Fast Resampler #
 
 ## Introduction ##
 
@@ -108,11 +108,11 @@ Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
 of 24-bit audio from 44100 to 96000 sample rate (2% transition band), on a
 Ryzen 3700X processor-based 64-bit system.  This approximately translates to a
 real-time resampling of `725*n_cores` (`1000*n_cores`) audio streams, at 100%
-CPU load.  Speed performance when converting to other sample rates may vary
-greatly.  When comparing performance of this resampler library to another
-library make sure that the competing library is also tuned to produce a fully
-linear-phase response, has similar stop-band characteristics and similar
-sample timing precision.
+CPU load.  Performance when converting to other sample rates may vary greatly.
+When comparing performance of this resampler library to another library make
+sure that the competing library is also tuned to produce a fully linear-phase
+response, has similar stop-band characteristics and similar sample timing
+precision.
 
 ## Dynamic Link Library ##
 
@@ -153,7 +153,7 @@ signal (or the output signal if the downsampling is performed) between the
 low-pass filter's -3 dB point and the Nyquist frequency, and ranges from 0.5%
 to 45%.  Stop-band attenuation can be specified in the range from 49 to 218
 decibel.  Both the transition band and stop-band attenuation affect
-resampler's overall speed performance and initial output delay.  For your
+resampler's overall performance and initial output delay.  For your
 information, transition frequency range spans 175% of the specified transition
 band, which means that for 2% transition band, frequency response below
 0.965\*Nyquist is linear.
@@ -205,6 +205,16 @@ maintaining confidence in this library among the interested parties. The
 inclusion into this list is not mandatory.
 
 ## Change Log ##
+
+Version 6.0:
+
+* Added SSE and NEON implementations to `CDSPHBDownsampler` yielding 5-16%
+performance improvement of power-of-2 downsampling.
+* Further optimization of filter calculation making it 15% faster.
+* Upped "SpinCount" in Windows mutex to 2000, to be on a safer side when the
+filter cache is fully filled.
+* Made the latest used "static" filter bank pop to the top of the list, for
+cases when multiple "ReqAtten" values are in use in an application.
 
 Version 5.9:
 

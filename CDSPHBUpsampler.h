@@ -636,7 +636,7 @@ public:
 	{
 		R8BASSERT( MaxInLen >= 0 );
 
-		return( MaxInLen << 1 );
+		return( MaxInLen * 2 );
 	}
 
 	virtual void clear()
@@ -666,17 +666,17 @@ public:
 
 		while( l > 0 )
 		{
-			// Add new input samples to both halves of the ring buffer.
+			// Copy new input samples to the ring buffer.
 
-			const int b = min( min( l, BufLen - WritePos ), flb - BufLeft );
+			const int b = min( l, min( BufLen - WritePos, flb - BufLeft ));
 
 			double* const wp1 = Buf + WritePos;
 			memcpy( wp1, ip, b * sizeof( wp1[ 0 ]));
+			const int ec = flo - WritePos;
 
-			if( WritePos < flo )
+			if( ec > 0 )
 			{
-				const int c = min( b, flo - WritePos );
-				memcpy( wp1 + BufLen, wp1, c * sizeof( wp1[ 0 ]));
+				memcpy( wp1 + BufLen, ip, min( b, ec ) * sizeof( wp1[ 0 ]));
 			}
 
 			ip += b;
@@ -686,11 +686,11 @@ public:
 
 			// Produce output.
 
-			if( BufLeft > fl2 )
-			{
-				const int c = BufLeft - fl2;
+			const int c = BufLeft - fl2;
 
-				double* const opend = op + ( c + c );
+			if( c > 0 )
+			{
+				double* const opend = op + c * 2;
 				( *convfn )( op, opend, fltp, BufRP, ReadPos );
 
 				op = opend;
@@ -742,13 +742,13 @@ private:
 		///<
 	double* fltp; ///< Half-band filter taps, points to FltBuf.
 		///<
-	int fll; ///< Input latency.
+	int fll; ///< Input latency (left-hand filter length).
 		///<
 	int fl2; ///< Right-side filter length.
 		///<
 	int flo; ///< Overrrun length.
 		///<
-	int flb; ///< Initial read position and maximal buffer write length.
+	int flb; ///< Initial buffer read position.
 		///<
 	double LatencyFrac; ///< Fractional latency left on the output.
 		///<
@@ -757,8 +757,7 @@ private:
 	int LatencyLeft; ///< Latency left to remove.
 		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
-		///< When this value is below FilterLenD2Plus1, the interpolation
-		///< cycle ends.
+		///< When this value is below "fl2", the interpolation cycle ends.
 		///<
 	int WritePos; ///< The current buffer write position. Incremented together
 		///< with the BufLeft variable.
