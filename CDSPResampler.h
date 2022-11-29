@@ -109,7 +109,7 @@ public:
 	 * stream may become fractionally delayed, depending on the minimum-phase
 	 * filter's actual fractional delay. Linear-phase filters do not have
 	 * fractional delay.
-	 * @see CDSPFIRFilterCache::getLPFilter()
+	 * @see EDSPFilterPhaseResponse
 	 */
 
 	CDSPResampler( const double SrcSampleRate, const double DstSampleRate,
@@ -401,6 +401,91 @@ public:
 		}
 	}
 
+	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
+	{
+		R8BASSERT( ReqOutPos >= 0 );
+
+		int c = StepCount;
+
+		if( c == 0 )
+		{
+			return( ReqOutPos + 1 );
+		}
+
+		int ReqInSamples = ReqOutPos;
+
+		while( --c >= 0 )
+		{
+			ReqInSamples = Steps[ c ] -> getInLenBeforeOutPos( ReqInSamples );
+		}
+
+		return( ReqInSamples );
+	}
+
+	/**
+	 * Function obtains overall input sample count required to produce the
+	 * first output sample. Function works by iteratively passing 1 sample at
+	 * a time until output starts. This is a relatively CPU-consuming
+	 * operation. This function should be called after the clear() function
+	 * call or after object's construction. The function itself calls the
+	 * clear() function before return.
+	 *
+	 * It is advisable to cache the value returned by this function,
+	 * for each SrcSampleRate/DstSampleRate pair, if it is called frequently.
+	 *
+	 * Note that this function can be considered a legacy function, and is now
+	 * used for testing purposes. It is advised to use "instant" (much faster)
+	 * getInLenBeforeOutPos() and getInputRequiredForOutput() functions
+	 * instead.
+	 *
+	 * @param ReqOutPos The required output position that is required to exist
+	 * in the output stream. Must be a non-negative value.
+	 * @return The number of input samples required.
+	 */
+
+	int getInLenBeforeOutStart( const int ReqOutPos = 0 )
+	{
+		R8BASSERT( ReqOutPos >= 0 );
+
+		int inc = 0;
+		int outc = 0;
+
+		while( true )
+		{
+			double ins = 0.0;
+			double* op;
+			outc += process( &ins, 1, op );
+
+			if( outc > ReqOutPos )
+			{
+				clear();
+				return( inc );
+			}
+
+			inc++;
+		}
+	}
+
+	/**
+	 * Function returns the number of input samples required to produce at
+	 * least the specified number of output samples, starting at the cleared
+	 * or after-construction state.
+	 *
+	 * @param ReqOutSamples The number of output samples required.
+	 * If a non-positive value was specified, the function returns 0.
+	 * @return The number of input samples required.
+	 */
+
+	int getInputRequiredForOutput( const int ReqOutSamples ) const
+	{
+		if( ReqOutSamples < 1 )
+		{
+			return( 0 );
+		}
+
+		return( getInLenBeforeOutPos( ReqOutSamples - 1 ));
+	}
+
 	virtual int getLatency() const
 	{
 		return( 0 );
@@ -412,12 +497,12 @@ public:
 	}
 
 	/**
-	 * This function ignores the supplied parameter and returns the maximal
-	 * output buffer length that depends on the MaxInLen supplied to the
-	 * constructor.
+	 * @return This function ignores the supplied parameter and returns the
+	 * maximal output buffer length that depends on the MaxInLen supplied to
+	 * the constructor.
 	 */
 
-	virtual int getMaxOutLen( const int/* MaxInLen */ ) const
+	virtual int getMaxOutLen( const int/* MaxInLen */) const
 	{
 		return( CurMaxOutLen );
 	}
@@ -564,62 +649,21 @@ public:
 		clear();
 	}
 
-	/**
-	 * Function obtains overall input sample count required to produce the
-	 * first output sample. Function works by iteratively passing 1 sample at
-	 * a time until output starts. This is a relatively CPU-consuming
-	 * operation. This function should be called after the clear() function
-	 * call or after object's construction. The function itself calls the
-	 * clear() function before return.
-	 *
-	 * Note that it is advisable to cache the value returned by this function,
-	 * for each SrcSampleRate/DstSampleRate pair, if it is called frequently.
-	 */
-
-	int getInLenBeforeOutStart()
-	{
-		int inc = 0;
-
-		while( true )
-		{
-			double ins = 0.0;
-			double* op;
-
-			if( process( &ins, 1, op ) > 0 )
-			{
-				clear();
-				return( inc );
-			}
-
-			inc++;
-		}
-	}
-
 private:
 	CFixedBuffer< CDSPProcessor* > Steps; ///< Array of processing steps.
-		///<
 	int StepCapacity; ///< The capacity of the Steps array.
-		///<
 	int StepCount; ///< The number of created processing steps.
-		///<
 	int MaxInLen; ///< Maximal input length.
-		///<
 	CFixedBuffer< double > TmpBufAll; ///< Buffer containing both temporary
 		///< buffers.
-		///<
 	double* TmpBufs[ 2 ]; ///< Temporary output buffers.
-		///<
 	int TmpBufCapacities[ 2 ]; ///< Capacities of temporary buffers, updated
 		///< during processing steps building.
-		///<
 	int CurTmpBuf; ///< Current temporary buffer.
-		///<
 	int CurMaxOutLen; ///< Current maximal output length.
-		///<
 	double LatencyFrac; ///< Current fractional latency. After object's
 		///< construction, equals to the remaining fractional latency in the
 		///< output.
-		///<
 
 	/**
 	 * Function adds processor, updates MaxOutLen variable and adjusts length
@@ -688,8 +732,8 @@ public:
 	 * Constructor initializes the 16-bit resampler. See the
 	 * r8b::CDSPResampler class for details.
 	 *
-	 * @param SrcSampleRate Source signal sample rate.
-	 * @param DstSampleRate Destination signal sample rate.
+	 * @param SrcSampleRate Source signal's sample rate.
+	 * @param DstSampleRate Destination signal's sample rate.
 	 * @param aMaxInLen The maximal planned length of the input buffer (in
 	 * samples) that will be passed to the resampler.
 	 * @param ReqTransBand Required transition band, in percent.
@@ -719,8 +763,8 @@ public:
 	 * Constructor initializes the 16-bit impulse response resampler. See the
 	 * r8b::CDSPResampler class for details.
 	 *
-	 * @param SrcSampleRate Source signal sample rate.
-	 * @param DstSampleRate Destination signal sample rate.
+	 * @param SrcSampleRate Source signal's sample rate.
+	 * @param DstSampleRate Destination signal's sample rate.
 	 * @param aMaxInLen The maximal planned length of the input buffer (in
 	 * samples) that will be passed to the resampler.
 	 * @param ReqTransBand Required transition band, in percent.
@@ -749,8 +793,8 @@ public:
 	 * Constructor initializes the 24-bit resampler (including 32-bit floating
 	 * point). See the r8b::CDSPResampler class for details.
 	 *
-	 * @param SrcSampleRate Source signal sample rate.
-	 * @param DstSampleRate Destination signal sample rate.
+	 * @param SrcSampleRate Source signal's sample rate.
+	 * @param DstSampleRate Destination signal's sample rate.
 	 * @param aMaxInLen The maximal planned length of the input buffer (in
 	 * samples) that will be passed to the resampler.
 	 * @param ReqTransBand Required transition band, in percent.

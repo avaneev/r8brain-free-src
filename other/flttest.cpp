@@ -80,11 +80,8 @@ class CResampThread : public CWorkerThread
 {
 public:
 	CStats* Stats; ///< Pointer to summary statistics object.
-		///<
 	double SrcSampleRate; ///< Source sample rate.
-		///<
 	double DstSampleRate; ///< Destination sample rate.
-		///<
 
 protected:
 	virtual ecode performWork()

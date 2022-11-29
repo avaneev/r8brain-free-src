@@ -70,7 +70,7 @@ makes sample rate conversion faster by 23% on average.
 
     #define R8B_IPP 1
 
-If a larger initial processing delay and a very minor sample timing error are
+If a larger initial processing delay and a very minor sample-timing error are
 not an issue, for the most efficiency you can define these macros at
 the beginning of the `r8bconf.h` file, or during compilation:
 
@@ -104,14 +104,14 @@ style.  To generate the documentation locally you may run the
 `doxygen ./other/r8bdoxy.txt` command from the library's folder.
 
 Preliminary tests show that the r8b::CDSPResampler24 resampler class achieves
-`32*n_cores` Mrops (`44*n_cores` for Intel IPP FFT) when converting 1 channel
+`38*n_cores` Mrops (`56*n_cores` for Intel IPP FFT) when converting 1 channel
 of 24-bit audio from 44100 to 96000 sample rate (2% transition band), on a
 Ryzen 3700X processor-based 64-bit system.  This approximately translates to a
-real-time resampling of `725*n_cores` (`1000*n_cores`) audio streams, at 100%
+real-time resampling of `860*n_cores` (`1270*n_cores`) audio streams, at 100%
 CPU load.  Performance when converting to other sample rates may vary greatly.
 When comparing performance of this resampler library to another library make
 sure that the competing library is also tuned to produce a fully linear-phase
-response, has similar stop-band characteristics and similar sample timing
+response, has similar stop-band characteristics and similar sample-timing
 precision.
 
 ## Dynamic Link Library ##
@@ -205,6 +205,18 @@ maintaining confidence in this library among the interested parties. The
 inclusion into this list is not mandatory.
 
 ## Change Log ##
+
+Version 6.1:
+
+* Made a micro-optimization of the "whole stepping" interpolation yielding 18%
+performance increase in some conversions (e.g., 44100 to 96000).
+* Implemented the getInLenBeforeOutPos() function which is an ultra-fast and
+flexible replacement for the getInLenBeforeOutStart() function (that became a
+legacy function now). Also added the getInputRequiredForOutput() helper
+function.
+* Updated comment sections across the codebase, to match the latest Doxygen
+version.
+* Reintroduced the r8b_inlen() function in the DLL.
 
 Version 6.0:
 

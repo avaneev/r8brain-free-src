@@ -32,7 +32,7 @@
 	 * Console output macro, used to output various resampler status strings,
 	 * including filter design parameters, convolver parameters.
 	 *
-	 * @param e Expression to send to the console, usually consists of a
+	 * @param ... Expression to send to the console, usually consists of a
 	 * standard "printf" format string followed by several parameters
 	 * (__VA_ARGS__).
 	 */
@@ -99,10 +99,10 @@
 	/**
 	 * This macro, when equal to 1, enables a fast interpolation sample
 	 * timing technique. This technique improves interpolation performance
-	 * (by around 10%) at the expense of a minor sample timing drift which is
+	 * (by around 10%) at the expense of a minor sample-timing drift which is
 	 * on the order of 1e-6 samples per 10 billion output samples. This
 	 * setting does not apply to whole-number stepping, if it is in use, as
-	 * this stepping provides zero timing error without performance impact.
+	 * such stepping provides zero timing error without performance impact.
 	 * Also does not apply to the cases when a whole-numbered (2X, 3X, etc.)
 	 * resampling is in the actual use.
 	 */

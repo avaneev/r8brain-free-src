@@ -96,6 +96,11 @@ public:
 		clear();
 	}
 
+	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
+	{
+		return( flo + ReqOutPos * 2 );
+	}
+
 	virtual int getLatency() const
 	{
 		return( 0 );
@@ -149,7 +154,7 @@ public:
 				}
 
 				ip++;
-				WritePos2 = ( WritePos2 + 1 ) & BufLenMask;
+				WritePos2 = WritePos1;
 				l--;
 				BufLeft++;
 			}
@@ -233,61 +238,39 @@ private:
 		///< interpolator. The minimum value of this parameter is 5, and
 		///< 1 << BufLenBits should be at least 3 times larger than the
 		///< FilterLen.
-		///<
 	static const int BufLen = 1 << BufLenBits; ///< The length of the ring
 		///< buffer. The actual length is longer, to permit "beyond bounds"
 		///< positioning.
-		///<
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
-		///<
 	double Buf1[ BufLen + 27 ]; ///< The ring buffer 1, including overrun
 		///< protection for the largest filter.
-		///<
 	double Buf2[ BufLen + 27 ]; ///< The ring buffer 2, including overrun
 		///< protection for the largest filter.
-		///<
 	double FltBuf[ 14 + 2 ]; ///< Holder for half-band filter taps, used with
 		///< 16-byte address-aligning, for SIMD use.
-		///<
 	const double* BufRP1; ///< Offseted Buf1 pointer at ReadPos=0.
-		///<
 	const double* BufRP2; ///< Offseted Buf2 pointer at ReadPos=0.
-		///<
 	double* fltp; ///< Half-band filter taps, points to FltBuf.
-		///<
 	double LatencyFrac; ///< Fractional latency left on the output.
-		///<
 	int Latency; ///< Initial latency that should be removed from the output.
-		///<
 	int fll; ///< Input latency (left-hand filter length).
-		///<
 	int fl2; ///< Right-side filter length.
-		///<
 	int flo; ///< Overrun length.
-		///<
 	int flb; ///< Initial buffer read position.
-		///<
 	int LatencyLeft; ///< Latency left to remove.
-		///<
 	int BufLeft; ///< The number of samples left in the buffer to process.
 		///< When this value is below "fl2", the interpolation cycle ends.
-		///<
 	int WritePos1; ///< The current buffer 1 write position.
-		///<
 	int WritePos2; ///< The current buffer 2 write position. Incremented
 		///< together with the BufLeft variable.
-		///<
 	int ReadPos; ///< The current buffer read position.
-		///<
 
 	typedef void( *CConvolveFn )( double* op, double* const opend,
 		const double* const flt, const double* const rp01,
 		const double* const rp02, int rpos ); ///<
 		///< Convolution function type.
-		///<
 	CConvolveFn convfn; ///< Convolution function in use.
-		///<
 
 #define R8BHBC1( fn ) \
 	static void fn( double* op, double* const opend, const double* const flt, \

@@ -34,18 +34,14 @@ public:
 	double Len2; ///< Required half filter kernel's length in samples (can be
 		///< a fractional value). Final physical kernel length will be
 		///< provided in the KernelLen variable. Len2 should be >= 2.
-		///<
 	double Len2i; ///< = 1.0 / Len2, initialized and used by some window
 		///< functions for optimization (should not be initialized by the
 		///< caller).
-		///<
 	int KernelLen; ///< Resulting length of the filter kernel, this variable
 		///< is set after the call to one of the "init" functions.
-		///<
 	int fl2; ///< Internal "half kernel length" value. This value can be used
 		///< as filter's latency in samples (taps), this variable is set after
 		///< the call to one of the "init" functions.
-		///<
 
 	union
 	{
@@ -53,12 +49,10 @@ public:
 		{
 			double Freq1; ///< Required corner circular frequency 1 [0; pi].
 				///< Used only in the generateBand() function.
-				///<
 			double Freq2; ///< Required corner circular frequency 2 [0; pi].
 				///< Used only in the generateBand() function. The range
 				///< [Freq1; Freq2] defines a pass band for the generateBand()
 				///< function.
-				///<
 		};
 
 		struct
@@ -69,7 +63,6 @@ public:
 				///< produces 1 sample delay (with the latency equal to fl2),
 				///< at 1.0 value it produces 0 sample delay (with the latency
 				///< equal to fl2 - 1).
-				///<
 		};
 	};
 
@@ -81,18 +74,14 @@ public:
 	{
 		wftCosine, ///< Generalized cosine window function. No parameters
 			///< required. The "Power" parameter is optional.
-			///<
 		wftKaiser, ///< Kaiser window function. Requires the "Beta" parameter.
 			///< The "Power" parameter is optional.
-			///<
 		wftGaussian ///< Gaussian window function. Requires the "Sigma"
 			///< parameter. The "Power" parameter is optional.
-			///<
 	};
 
 	typedef double( CDSPSincFilterGen :: *CWindowFunc )(); ///< Window
 		///< calculation function pointer type.
-		///<
 
 	/**
 	 * Function initializes *this structure for generation of a window
@@ -572,13 +561,9 @@ public:
 private:
 	double Power; ///< The power factor used to raise the window function.
 		///< Equals a negative value if the power factor should not be used.
-		///<
 	CSineGen w1; ///< Cosine wave 1 for window function.
-		///<
 	CSineGen w2; ///< Cosine wave 2 for window function.
-		///<
 	CSineGen w3; ///< Cosine wave 3 for window function.
-		///<
 
 	union
 	{
@@ -586,26 +571,20 @@ private:
 		{
 			double KaiserBeta; ///< Kaiser window function's "Beta"
 				///< coefficient.
-				///<
 			double KaiserMul; ///< Kaiser window function's divisor, inverse.
-				///<
 			double KaiserLen2Frac; ///< Equals FracDelay / Len2.
-				///<
 		};
 
 		struct
 		{
 			double GaussianSigmaI; ///< Gaussian window function's "Sigma"
 				///< coefficient, inverse.
-				///<
 			double GaussianSigmaFrac; ///< Equals FracDelay / GaussianSigma.
-				///<
 		};
 	};
 
 	int wn; ///< Window function integer position. 0 - center of the window
 		///< function. This variable may not be used by some window functions.
-		///<
 
 	/**
 	 * Function initializes Kaiser window function calculation. The FracDelay

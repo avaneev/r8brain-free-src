@@ -53,7 +53,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 6.0
+ * @version 6.1
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -105,7 +105,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "6.0"
+#define R8B_VERSION "6.1"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -162,12 +162,11 @@ class CStdClassAllocator
 {
 public:
 	/**
-	 * @param n The size of the object, in bytes.
 	 * @param p Pointer to object's pre-allocated memory block.
 	 * @return Pointer to object.
 	 */
 
-	void* operator new( size_t, void* p )
+	void* operator new( const size_t, void* const p )
 	{
 		return( p );
 	}
@@ -177,7 +176,7 @@ public:
 	 * @return Pointer to the allocated memory block for the object.
 	 */
 
-	void* operator new( size_t n )
+	void* operator new( const size_t n )
 	{
 		return( :: malloc( n ));
 	}
@@ -187,7 +186,7 @@ public:
 	 * @return Pointer to the allocated memory block for the object.
 	 */
 
-	void* operator new[]( size_t n )
+	void* operator new[]( const size_t n )
 	{
 		return( :: malloc( n ));
 	}
@@ -198,7 +197,7 @@ public:
 	 * @param p Pointer to the allocated memory block for the object.
 	 */
 
-	void operator delete( void* p )
+	void operator delete( void* const p )
 	{
 		:: free( p );
 	}
@@ -209,7 +208,7 @@ public:
 	 * @param p Pointer to the allocated memory block for the object.
 	 */
 
-	void operator delete[]( void* p )
+	void operator delete[]( void* const p )
 	{
 		:: free( p );
 	}
@@ -228,7 +227,7 @@ public:
 	 * Function allocates memory block.
 	 *
 	 * @param Size The size of the block, in bytes.
-	 * @result The pointer to the allocated block.
+	 * @return The pointer to the allocated block.
 	 */
 
 	static void* allocmem( const size_t Size )
@@ -241,10 +240,10 @@ public:
 	 *
 	 * @param p Pointer to the allocated block, can be NULL.
 	 * @param Size The new size of the block, in bytes.
-	 * @result The pointer to the (re)allocated block.
+	 * @return The pointer to the (re)allocated block.
 	 */
 
-	static void* reallocmem( void* p, const size_t Size )
+	static void* reallocmem( void* const p, const size_t Size )
 	{
 		return( :: realloc( p, Size ));
 	}
@@ -255,7 +254,7 @@ public:
 	 * @param p Pointer to the allocated block, can be NULL.
 	 */
 
-	static void freemem( void* p )
+	static void freemem( void* const p )
 	{
 		:: free( p );
 	}
@@ -268,6 +267,7 @@ public:
  * @param ptr Pointer to align.
  * @param align Alignment, in bytes, power-of-2.
  * @tparam T Pointer's element type.
+ * @return Aligned pointer.
  */
 
 template< typename T >
@@ -413,11 +413,8 @@ public:
 private:
 	static const size_t Alignment = 64; ///< Buffer address alignment, in
 		///< bytes.
-		///<
 	void* Data0; ///< Buffer pointer, original unaligned.
-		///<
 	T* Data; ///< Element buffer pointer, aligned.
-		///<
 };
 
 /**
@@ -518,7 +515,6 @@ public:
 
 private:
 	T Object; ///< Pointer to keeped object.
-		///<
 };
 
 /**
@@ -590,10 +586,8 @@ private:
 	#if defined( _WIN32 )
 		CRITICAL_SECTION CritSec; ///< Standard Windows critical section
 			///< structure.
-			///<
 	#else // defined( _WIN32 )
 		pthread_mutex_t Mutex; ///< pthread.h mutex object.
-			///<
 	#endif // defined( _WIN32 )
 };
 
@@ -650,9 +644,8 @@ public:
 		}
 	}
 
-protected:
+private:
 	CSyncObject* SyncObj; ///< Sync object in use (can be NULL).
-		///<
 };
 
 /**
@@ -764,11 +757,8 @@ public:
 
 private:
 	double svalue1; ///< Current sine value.
-		///<
 	double svalue2; ///< Previous sine value.
-		///<
 	double sincr; ///< Sine value increment.
-		///<
 };
 
 /**

@@ -3,7 +3,7 @@
 /**
  * @file r8bsrc.h
  *
- * @brief Inclusion file for use with the "r8bsrc.dll".
+ * @brief Inclusion file for use with the "r8bsrc.dll" library.
  *
  * This is the inclusion file for the "r8bsrc.dll" dynamic link library
  * (the "r8bsrc.lib" library should be included into the project). This DLL
@@ -17,8 +17,8 @@
  * 64-bit systems. Pointer types, including the CR8BResampler type, have
  * 32-bit size on 32-bit system and 64-bit size on 64-bit system.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 #ifndef R8BSRC_INCLUDED
@@ -37,52 +37,69 @@ typedef void* CR8BResampler;
 enum ER8BResamplerRes
 {
 	r8brr16 = 0, ///< 16-bit precision resampler.
-		///<
 	r8brr16IR = 1, ///< 16-bit precision resampler for impulse responses.
-		///<
 	r8brr24 = 2 ///< 24-bit precision resampler (including 32-bit floating
 		///< point).
-		///<
 };
 
 extern "C" {
 
+#ifndef R8BSRC_DECL
+	#define R8BSRC_DECL __declspec( dllimport )
+#endif // R8BSRC_DECL
+
 /**
  * Function creates a new linear-phase resampler object.
  *
- * @param SrcSampleRate Source signal sample rate. Both sample rates can
+ * @param SrcSampleRate Source signal's sample rate. Both sample rates can
  * be specified as a ratio, e.g. SrcSampleRate = 1.0, DstSampleRate = 2.0.
- * @param DstSampleRate Destination signal sample rate.
+ * @param DstSampleRate Destination signal's sample rate.
  * @param MaxInLen The maximal planned length of the input buffer (in samples)
  * that will be passed to the resampler. The resampler relies on this value as
  * it allocates intermediate buffers. Input buffers longer than this value
- * should never be supplied to the resampler. Note that the resampler may use
- * the input buffer itself for intermediate sample data storage.
+ * should never be supplied to the resampler.
+ * @param ReqTransBand Required transition band, in percent of the spectral
+ * space of the input signal (or the output signal if downsampling is
+ * performed) between filter's -3 dB point and the Nyquist frequency.
  * @param Res Resampler's required resolution.
+ * @return Pointer to the resampler object.
  */
 
-CR8BResampler _cdecl r8b_create( const double SrcSampleRate,
-	const double DstSampleRate, const int MaxInLen,
-	const double ReqTransBand, const ER8BResamplerRes Res );
+R8BSRC_DECL CR8BResampler r8b_create( const double SrcSampleRate,
+	const double DstSampleRate, const int MaxInLen, const double ReqTransBand,
+	const ER8BResamplerRes Res );
 
 /**
- * Function deletes a resampler previously created via the r8b_create()
+ * Function deletes a resampler object previously created via the r8b_create()
  * function.
  *
  * @param rs Resampler object to delete.
  */
 
-void _cdecl r8b_delete( CR8BResampler const rs );
+R8BSRC_DECL void r8b_delete( CR8BResampler const rs );
+
+/**
+ * Function returns the number of input samples required to produce at least
+ * the specified number of output samples, starting at the cleared or
+ * after-construction state.
+ *
+ * @param rs Resampler object to query.
+ * @param ReqOutSamples The number of output samples required. If a
+ * non-positive value was specified, the function returns 0.
+ * @return The number of input samples required.
+ */
+
+R8BSRC_DECL int r8b_inlen( CR8BResampler const rs, const int ReqOutSamples );
 
 /**
  * Function clears (resets) the state of the resampler object and returns it
  * to the state after construction. All input data accumulated in the
- * internal buffer of this resampler object so far will be discarded.
+ * internal buffer of the resampler object so far will be discarded.
  *
  * @param rs Resampler object to clear.
  */
 
-void _cdecl r8b_clear( CR8BResampler const rs );
+R8BSRC_DECL void r8b_clear( CR8BResampler const rs );
 
 /**
  * Function performs sample rate conversion.
@@ -111,8 +128,8 @@ void _cdecl r8b_clear( CR8BResampler const rs );
  * overflow of the bigger output buffer happens.
  */
 
-int _cdecl r8b_process( CR8BResampler const rs, double* const ip0, int l,
-	double*& op0 );
+R8BSRC_DECL int r8b_process( CR8BResampler const rs, double* const ip0,
+	const int l, double*& op0 );
 
 } // extern "C"
 

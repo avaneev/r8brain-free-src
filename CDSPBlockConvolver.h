@@ -189,6 +189,11 @@ public:
 		Filter -> unref();
 	}
 
+	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
+	{
+		return(( Latency + ReqOutPos * DownFactor ) / UpFactor );
+	}
+
 	virtual int getLatency() const
 	{
 		return( DoConsumeLatency ? 0 : Latency );
@@ -346,73 +351,48 @@ public:
 
 private:
 	CDSPFIRFilter* Filter; ///< Filter in use.
-		///<
 	CPtrKeeper< CDSPRealFFTKeeper* > fftin; ///< FFT object 1, used to produce
 		///< the input spectrum (can embed the "power of 2" upsampling).
-		///<
 	CPtrKeeper< CDSPRealFFTKeeper* > ffto2; ///< FFT object 2 (can be NULL).
-		///<
 	CDSPRealFFTKeeper* fftout; ///< FFT object used to produce the output
 		///< signal (can embed the "power of 2" downsampling), may point to
 		///< either "fftin" or "ffto2".
-		///<
 	int UpFactor; ///< Upsampling factor.
-		///<
 	int DownFactor; ///< Downsampling factor.
-		///<
 	int BlockLen2; ///< Equals block length * 2.
-		///<
 	int OutOffset; ///< Output offset, depends on filter's introduced latency.
-		///<
 	int PrevInputLen; ///< The length of previous input data saved, used for
 		///< overlap.
-		///<
 	int InputLen; ///< The number of input samples that should be accumulated
 		///< before the input block is processed.
-		///<
 	double LatencyFrac; ///< Fractional latency, in samples, that is left in
 		///< the output signal.
-		///<
 	int Latency; ///< Processing latency, in samples.
-		///<
 	int UpShift; ///< "Power of 2" upsampling shift. Equals -1 if UpFactor is
 		///< not a "power of 2" value. Equals 0 if UpFactor equals 1.
-		///<
 	int DownShift; ///< "Power of 2" downsampling shift. Equals -1 if
 		///< DownFactor is not a "power of 2". Equals 0 if DownFactor equals
 		///< 1.
-		///<
 	int InputDelay; ///< Additional input delay, in samples. Used to make the
 		///< output delay divisible by DownShift. Used only if UpShift <= 0
 		///< and DownShift > 0.
-		///<
 	double* PrevInput; ///< Previous input data buffer, capacity = BlockLen.
-		///<
 	double* CurInput; ///< Input data buffer, capacity = BlockLen2.
-		///<
 	double* CurOutput; ///< Output data buffer, capacity = BlockLen2.
-		///<
 	int InDataLeft; ///< Samples left before processing input and output FFT
 		///< blocks. Initialized to InputLen on clear.
-		///<
 	int LatencyLeft; ///< Latency in samples left to skip.
-		///<
 	int UpSkip; ///< The current upsampling sample skip (value in the range
 		///< 0 to UpFactor - 1).
-		///<
 	int DownSkip; ///< The current downsampling sample skip (value in the
 		///< range 0 to DownFactor - 1). Not used if DownShift > 0.
-		///<
 	int DownSkipInit; ///< The initial DownSkip value after clear().
-		///<
 	CFixedBuffer< double > WorkBlocks; ///< Previous input data, input and
 		///< output data blocks, overall capacity = BlockLen2 * 2 +
 		///< PrevInputLen. Used in the flip-flop manner.
-		///<
 	bool DoConsumeLatency; ///< "True" if the output latency should be
 		///< consumed. Does not apply to the fractional part of the latency
 		///< (if such part is available).
-		///<
 
 	/**
 	 * Function copies samples from the input buffer to the output buffer
