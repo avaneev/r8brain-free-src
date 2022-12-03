@@ -43,12 +43,18 @@ public:
 
 	/**
 	 * Function returns the number of input samples required to advance to
-	 * the specified output sample position, inclusive, starting at the
-	 * cleared or after-construction state.
+	 * the specified output sample position (so that the next process() call
+	 * passes this output position), starting at the cleared or
+	 * after-construction state of *this object.
 	 *
-	 * @param ReqOutPos The required output position that is required to exist
-	 * in the output stream. Set to 0 to obtain "input length before output
-	 * start" latency. Must be a non-negative value.
+	 * Note that the implementation of this function assumes the caller only
+	 * needs to estimate an initial buffering requirement; passing a full
+	 * sample length value (e.g., greater than 100000) may overflow the
+	 * calculation or cause rounding errors.
+	 *
+	 * @param ReqOutPos The required output position. Set to 0 to obtain
+	 * "input length before output start" latency. Must be a non-negative
+	 * value.
 	 * @return The number of input samples required.
 	 */
 

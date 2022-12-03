@@ -736,8 +736,10 @@ public:
 
 		if( IsWhole )
 		{
-			InitFracPosW = (int) ( InitFracPos * OutStep );
-			LatencyFrac = InitFracPos - (double) InitFracPosW / OutStep;
+			const double spos = InitFracPos * OutStep;
+			InitFracPosW = (int) spos;
+			LatencyFrac = ( spos - InitFracPosW ) / InStep;
+
 			FilterBank = &CDSPFracDelayFilterBankCache :: getFilterBank(
 				OutStep, 1, 2, ReqAtten, IsThird, false );
 		}
@@ -797,13 +799,17 @@ public:
 
 	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
 	{
+		const int ilat = fl2 + Latency;
+
 		if( IsWhole )
 		{
-			return( fl2 + ReqOutPos * InStep / OutStep );
+			return( ilat + (int) (( InitFracPosW +
+				(double) ReqOutPos * InStep ) / OutStep +
+				LatencyFrac * InStep / OutStep ));
 		}
 
-		return( fl2 + (int) floor( ReqOutPos *
-			SrcSampleRate / DstSampleRate ));
+		return( ilat + (int) ( InitFracPos + ReqOutPos * SrcSampleRate /
+			DstSampleRate ));
 	}
 
 	virtual int getLatency() const
@@ -934,7 +940,8 @@ private:
 	int InitFracPosW; ///< Initial fractional position for whole-number
 		///< stepping.
 	int Latency; ///< Initial latency that should be removed from the input.
-	double LatencyFrac; ///< Left-over fractional latency.
+	double LatencyFrac; ///< Left-over fractional latency on output (always
+		///< zero for non-whole stepping).
 	int FilterLen; ///< Filter length, in taps. Even value.
 	int fll; ///< Input latency (left-hand filter length).
 	int fl2; ///< Right-side (half) filter length.

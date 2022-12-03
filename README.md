@@ -206,6 +206,15 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 6.2:
+
+* Fixed miscalculation in the recently introduced getInLenBeforeOutPos()
+function for minimum-phase filters.
+* Fixed a mistake in the getInputRequiredForOutput() function.
+* Fixed a long-standing mistake in LatencyFrac value of whole-stepping
+interpolation. However, this mistake gave no practical issues before (absent
+for linear-phase filters, and minor for minimum-phase filters).
+
 Version 6.1:
 
 * Made a micro-optimization of the "whole stepping" interpolation yielding 18%

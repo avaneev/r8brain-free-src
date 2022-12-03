@@ -191,7 +191,8 @@ public:
 
 	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
 	{
-		return(( Latency + ReqOutPos * DownFactor ) / UpFactor );
+		return( (int) (( Latency + (double) ReqOutPos * DownFactor ) /
+			UpFactor + LatencyFrac * DownFactor / UpFactor ));
 	}
 
 	virtual int getLatency() const

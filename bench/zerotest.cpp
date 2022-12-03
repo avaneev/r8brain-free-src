@@ -3,15 +3,14 @@
 #include "../../../libvox/Sources/Other/CWaveFile.h"
 #include "../CDSPResampler.h"
 
-typedef r8b :: CDSPResampler24 CResamp;
-
 /**
  * @file zerotest.cpp
  *
  * @brief Mass zeroing test - checks for sample rate conversion precision by
- * upsampling and downsampling a reference signal.
+ * upsampling and downsampling a reference signal, mainly using whole-stepping
+ * interpolation.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -89,24 +88,43 @@ VOXMAIN
 	int avgc = 0;
 	double avgperf = 0.0;
 	double avglatency = 0.0;
+	int minld1 = 10000000;
+	int maxld1 = -10000000;
+	int minld2 = 10000000;
+	int maxld2 = -10000000;
 	int k;
 
 	for( k = 21; k <= 640; k++ )
 	{
-		const int MaxInLen = (int) ( 50 + rnd.getUniform() * 1500 );
+		const double ReqAtten = 180.15;// - 130 * rnd.getUniform();
 		const double tb = 0.5 + rnd.getUniform() * 4.5;
+		const int MaxInLen = (int) ( 50 + rnd.getUniform() * 1500 );
+		const int rlen1 = 1 + (int) ( 1024 * rnd.getUniform() );
+		const int rlen2 = 1 + (int) ( 1024 * rnd.getUniform() );
 
 		const double DstSampleRate = k;
 		const int ol1 = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf1( ol1 );
 		CFixedBuffer< double > OutBuf2( InBufSize );
 
-		CPtrKeeper< CResamp* > Resamp1;
-		Resamp1 = new CResamp( SrcSampleRate, DstSampleRate, MaxInLen, tb );
-		avglatency += Resamp1 -> getInLenBeforeOutStart();
+		CPtrKeeper< r8b :: CDSPResampler* > Resamp1;
+		Resamp1 = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
+			MaxInLen, tb, ReqAtten );
 
-		CPtrKeeper< CResamp* > Resamp2;
-		Resamp2 = new CResamp( DstSampleRate, SrcSampleRate, MaxInLen, tb );
+		const int inlen1a = Resamp1 -> getInLenBeforeOutStart( rlen1-1 )+1;
+		const int inlen1b = Resamp1 -> getInputRequiredForOutput( rlen1 );
+		avglatency += inlen1a;
+		minld1 = min( minld1, inlen1b - inlen1a );
+		maxld1 = max( maxld1, inlen1b - inlen1a );
+
+		CPtrKeeper< r8b :: CDSPResampler* > Resamp2;
+		Resamp2 = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
+			MaxInLen, tb, ReqAtten );
+
+		const int inlen2a = Resamp2 -> getInLenBeforeOutStart( rlen2-1 )+1;
+		const int inlen2b = Resamp2 -> getInputRequiredForOutput( rlen2 );
+		minld2 = min( minld2, inlen2b - inlen2a );
+		maxld2 = max( maxld2, inlen2b - inlen2a );
 
 		const TClock t1( CSystem :: getClock() );
 		Resamp1 -> oneshot( &Ref[ 0 ], InBufSize, &OutBuf1[ 0 ], ol1 );
@@ -136,13 +154,15 @@ VOXMAIN
 			printf( "%7.2f", 20.0 * log( r ) / log( 10.0 ));
 		}
 
-		printf( "\t%.2f\tMrops\n", perf );
+		printf( "\t%.2f\tMrops %i %i\n", perf,
+			inlen1b - inlen1a, inlen2b - inlen2a );
 	}
 
 	printf( "Average rms %.2f\n", 10.0 * log( avgr / avgc ) / log( 10.0 ));
 	printf( "Peak diff %.2f\n", 20.0 * log( peakd ) / log( 10.0 ));
 	printf( "Average perf %.2f Mrops\n", sqrt( avgperf / avgc ));
 	printf( "Average latency %.0f\n", avglatency / avgc );
+	printf( "inlen diffs: %i %i | %i %i\n", minld1, maxld1, minld2, maxld2 );
 
 	VOXRET;
 }

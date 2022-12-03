@@ -98,7 +98,7 @@ public:
 
 	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
 	{
-		return( flo + ReqOutPos * 2 );
+		return( flo + (int) (( Latency + LatencyFrac + ReqOutPos ) * 2.0 ));
 	}
 
 	virtual int getLatency() const

@@ -86,29 +86,24 @@ R8BSRC_DECL CR8BResampler r8b_create( const double SrcSampleRate,
 
 R8BSRC_DECL void r8b_delete( CR8BResampler const rs )
 {
-	delete (CDSPProcessor*) rs;
+	delete (CDSPResampler*) rs;
 }
 
 R8BSRC_DECL int r8b_inlen( CR8BResampler const rs, const int ReqOutSamples )
 {
-	if( ReqOutSamples < 1 )
-	{
-		return( 0 );
-	}
-
-	return(( (CDSPProcessor*) rs ) -> getInLenBeforeOutPos(
-		ReqOutSamples - 1 ));
+	return(( (CDSPResampler*) rs ) -> getInputRequiredForOutput(
+		ReqOutSamples ));
 }
 
 R8BSRC_DECL void r8b_clear( CR8BResampler const rs )
 {
-	( (CDSPProcessor*) rs ) -> clear();
+	( (CDSPResampler*) rs ) -> clear();
 }
 
 R8BSRC_DECL int r8b_process( CR8BResampler const rs, double* const ip0,
 	const int l, double*& op0 )
 {
-	return(( (CDSPProcessor*) rs ) -> process( ip0, l, op0 ));
+	return(( (CDSPResampler*) rs ) -> process( ip0, l, op0 ));
 }
 
 } // extern "C"

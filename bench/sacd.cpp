@@ -9,12 +9,12 @@
 /**
  * @file sacd.cpp
  *
- * @brief 
+ * @brief Example PCM to DSD converter.
  *
- * 
+ * This is a proof-of-concept PCM to DSD converter.
  *
- * r8brain-free-src Copyright (c) 2013-2019 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * See the "LICENSE" file for license.
  */
 
 class CDither1Bit

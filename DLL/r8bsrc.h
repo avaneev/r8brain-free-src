@@ -81,7 +81,7 @@ R8BSRC_DECL void r8b_delete( CR8BResampler const rs );
 /**
  * Function returns the number of input samples required to produce at least
  * the specified number of output samples, starting at the cleared or
- * after-construction state.
+ * after-construction state of resampler object.
  *
  * @param rs Resampler object to query.
  * @param ReqOutSamples The number of output samples required. If a

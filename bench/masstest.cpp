@@ -10,7 +10,7 @@
  * rate conversions, designed for Dr.Memory debugger.
  *
  * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
- * See the "License.txt" file for license.
+ * See the "LICENSE" file for license.
  */
 
 double calcRMS( const double* const p1, const double* const p2, const int l,
@@ -115,6 +115,8 @@ VOXMAIN
 
 		const double tb = 0.5 + 4.5 * rnd.getUniform();
 		const int MaxInLen = 50 + (int) ( 2000 * rnd.getUniform() );
+		const int rlen1 = 1 + (int) ( 1024 * rnd.getUniform() );
+		const int rlen2 = 1 + (int) ( 1024 * rnd.getUniform() );
 
 		printf( "Iteration %3i dst=%8.4f tb=%7.4f inlen=%4i ",
 			k, DstSampleRate, tb, MaxInLen );
@@ -122,13 +124,11 @@ VOXMAIN
 		const int ol = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf( ol );
 
-		const int rlen1 = 1 + (int) ( 1024 * rnd.getUniform() );
-		const int rlen2 = 1 + (int) ( 1024 * rnd.getUniform() );
 		CPtrKeeper< r8b :: CDSPResampler* > Resamp;
 		Resamp = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 			MaxInLen, tb, ReqAtten );
 
-		const int inlen1a = Resamp -> getInLenBeforeOutStart( rlen1-1 );
+		const int inlen1a = Resamp -> getInLenBeforeOutStart( rlen1-1 )+1;
 		const int inlen1b = Resamp -> getInputRequiredForOutput( rlen1 );
 		avglatency += inlen1a;
 		minld1 = min( minld1, inlen1b - inlen1a );
@@ -145,7 +145,7 @@ VOXMAIN
 		Resamp = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
 			MaxInLen, tb, ReqAtten );
 
-		const int inlen2a = Resamp -> getInLenBeforeOutStart( rlen2-1 );
+		const int inlen2a = Resamp -> getInLenBeforeOutStart( rlen2-1 )+1;
 		const int inlen2b = Resamp -> getInputRequiredForOutput( rlen2 );
 		minld2 = min( minld2, inlen2b - inlen2a );
 		maxld2 = max( maxld2, inlen2b - inlen2a );

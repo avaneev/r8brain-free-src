@@ -405,14 +405,8 @@ public:
 	{
 		R8BASSERT( ReqOutPos >= 0 );
 
-		int c = StepCount;
-
-		if( c == 0 )
-		{
-			return( ReqOutPos + 1 );
-		}
-
 		int ReqInSamples = ReqOutPos;
+		int c = StepCount;
 
 		while( --c >= 0 )
 		{
@@ -423,23 +417,24 @@ public:
 	}
 
 	/**
-	 * Function obtains overall input sample count required to produce the
-	 * first output sample. Function works by iteratively passing 1 sample at
-	 * a time until output starts. This is a relatively CPU-consuming
-	 * operation. This function should be called after the clear() function
-	 * call or after object's construction. The function itself calls the
-	 * clear() function before return.
+	 * Function returns the number of input samples required to advance to
+	 * the specified output sample position (so that the next process() call
+	 * passes this output position), starting at the cleared or
+	 * after-construction state of *this object.
 	 *
-	 * It is advisable to cache the value returned by this function,
-	 * for each SrcSampleRate/DstSampleRate pair, if it is called frequently.
+	 * This function works by iteratively passing 1 sample at a time until the
+	 * overall output length passes the specified value. This is a relatively
+	 * CPU-consuming operation. This function should be called after the
+	 * clear() function call or after object's construction. The function
+	 * itself calls the clear() function before return.
 	 *
 	 * Note that this function can be considered a legacy function, and is now
 	 * used for testing purposes. It is advised to use "instant" (much faster)
 	 * getInLenBeforeOutPos() and getInputRequiredForOutput() functions
 	 * instead.
 	 *
-	 * @param ReqOutPos The required output position that is required to exist
-	 * in the output stream. Must be a non-negative value.
+	 * @param ReqOutPos The required output position. Must be a non-negative
+	 * value.
 	 * @return The number of input samples required.
 	 */
 
@@ -469,10 +464,10 @@ public:
 	/**
 	 * Function returns the number of input samples required to produce at
 	 * least the specified number of output samples, starting at the cleared
-	 * or after-construction state.
+	 * or after-construction state of *this object.
 	 *
-	 * @param ReqOutSamples The number of output samples required.
-	 * If a non-positive value was specified, the function returns 0.
+	 * @param ReqOutSamples The number of output samples required. If a
+	 * non-positive value was specified, the function returns 0.
 	 * @return The number of input samples required.
 	 */
 
@@ -483,7 +478,7 @@ public:
 			return( 0 );
 		}
 
-		return( getInLenBeforeOutPos( ReqOutSamples - 1 ));
+		return( getInLenBeforeOutPos( ReqOutSamples - 1 ) + 1 );
 	}
 
 	virtual int getLatency() const
