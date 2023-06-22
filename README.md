@@ -206,6 +206,13 @@ inclusion into this list is not mandatory.
 
 ## Change Log ##
 
+Version 6.3:
+
+* Improved the findGCD() function, to cover a wider range of sample rate
+ratios.
+* Added the R8B_DSPBASECLASS macro, to redefine the base class of non-cached
+objects.
+
 Version 6.2:
 
 * Fixed miscalculation in the recently introduced getInLenBeforeOutPos()

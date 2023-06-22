@@ -29,7 +29,7 @@
  *
  * The MIT License (MIT)
  * 
- * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -53,7 +53,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 6.2
+ * @version 6.3
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -105,7 +105,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "6.2"
+#define R8B_VERSION "6.3"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.
@@ -388,16 +388,6 @@ public:
 		freemem( Data0 );
 		Data0 = NULL;
 		Data = NULL;
-	}
-
-	/**
-	 * @return Pointer to the first element of the allocated buffer, NULL if
-	 * not allocated.
-	 */
-
-	T* getPtr() const
-	{
-		return( Data );
 	}
 
 	/**

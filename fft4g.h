@@ -304,9 +304,7 @@ namespace r8b {
 
 class ooura_fft
 {
-friend class CDSPRealFFT;
-
-private:
+public:
 typedef double FPType;
 
 static void cdft(int n, int isgn, FPType *a, int *ip, FPType *w)

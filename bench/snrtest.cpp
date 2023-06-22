@@ -9,7 +9,7 @@
  * precision at the ReqAtten levels. At some ReqAtten settings resampler
  * delivers a lower SNR, thus setting ReqAtten+9 is advisable.
  *
- * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -52,10 +52,10 @@ VOXMAIN
 		const int Ref0Size = (int) ( InBufSize * 9.0 / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp1;
+		CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.0, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler24* > Resamp2;
+		CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBuf[ 0 ], InBufSize, &Ref0[ 0 ], Ref0Size );
@@ -82,11 +82,11 @@ VOXMAIN
 			CFixedBuffer< double > OutBuf1( ol1 );
 			CFixedBuffer< double > OutBuf2( InBufSize );
 
-			CPtrKeeper< r8b :: CDSPResampler* > Resamp1;
+			CPtrKeeper< r8b :: CDSPResampler > Resamp1;
 			Resamp1 = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 				MaxInLen, tb, ReqAtten );
 
-			CPtrKeeper< r8b :: CDSPResampler* > Resamp2;
+			CPtrKeeper< r8b :: CDSPResampler > Resamp2;
 			Resamp2 = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
 				MaxInLen, tb, ReqAtten );
 

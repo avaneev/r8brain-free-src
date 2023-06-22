@@ -9,7 +9,7 @@
  * @brief Mass randomized/stochastic test of various combinations of sample
  * rate conversions, designed for Dr.Memory debugger.
  *
- * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -56,7 +56,7 @@ VOXMAIN
 
 	const int InBufSize = (int) min( (int64_t) 50000, inf.SampleCount );
 
-	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
+	CStructArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
 	int i;
 
 	for( i = 0; i < inf.ChannelCount; i++ )
@@ -79,10 +79,10 @@ VOXMAIN
 		const int Ref0Size = (int) ( InBufSize * bw / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler* > Resamp1;
+		CPtrKeeper< r8b :: CDSPResampler > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler( 10.0, bw, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler* > Resamp2;
+		CPtrKeeper< r8b :: CDSPResampler > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler( bw, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
@@ -124,7 +124,7 @@ VOXMAIN
 		const int ol = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 		CFixedBuffer< double > OutBuf( ol );
 
-		CPtrKeeper< r8b :: CDSPResampler* > Resamp;
+		CPtrKeeper< r8b :: CDSPResampler > Resamp;
 		Resamp = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 			MaxInLen, tb, ReqAtten );
 

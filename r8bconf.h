@@ -9,7 +9,7 @@
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.
  *
- * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -62,6 +62,17 @@
 
 	#define R8B_MEMALLOCCLASS :: r8b :: CStdMemAllocator
 #endif // !defined( R8B_MEMALLOCCLASS )
+
+#if !defined( R8B_DSPBASECLASS )
+	/**
+	 * Macro defines the name of the class from which all CDSPProcessor
+	 * objects are derived. The default value is R8B_BASECLASS. These objects
+	 * are dynamically allocated, but are not cached in the global static
+	 * variables.
+	 */
+
+	#define R8B_DSPBASECLASS R8B_BASECLASS
+#endif // !defined( R8B_DSPBASECLASS )
 
 #if !defined( R8B_FILTER_CACHE_MAX )
 	/**

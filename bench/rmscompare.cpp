@@ -9,7 +9,7 @@
  *
  * @brief RMS comparison utility.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -43,8 +43,8 @@ VOXMAIN
 	}
 
 	const int InBufCapacity = 4096;
-	CInitArray< CFixedBuffer< double > > InBufs1( inf1.ChannelCount );
-	CInitArray< CFixedBuffer< double > > InBufs2( inf1.ChannelCount );
+	CStructArray< CFixedBuffer< double > > InBufs1( inf1.ChannelCount );
+	CStructArray< CFixedBuffer< double > > InBufs2( inf1.ChannelCount );
 	CArray< double > rms( inf1.ChannelCount );
 	int i;
 

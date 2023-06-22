@@ -14,7 +14,7 @@
  * pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -66,8 +66,8 @@ VOXMAIN
 	VOXCHECK( outf.saveFile( *Args.getArgValue( "out-file" ).ValueStr ));
 
 	const int InBufCapacity = 2048;
-	CInitArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
-	CInitArray< CPtrKeeper< r8b :: CDSPResampler24* > > Resamps(
+	CStructArray< CFixedBuffer< double > > InBufs( inf.ChannelCount );
+	CInitArray< CPtrKeeper< r8b :: CDSPResampler > > Resamps(
 		inf.ChannelCount );
 
 	const double tb = Args.getArgValue( "trans-band" ).Value.Double;

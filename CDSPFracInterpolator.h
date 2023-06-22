@@ -607,20 +607,20 @@ inline void CDSPFracDelayFilterBank :: unref()
 
 inline bool findGCD( double l, double s, double& GCD )
 {
-	int it = 0;
+	int it = 150;
 
-	while( it < 50 )
+	while( --it != 0 )
 	{
-		if( s <= 0.0 )
+		const double r = l - s;
+
+		if( r == 0.0 )
 		{
-			GCD = l;
+			GCD = s;
 			return( true );
 		}
 
-		const double r = l - s;
 		l = s;
-		s = ( r < 0.0 ? -r : r );
-		it++;
+		s = fabs( r );
 	}
 
 	return( false );

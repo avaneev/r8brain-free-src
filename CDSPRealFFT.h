@@ -11,7 +11,7 @@
  * minimizes time necessary to initialize the FFT object of the required
  * length.
  *
- * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -121,7 +121,7 @@ public:
 
 	#else // R8B_PFFFT_DOUBLE
 
-		ooura_fft :: rdft( Len, 1, p, wi.getPtr(), wd.getPtr() );
+		ooura_fft :: rdft( Len, 1, p, wi, wd );
 
 	#endif // R8B_IPP
 	}
@@ -150,7 +150,7 @@ public:
 
 	#else // R8B_PFFFT_DOUBLE
 
-		ooura_fft :: rdft( Len, -1, p, wi.getPtr(), wd.getPtr() );
+		ooura_fft :: rdft( Len, -1, p, wi, wd );
 
 	#endif // R8B_IPP
 
