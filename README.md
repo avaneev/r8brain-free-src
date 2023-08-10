@@ -164,7 +164,7 @@ which is engaged automatically if the resampling parameters permit.
 
 This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Microsoft Visual C++](https://visualstudio.microsoft.com/),
-[LLVM](https://llvm.org/) and [Intel C++](https://software.intel.com/en-us/c-compilers)
+[Clang](https://clang.llvm.org/) and [Intel C++](https://software.intel.com/en-us/c-compilers)
 compilers, on 32- and 64-bit Windows, macOS, and CentOS Linux.
 
 Most code is "inline", without the need to compile many source files. The
@@ -198,13 +198,14 @@ This library is used by:
 * [Ripcord](https://cancel.fm/ripcord/)
 * [TensorVox](https://github.com/ZDisket/TensorVox)
 * [Curvessor](https://github.com/unevens/Curvessor)
-
-Please send me a note via aleksey.vaneev@gmail.com and I will include a link
-to your software product to this list of users. This list is important in
-maintaining confidence in this library among the interested parties. The
-inclusion into this list is not mandatory.
+* [Hang Loose Convolver](https://accuratesound.ca/hang-loose-convolver-hlc/)
+* [Wave Breaker](https://pressplay-music.com/wave-breaker/)
 
 ## Change Log ##
+
+Version 6.4:
+
+* Improved SSE detection macros.
 
 Version 6.3:
 

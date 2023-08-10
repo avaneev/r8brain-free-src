@@ -24,6 +24,7 @@
  *
  * For more information, please visit
  * https://github.com/avaneev/r8brain-free-src
+ * E-mail: aleksey.vaneev@gmail.com or info@voxengo.com
  *
  * @section license License
  *
@@ -53,7 +54,7 @@
  * following way: "Sample rate converter designed by Aleksey Vaneev of
  * Voxengo"
  *
- * @version 6.3
+ * @version 6.4
  */
 
 #ifndef R8BBASE_INCLUDED
@@ -73,15 +74,19 @@
 
 #if defined( __SSE4_2__ ) || defined( __SSE4_1__ ) || \
 	defined( __SSSE3__ ) || defined( __SSE3__ ) || defined( __SSE2__ ) || \
-	defined( __x86_64__ ) || defined( _M_AMD64 ) || defined( _M_X64 ) || \
-	defined( __amd64 )
+	defined( __x86_64__ ) || defined( __amd64 ) || defined( _M_X64 ) || \
+	defined( _M_AMD64 ) || ( defined( _M_IX86_FP ) && _M_IX86_FP == 2 )
 
-	#include <immintrin.h>
+	#if defined( _MSC_VER )
+		#include <intrin.h>
+	#else // defined( _MSC_VER )
+		#include <emmintrin.h>
+	#endif // defined( _MSC_VER )
 
 	#define R8B_SSE2
 	#define R8B_SIMD_ISH
 
-#elif defined( __aarch64__ ) || defined( __arm64__ )
+#elif defined( __aarch64__ ) || defined( __arm64 )
 
 	#include <arm_neon.h>
 
@@ -91,7 +96,7 @@
 		#define R8B_SIMD_ISH // Shuffled interpolation is inefficient on M1.
 	#endif // !defined( __APPLE__ )
 
-#endif // ARM64
+#endif // AArch64
 
 /**
  * @brief The "r8brain-free-src" library namespace.
@@ -105,7 +110,7 @@ namespace r8b {
  * Macro defines r8brain-free-src version string.
  */
 
-#define R8B_VERSION "6.3"
+#define R8B_VERSION "6.4"
 
 /**
  * The macro equals to "pi" constant, fits 53-bit floating point mantissa.

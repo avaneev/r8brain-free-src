@@ -145,7 +145,7 @@ inline v4sf ld_ps1(const float *p) { v4sf v=vec_lde(0,p); return vec_splat(vec_p
 /*
   SSE1 support macros
 */
-#elif !defined(PFFFT_SIMD_DISABLE) && (defined(__x86_64__) || defined(_M_X64) || defined(i386) || defined(_M_IX86))
+#elif !defined(PFFFT_SIMD_DISABLE) && (defined(__x86_64__) || defined(_M_X64) || defined(i386) || defined(__i386) || defined(__i386__) || defined(_M_IX86))
 
 #include <xmmintrin.h>
 typedef __m128 v4sf;
@@ -166,7 +166,7 @@ typedef __m128 v4sf;
   ARM NEON support macros
 */
 #elif !defined(PFFFT_SIMD_DISABLE) && ( defined(__ARM_NEON) || \
-	defined(__aarch64__) || defined(__arm64__))
+	defined(__aarch64__) || defined(__arm64))
 #  include <arm_neon.h>
 typedef float32x4_t v4sf;
 #  define SIMD_SZ 4
