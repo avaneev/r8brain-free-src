@@ -204,6 +204,13 @@ This library is used by:
 
 ## Change Log ##
 
+Version 6.5:
+
+* Made a fix to the getWholeStepping() function to permit GCD search for
+fractional sample rates lower than 1.0.
+* Changed floating-point `0x1pN` constants not supported by some compilers,
+to `e` notation.
+
 Version 6.4:
 
 * Improved SSE detection macros.

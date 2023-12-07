@@ -607,16 +607,16 @@ inline void CDSPFracDelayFilterBank :: unref()
 
 inline bool findGCD( double l, double s, double& GCD )
 {
-	int it = 150;
+	int it = 0;
 
-	while( --it != 0 )
+	while( ++it < 150 )
 	{
 		const double r = l - s;
 
 		if( r == 0.0 )
 		{
 			GCD = s;
-			return( true );
+			return( s > 0.0 );
 		}
 
 		l = s;
@@ -644,7 +644,7 @@ inline bool getWholeStepping( const double SSampleRate,
 {
 	double GCD;
 
-	if( !findGCD( SSampleRate, DSampleRate, GCD ) || GCD < 1.0 )
+	if( !findGCD( SSampleRate, DSampleRate, GCD ))
 	{
 		return( false );
 	}

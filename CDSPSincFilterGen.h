@@ -327,7 +327,7 @@ public:
 		const double pw = Power;
 		int t = 1;
 
-		if( Freq1 < 0x1p-42 )
+		if( Freq1 < 2.3e-13 )
 		{
 			if( pw < 0.0 )
 			{
@@ -481,9 +481,9 @@ public:
 			f = -f;
 		}
 
-		int IsZeroX = ( fabs( fd - 1.0 ) < 0x1p-42 );
+		int IsZeroX = ( fabs( fd - 1.0 ) < 2.3e-13 );
 		int mt = 0 - IsZeroX;
-		IsZeroX = ( IsZeroX || fabs( fd ) < 0x1p-42 );
+		IsZeroX = ( IsZeroX || fabs( fd ) < 2.3e-13 );
 
 		if( pw < 0.0 )
 		{
