@@ -192,7 +192,6 @@ This library is used by:
 * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
 * [OpenMPT](https://openmpt.org/)
 * [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
-* [r8brain free sample rate converter](https://www.voxengo.com/product/r8brain/)
 * [Voice Aloud Reader](https://play.google.com/store/apps/details?id=com.hyperionics.avarLic)
 * [Zynewave Podium](https://zynewave.com/podium/)
 * [Phonometrica](http://www.phonometrica-ling.org/index.html)
