@@ -8,7 +8,8 @@
  * as a pseudo-code demonstrating the use of the library. Here you can find an
  * example implementation of the simplest sample rate converter utility.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ *
  * See the "LICENSE" file for license.
  */
 
@@ -26,7 +27,7 @@ int main()
 
 	const int InBufCapacity = 1024;
 	CFixedBuffer< double > InBufs[ inf.ChannelCount ];
-	CPtrKeeper< CDSPResampler24* > Resamps[ inf.ChannelCount ];
+	CPtrKeeper< CDSPResampler24 > Resamps[ inf.ChannelCount ];
 
 	int i;
 

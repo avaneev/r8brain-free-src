@@ -1,8 +1,3 @@
-#include "../../../libvox/Sources/Audio/AudioMath.h"
-#include "../../../libvox/Sources/Core/AppMain.h"
-#include "../../../libvox/Sources/Other/CWaveFile.h"
-#include "../CDSPResampler.h"
-
 /**
  * @file zerotest.cpp
  *
@@ -10,9 +5,15 @@
  * upsampling and downsampling a reference signal, mainly using whole-stepping
  * interpolation.
  *
- * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ *
  * See the "LICENSE" file for license.
  */
+
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
+#include "../CDSPResampler.h"
 
 double calcRMS( const double* const p1, const double* const p2, const int l,
 	double& peakd )
@@ -70,10 +71,10 @@ VOXMAIN
 		const int Ref0Size = (int) ( InBufSize * bw / 10.0 );
 		CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler24( 10.0, bw, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler24( bw, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
@@ -107,7 +108,7 @@ VOXMAIN
 		CFixedBuffer< double > OutBuf1( ol1 );
 		CFixedBuffer< double > OutBuf2( InBufSize );
 
-		CPtrKeeper< r8b :: CDSPResampler > Resamp1;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 			MaxInLen, tb, ReqAtten );
 
@@ -117,7 +118,7 @@ VOXMAIN
 		minld1 = min( minld1, inlen1b - inlen1a );
 		maxld1 = max( maxld1, inlen1b - inlen1a );
 
-		CPtrKeeper< r8b :: CDSPResampler > Resamp2;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
 			MaxInLen, tb, ReqAtten );
 

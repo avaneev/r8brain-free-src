@@ -1,17 +1,18 @@
-#include "../../../libvox/Sources/Audio/AudioMath.h"
-#include "../../../libvox/Sources/Core/AppMain.h"
-#include "../../../libvox/Sources/Other/CWaveFile.h"
-#include "../CDSPResampler.h"
-
 /**
  * @file masstest.cpp
  *
  * @brief Mass randomized/stochastic test of various combinations of sample
  * rate conversions, designed for Dr.Memory debugger.
  *
- * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ *
  * See the "LICENSE" file for license.
  */
+
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../../../libvox/Sources/Other/CWaveFile.h"
+#include "../CDSPResampler.h"
 
 double calcRMS( const double* const p1, const double* const p2, const int l,
 	double& peakd )
@@ -33,7 +34,7 @@ void addSine( double* const p, const int l, const double Freq,
 	const double SampleRate )
 {
 	CSineGen sg;
-	sg.init( R8B_2PI * Freq / SampleRate, 0.5 );
+	sg.init( r8b :: R8B_2PI * Freq / SampleRate, 0.5 );
 	int i;
 
 	for( i = 0; i < l; i++ )
@@ -77,12 +78,12 @@ VOXMAIN
 		const double tb = 2.0;
 		const double bw = 9.3;
 		const int Ref0Size = (int) ( InBufSize * bw / 10.0 );
-		CFixedBuffer< double > Ref0( Ref0Size );
+		r8b :: CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler > Resamp1;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler( 10.0, bw, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler > Resamp2;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler( bw, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBufs[ 0 ][ 0 ], InBufSize, &Ref0[ 0 ],
@@ -92,10 +93,10 @@ VOXMAIN
 	}
 
 	CRnd rnd;
-	rnd.init( RndInitValue.get() );
+	rnd.init( (int) RndInitValue.get() );
 
 	const int TestCount = 1000;
-	CFixedBuffer< double > OutBuf2( InBufSize );
+	r8b :: CFixedBuffer< double > OutBuf2( InBufSize );
 	double peakd = 0.0;
 	double maxr = 0.0;
 	double avgr = 0.0;
@@ -122,9 +123,9 @@ VOXMAIN
 			k, DstSampleRate, tb, MaxInLen );
 
 		const int ol = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
-		CFixedBuffer< double > OutBuf( ol );
+		r8b :: CFixedBuffer< double > OutBuf( ol );
 
-		CPtrKeeper< r8b :: CDSPResampler > Resamp;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp;
 		Resamp = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 			MaxInLen, tb, ReqAtten );
 

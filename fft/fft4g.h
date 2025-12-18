@@ -17,6 +17,12 @@
 #ifndef R8B_FFT4G_INCLUDED
 #define R8B_FFT4G_INCLUDED
 
+#if __cplusplus >= 201103L
+	#include <cmath>
+#else // __cplusplus >= 201103L
+	#include <math.h>
+#endif // __cplusplus >= 201103L
+
 /*
 Fast Fourier/Cosine/Sine Transform
     dimension   :one
@@ -294,6 +300,14 @@ Appendix :
 */
 
 namespace r8b {
+
+#if __cplusplus >= 201103L
+
+	using std :: sin;
+	using std :: cos;
+	using std :: atan;
+
+#endif // __cplusplus >= 201103L
 
 /**
  * @brief A wrapper class around Takuya OOURA's FFT functions.

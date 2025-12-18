@@ -1,6 +1,6 @@
-# r8brain-free-src - High-Quality, Fast Resampler (in C++) #
+# r8brain-free-src - High-Quality, Fast Resampler (in C++)
 
-## Introduction ##
+## Introduction
 
 Open source (under the MIT license) high-quality professional audio sample
 rate converter (SRC) / resampler C++ library.  Features routines for SRC,
@@ -27,16 +27,18 @@ alternative being only the whole number-factored SRC, which can be slower.
 P.S. Please credit the creator of this library in your documentation in the
 following way: "Sample rate converter designed by Aleksey Vaneev of Voxengo".
 
-## Requirements ##
+## Requirements
 
 C++ compiler and system with the "double" floating-point type (53-bit
 mantissa) support.  No explicit code for the "float" type is present in this
-library, because as practice has shown, the "float"-based code performs
-considerably slower on a modern processor, at least in this library.  This
-library does not have dependencies beside the standard C library, the
-"windows.h" on Windows and the "pthread.h" on macOS and Linux.
+library (except FFT routines), because as practice has shown,
+the "float"-based code performs slower on a modern processor, at least in this
+library.  This library is basically header-only and does not have dependencies
+beside the standard C++ library.  If you are using a pre-C++11 compiler,
+the added dependency is the "Windows.h" on Windows and the "pthread.h" on
+macOS and Linux.
 
-## Usage Information ##
+## Usage Information
 
 The sample rate converter (resampler) is represented by the
 **r8b::CDSPResampler** class, which is a single front-end class for the
@@ -52,11 +54,9 @@ isolating it from all other code.  The code is thread-safe.  A separate
 resampler object should be created for each audio channel or stream being
 processed concurrently.
 
-Note that you will need to compile the "r8bbase.cpp" source file and include
-the resulting object file into your application build.  This source file
-includes definitions of several global static objects used by the library.
-You may also need to include to your project: the "Kernel32" library (on
-Windows) and the "pthread" library on macOS and Linux.
+If you are using a pre-C++11 compiler, you may need to include to your
+project build: the "Kernel32" library (on Windows) and the "pthread" library
+on macOS and Linux.
 
 The library is able to process signal of any scale and loudness: it is not
 limited to just a "usual" -1.0 to 1.0 range.
@@ -65,15 +65,19 @@ By defining the `R8B_IPP` configuration macro it is possible to enable Intel
 IPP back-end for FFT functions, instead of the default Ooura FFT.  IPP FFT
 makes sample rate conversion faster by 23% on average.
 
-    #define R8B_IPP 1
+```c++
+#define R8B_IPP 1
+```
 
 If a larger initial processing delay and a very minor sample-timing error are
 not an issue, for the most efficiency you can define these macros at
 the beginning of the `r8bconf.h` file, or during compilation:
 
-    #define R8B_IPP 1
-    #define R8B_FASTTIMING 1
-    #define R8B_EXTFFT 1
+```c++
+#define R8B_IPP 1
+#define R8B_FASTTIMING 1
+#define R8B_EXTFFT 1
+```
 
 If you do not have access to the Intel IPP then you may consider enabling the
 PFFFT which is only slightly slower than Intel IPP FFT in performance.  There
@@ -87,14 +91,18 @@ use of SSE2, AVX, and NEON intrinsics, yielding precision that is equal to
 both Intel IPP and Ooura FFT implementations.
 
 To use the PFFFT, define the `R8B_PFFFT` or `R8B_PFFFT_DOUBLE` macro, compile
-and include the supplied `pffft.cpp` or `pffft_double/pffft_double.c` file to
-your project build.
+and include the supplied `fft/pffft.c` or `fft/pffft_double.c` file to your
+project build.
 
-    #define R8B_PFFFT 1
+```c++
+#define R8B_PFFFT 1
+```
 
-    or
+or
 
-    #define R8B_PFFFT_DOUBLE 1
+```c++
+#define R8B_PFFFT_DOUBLE 1
+```
 
 The code of this library was commented in the [Doxygen](http://www.doxygen.org/)
 style.  To generate the documentation locally you may run the
@@ -111,7 +119,7 @@ sure that the competing library is also tuned to produce a fully linear-phase
 response, has similar stop-band characteristics and similar sample-timing
 precision.
 
-## Dynamic Link Library ##
+## Dynamic Link Library
 
 The functions of this SRC library are also accessible in simplified form via
 the DLL file on Windows, requiring a processor with SSE2 support (Win64
@@ -121,7 +129,7 @@ folder on the project's homepage.  On non-Windows systems it is preferrable
 to use the C++ library directly.  Note that the DLL was compiled with the
 Intel IPP enabled.
 
-## Real-Time Applications ##
+## Real-Time Applications
 
 The resampler class of this library was designed as an asynchronous processor:
 it may produce any number of output samples, depending on the input sample
@@ -137,7 +145,7 @@ demonstrated in the `example.cpp` file, for a real-time resampling a "pull"
 method should be used which calls the resampling process until the output
 buffer is filled.
 
-## Notes ##
+## Notes
 
 When using the **r8b::CDSPResampler** class directly, you may select the
 transition band/steepness of the low-pass (reconstruction) filter, expressed
@@ -164,14 +172,14 @@ This library was tested for compatibility with [GNU C++](https://gcc.gnu.org/),
 [Clang](https://clang.llvm.org/) and [Intel C++](https://software.intel.com/en-us/c-compilers)
 compilers, on 32- and 64-bit Windows, macOS, and CentOS Linux.
 
-Most code is "inline", without the need to compile many source files. The
-memory footprint is quite modest.
+All code is "inline", without the need to compile any source files.
+The memory footprint is quite modest.
 
 For high-quality dithering you may consider using
 [PRVHASH PRNG](https://github.com/avaneev/prvhash) which features an excellent
 psycho-acoustic performance.
 
-## Acknowledgements ##
+## Acknowledgements
 
 r8brain-free-src is bundled with the following code:
 
@@ -182,7 +190,7 @@ r8brain-free-src is bundled with the following code:
 * PFFFT DOUBLE Copyright (c) 2020 Hayati Ayguen, Dario Mambro.
 [Homepage](https://github.com/marton78/pffft)
 
-## Users ##
+## Users
 
 This library is used by:
 
@@ -201,7 +209,17 @@ This library is used by:
 * [Hang Loose Convolver](https://accuratesound.ca/hang-loose-convolver-hlc/)
 * [Wave Breaker](https://pressplay-music.com/wave-breaker/)
 
-## Change Log ##
+## Change Log
+
+Version 7.0:
+
+* Implemented full C++ compliance.
+* Removed `r8bbase.cpp` dependency.
+* Removed `Windows.h` and `pthread.h` dependency for C++11 compilers.
+* Moved all FFT routines to the `fft/` folder.
+* Updated PFFFT to the latest version (now `pffft.c`).
+* Fixed most compiler warnings.
+* Improved documentation.
 
 Version 6.5:
 

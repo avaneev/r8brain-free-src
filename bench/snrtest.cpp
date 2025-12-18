@@ -1,7 +1,3 @@
-#include "../../../libvox/Sources/Audio/AudioMath.h"
-#include "../../../libvox/Sources/Core/AppMain.h"
-#include "../CDSPResampler.h"
-
 /**
  * @file snrtest.cpp
  *
@@ -9,9 +5,14 @@
  * precision at the ReqAtten levels. At some ReqAtten settings resampler
  * delivers a lower SNR, thus setting ReqAtten+9 is advisable.
  *
- * r8brain-free-src Copyright (c) 2013-2023 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ *
  * See the "LICENSE" file for license.
  */
+
+#include "../../../libvox/Sources/Audio/AudioMath.h"
+#include "../../../libvox/Sources/Core/AppMain.h"
+#include "../CDSPResampler.h"
 
 double calcRMS( const double* const p1, const double* const p2, const int l )
 {
@@ -50,12 +51,12 @@ VOXMAIN
 		const int MaxInLen = 521;
 		const double tb = 2.0;
 		const int Ref0Size = (int) ( InBufSize * 9.0 / 10.0 );
-		CFixedBuffer< double > Ref0( Ref0Size );
+		r8b :: CFixedBuffer< double > Ref0( Ref0Size );
 
-		CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
 		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.0, MaxInLen, tb );
 
-		CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
+		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
 		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBuf[ 0 ], InBufSize, &Ref0[ 0 ], Ref0Size );
@@ -82,11 +83,11 @@ VOXMAIN
 			CFixedBuffer< double > OutBuf1( ol1 );
 			CFixedBuffer< double > OutBuf2( InBufSize );
 
-			CPtrKeeper< r8b :: CDSPResampler > Resamp1;
+			r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp1;
 			Resamp1 = new r8b :: CDSPResampler( SrcSampleRate, DstSampleRate,
 				MaxInLen, tb, ReqAtten );
 
-			CPtrKeeper< r8b :: CDSPResampler > Resamp2;
+			r8b :: CPtrKeeper< r8b :: CDSPResampler > Resamp2;
 			Resamp2 = new r8b :: CDSPResampler( DstSampleRate, SrcSampleRate,
 				MaxInLen, tb, ReqAtten );
 
