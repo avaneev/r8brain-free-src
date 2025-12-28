@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.0
+ * @version 7.1
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.0" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.1" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
