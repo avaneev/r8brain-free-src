@@ -211,6 +211,10 @@ This library is used by:
 
 ## Change Log
 
+Version 7.1:
+
+* Updated FFT routines to the latest versions.
+
 Version 7.0:
 
 * Implemented full C++ compliance.
