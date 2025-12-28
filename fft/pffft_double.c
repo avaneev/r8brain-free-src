@@ -75,12 +75,14 @@
 #    define _USE_MATH_DEFINES
 #  endif
 #  include <malloc.h>
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+#  include <malloc.h>
 #else
 #  include <alloca.h>
 #endif
 
-#include <stdint.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
@@ -123,6 +125,9 @@
 #define FUNC_ALIGNED_MALLOC        pffftd_aligned_malloc
 #define FUNC_ALIGNED_FREE          pffftd_aligned_free
 #define FUNC_SIMD_SIZE             pffftd_simd_size
+#define FUNC_MIN_FFT_SIZE          pffftd_min_fft_size
+#define FUNC_IS_VALID_SIZE         pffftd_is_valid_size
+#define FUNC_NEAREST_SIZE          pffftd_nearest_transform_size
 #define FUNC_SIMD_ARCH             pffftd_simd_arch
 #define FUNC_VALIDATE_SIMD_A       validate_pffftd_simd
 #define FUNC_VALIDATE_SIMD_EX      validate_pffftd_simd_ex
@@ -138,6 +143,7 @@
 #define FUNC_COS  cos
 #define FUNC_SIN  sin
 
+
 #include "pffft_priv_impl.h"
 
 /* moved from "pffft_common.c" */
@@ -145,13 +151,11 @@
 /* SSE and co like 16-bytes aligned pointers
  * with a 64-byte alignment, we are even aligned on L2 cache lines... */
 #define MALLOC_V4SF_ALIGNMENT 64
-#define MALLOC_V4SF_SIZE (MALLOC_V4SF_ALIGNMENT+sizeof(void*))
 
 static void * Valigned_malloc(size_t nb_bytes) {
-  void *p, *p0 = malloc(nb_bytes + MALLOC_V4SF_SIZE);
+  void *p, *p0 = malloc(nb_bytes + MALLOC_V4SF_ALIGNMENT);
   if (!p0) return (void *) 0;
-  p = (void *) (((uintptr_t) p0 + MALLOC_V4SF_SIZE) &
-    ~(uintptr_t) (MALLOC_V4SF_ALIGNMENT-1));
+  p = (void *) (((uintptr_t) p0 + MALLOC_V4SF_ALIGNMENT) & (~((uintptr_t) (MALLOC_V4SF_ALIGNMENT-1))));
   *((void **) p - 1) = p0;
   return p;
 }
@@ -181,21 +185,9 @@ static int is_power_of_two(int N) {
   return f;
 }
 
-static int min_fft_size(pffft_transform_t transform) {
-  /* unfortunately, the fft size must be a multiple of 16 for complex FFTs
-     and 32 for real FFTs -- a lot of stuff would need to be rewritten to
-     handle other cases (or maybe just switch to a scalar fft, I don't know..) */
-  int simdSz = pffftd_simd_size();
-  if (transform == PFFFT_REAL)
-    return ( 2 * simdSz * simdSz );
-  else if (transform == PFFFT_COMPLEX)
-    return ( simdSz * simdSz );
-  else
-    return 1;
-}
+
 
 void *pffftd_aligned_malloc(size_t nb_bytes) { return Valigned_malloc(nb_bytes); }
 void pffftd_aligned_free(void *p) { Valigned_free(p); }
 int pffftd_next_power_of_two(int N) { return next_power_of_two(N); }
 int pffftd_is_power_of_two(int N) { return is_power_of_two(N); }
-int pffftd_min_fft_size(pffft_transform_t transform) { return min_fft_size(transform); }

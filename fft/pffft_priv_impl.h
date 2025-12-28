@@ -69,9 +69,47 @@
 #endif
 
 
-int FUNC_SIMD_SIZE() { return SIMD_SZ; }
+int FUNC_SIMD_SIZE(void) { return SIMD_SZ; }
 
-const char * FUNC_SIMD_ARCH() { return VARCH; }
+int FUNC_MIN_FFT_SIZE(pffft_transform_t transform) {
+  /* unfortunately, the fft size must be a multiple of 16 for complex FFTs
+     and 32 for real FFTs -- a lot of stuff would need to be rewritten to
+     handle other cases (or maybe just switch to a scalar fft, I don't know..) */
+  int simdSz = FUNC_SIMD_SIZE();
+  if (transform == PFFFT_REAL)
+    return ( 2 * simdSz * simdSz );
+  else if (transform == PFFFT_COMPLEX)
+    return ( simdSz * simdSz );
+  else
+    return 1;
+}
+
+int FUNC_IS_VALID_SIZE(int N, pffft_transform_t cplx) {
+  const int N_min = FUNC_MIN_FFT_SIZE(cplx);
+  int R = N;
+  while (R >= 5*N_min && (R % 5) == 0)  R /= 5;
+  while (R >= 3*N_min && (R % 3) == 0)  R /= 3;
+  while (R >= 2*N_min && (R % 2) == 0)  R /= 2;
+  return (R == N_min) ? 1 : 0;
+}
+
+int FUNC_NEAREST_SIZE(int N, pffft_transform_t cplx, int higher) {
+  int d;
+  const int N_min = FUNC_MIN_FFT_SIZE(cplx);
+  if (N < N_min)
+    N = N_min;
+  d = (higher) ? N_min : -N_min;
+  if (d > 0)
+    N = N_min * ((N+N_min-1) / N_min);  /* round up */
+  else
+    N = N_min * (N / N_min);  /* round down */
+
+  for (; ; N += d)
+    if (FUNC_IS_VALID_SIZE(N, cplx))
+      return N;
+}
+
+const char * FUNC_SIMD_ARCH(void) { return VARCH; }
 
 
 /*
@@ -1015,13 +1053,14 @@ struct SETUP_STRUCT {
 };
 
 SETUP_STRUCT *FUNC_NEW_SETUP(int N, pffft_transform_t transform) {
-  SETUP_STRUCT *s = (SETUP_STRUCT*)malloc(sizeof(SETUP_STRUCT));
+  SETUP_STRUCT *s = 0;
   int k, m;
   /* unfortunately, the fft size must be a multiple of 16 for complex FFTs 
      and 32 for real FFTs -- a lot of stuff would need to be rewritten to
      handle other cases (or maybe just switch to a scalar fft, I don't know..) */
-  if (transform == PFFFT_REAL) { assert((N%(2*SIMD_SZ*SIMD_SZ))==0 && N>0); }
-  if (transform == PFFFT_COMPLEX) { assert((N%(SIMD_SZ*SIMD_SZ))==0 && N>0); }
+  if (transform == PFFFT_REAL)    { if ((N%(2*SIMD_SZ*SIMD_SZ)) || N<=0) return s; }
+  if (transform == PFFFT_COMPLEX) { if ((N%(  SIMD_SZ*SIMD_SZ)) || N<=0) return s; }
+  s = (SETUP_STRUCT*)malloc(sizeof(SETUP_STRUCT));
   /* assert((N % 32) == 0); */
   s->N = N;
   s->transform = transform;  
@@ -1066,6 +1105,8 @@ SETUP_STRUCT *FUNC_NEW_SETUP(int N, pffft_transform_t transform) {
 
 
 void FUNC_DESTROY(SETUP_STRUCT *s) {
+  if (!s)
+    return;
   FUNC_ALIGNED_FREE(s->data);
   free(s);
 }
@@ -1778,7 +1819,7 @@ void FUNC_TRANSFORM_ORDERED(SETUP_STRUCT *setup, const float *input, float *outp
 #define assertv4(v,f0,f1,f2,f3) assert(v.f[0] == (f0) && v.f[1] == (f1) && v.f[2] == (f2) && v.f[3] == (f3))
 
 /* detect bugs with the vector support macros */
-void FUNC_VALIDATE_SIMD_A() {
+void FUNC_VALIDATE_SIMD_A(void) {
   float f[16] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
   v4sf_union a0, a1, a2, a3, t, u; 
   memcpy(a0.f, f, 4*sizeof(float));
@@ -1818,7 +1859,7 @@ void FUNC_VALIDATE_SIMD_A() {
 
 static void pffft_assert1( float result, float ref, const char * vartxt, const char * functxt, int * numErrs, const char * f, int lineNo )
 {
-  if ( !( fabs( result - ref ) < 0.01 ) )
+  if ( !( fabs( result - ref ) < 0.01F ) )
   {
     fprintf(stderr, "%s: assert for %s at %s(%d)\n  expected %f  value %f\n", functxt, vartxt, f, lineNo, ref, result);
     ++(*numErrs);

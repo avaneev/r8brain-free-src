@@ -154,7 +154,7 @@ typedef union v4sf_union {
 
 
 #if !defined(SIMD_SZ)
-#pragma message( __FILE__ ": double SCALAR1 macros are defined" )
+#pragma message( __FILE__ ": float SCALAR1 macros are defined" )
 typedef vsfscalar v4sf;
 
 #  define SIMD_SZ 1

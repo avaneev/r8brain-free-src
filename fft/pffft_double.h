@@ -83,7 +83,6 @@
 #define PFFFT_DOUBLE_H
 
 #include <stddef.h> /* for size_t */
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -192,19 +191,32 @@ extern "C" {
   /* return string identifier of used architecture (AVX/..) */
   const char * pffftd_simd_arch();
 
-
-  /* following functions are identical to the pffft_ functions */
-
   /* simple helper to get minimum possible fft size */
   int pffftd_min_fft_size(pffft_transform_t transform);
+
+  /* simple helper to determine size N is valid
+     - factorizable to pffft_min_fft_size() with factors 2, 3, 5
+  */
+  int pffftd_is_valid_size(int N, pffft_transform_t cplx);
+
+  /* determine nearest valid transform size  (by brute-force testing)
+     - factorizable to pffft_min_fft_size() with factors 2, 3, 5.
+     higher: bool-flag to find nearest higher value; else lower.
+  */
+  int pffftd_nearest_transform_size(int N, pffft_transform_t cplx, int higher);
+
+
+  /* following functions are identical to the pffft_ functions - both declared */
 
   /* simple helper to determine next power of 2
      - without inexact/rounding floating point operations
   */
   int pffftd_next_power_of_two(int N);
+  int pffft_next_power_of_two(int N);
 
   /* simple helper to determine if power of 2 - returns bool */
   int pffftd_is_power_of_two(int N);
+  int pffft_is_power_of_two(int N);
 
   /*
     the double buffers must have the correct alignment (32-byte boundary
@@ -212,7 +224,9 @@ extern "C" {
     correctly aligned buffers.  
   */
   void *pffftd_aligned_malloc(size_t nb_bytes);
+  void *pffft_aligned_malloc(size_t nb_bytes);
   void pffftd_aligned_free(void *);
+  void pffft_aligned_free(void *);
 
 #ifdef __cplusplus
 }

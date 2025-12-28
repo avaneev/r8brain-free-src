@@ -62,6 +62,7 @@
 #endif
 
 #include "pffft.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -274,7 +275,7 @@ void validate_pffft_simd() {} // allow test_pffft.c to call this function even w
 void *pffft_aligned_malloc(size_t nb_bytes) {
   void *p, *p0 = malloc(nb_bytes + MALLOC_V4SF_ALIGNMENT);
   if (!p0) return (void *) 0;
-  p = (void *) (((size_t) p0 + MALLOC_V4SF_ALIGNMENT) & (~((size_t) (MALLOC_V4SF_ALIGNMENT-1))));
+  p = (void *) (((uintptr_t) p0 + MALLOC_V4SF_ALIGNMENT) & (~((uintptr_t) (MALLOC_V4SF_ALIGNMENT-1))));
   *((void **) p - 1) = p0;
   return p;
 }
@@ -638,7 +639,7 @@ static void radb3_ps(int ido, int l1, const v4sf *RESTRICT cc, v4sf *RESTRICT ch
 static NEVER_INLINE(void) radf4_ps(int ido, int l1, const v4sf *RESTRICT cc, v4sf * RESTRICT ch,
                                    const float * RESTRICT wa1, const float * RESTRICT wa2, const float * RESTRICT wa3)
 {
-  static const float minus_hsqt2 = (float)-0.7071067811865475;
+  static const float minus_hsqt2 = -0.7071067811865475f;
   int i, k, l1ido = l1*ido;
   {
     const v4sf *RESTRICT cc_ = cc, * RESTRICT cc_end = cc + l1ido;
@@ -722,7 +723,7 @@ static NEVER_INLINE(void) radf4_ps(int ido, int l1, const v4sf *RESTRICT cc, v4s
 static NEVER_INLINE(void) radb4_ps(int ido, int l1, const v4sf * RESTRICT cc, v4sf * RESTRICT ch,
                                    const float * RESTRICT wa1, const float * RESTRICT wa2, const float *RESTRICT wa3)
 {
-  static const float minus_sqrt2 = (float)-1.414213562373095;
+  static const float minus_sqrt2 = -1.414213562373095f;
   static const float two = 2.f;
   int i, k, l1ido = l1*ido;
   v4sf ci2, ci3, ci4, cr2, cr3, cr4, ti1, ti2, ti3, ti4, tr1, tr2, tr3, tr4;
@@ -1104,7 +1105,7 @@ static void rffti1_ps(int n, float *wa, int *ifac)
   int k1, j, ii;
 
   int nf = decompose(n,ifac,ntryh);
-  float argh = (2*M_PI) / n;
+  float argh = (2*(float)M_PI) / n;
   int is = 0;
   int nfm1 = nf - 1;
   int l1 = 1;
@@ -1122,8 +1123,8 @@ static void rffti1_ps(int n, float *wa, int *ifac)
       for (ii = 3; ii <= ido; ii += 2) {
         i += 2;
         fi += 1;
-        wa[i - 2] = cos(fi*argld);
-        wa[i - 1] = sin(fi*argld);
+        wa[i - 2] = cosf(fi*argld);
+        wa[i - 1] = sinf(fi*argld);
       }
       is += ido;
     }
@@ -1137,7 +1138,7 @@ void cffti1_ps(int n, float *wa, int *ifac)
   int k1, j, ii;
 
   int nf = decompose(n,ifac,ntryh);
-  float argh = (2*M_PI)/(float)n;
+  float argh = (2*(float)M_PI)/(float)n;
   int i = 1;
   int l1 = 1;
   for (k1=1; k1<=nf; k1++) {
@@ -1157,8 +1158,8 @@ void cffti1_ps(int n, float *wa, int *ifac)
       for (ii = 4; ii <= idot; ii += 2) {
         i += 2;
         fi += 1;
-        wa[i-1] = cos(fi*argld);
-        wa[i] = sin(fi*argld);
+        wa[i-1] = cosf(fi*argld);
+        wa[i] = sinf(fi*argld);
       }
       if (ip > 5) {
         wa[i1-1] = wa[i-1];
@@ -1187,19 +1188,19 @@ v4sf *cfftf1_ps(int n, const v4sf *input_readonly, v4sf *work1, v4sf *work2, con
         int ix2 = iw + idot;
         int ix3 = ix2 + idot;
         int ix4 = ix3 + idot;
-        passf5_ps(idot, l1, in, out, &wa[iw], &wa[ix2], &wa[ix3], &wa[ix4], isign);
+        passf5_ps(idot, l1, in, out, &wa[iw], &wa[ix2], &wa[ix3], &wa[ix4], (float)isign);
       } break;
       case 4: {
         int ix2 = iw + idot;
         int ix3 = ix2 + idot;
-        passf4_ps(idot, l1, in, out, &wa[iw], &wa[ix2], &wa[ix3], isign);
+        passf4_ps(idot, l1, in, out, &wa[iw], &wa[ix2], &wa[ix3], (float)isign);
       } break;
       case 2: {
-        passf2_ps(idot, l1, in, out, &wa[iw], isign);
+        passf2_ps(idot, l1, in, out, &wa[iw], (float)isign);
       } break;
       case 3: {
         int ix2 = iw + idot;
-        passf3_ps(idot, l1, in, out, &wa[iw], &wa[ix2], isign);
+        passf3_ps(idot, l1, in, out, &wa[iw], &wa[ix2], (float)isign);
       } break;
       default:
         assert(0);
@@ -1229,9 +1230,10 @@ struct PFFFT_Setup {
 };
 
 PFFFT_Setup *pffft_new_setup(int N, pffft_transform_t transform) {
-  // validate N for negative values or potential int overflow
-  PFFFT_Setup *s;
+  PFFFT_Setup *s = NULL;
   int k, m;
+
+  // validate N for negative values or potential int overflow
   if (N < 0) {
     return 0;
   }
@@ -1251,7 +1253,7 @@ PFFFT_Setup *pffft_new_setup(int N, pffft_transform_t transform) {
   s->transform = transform;
   /* nb of complex simd vectors */
   s->Ncvec = (transform == PFFFT_REAL ? N/2 : N)/SIMD_SZ;
-  s->data = (v4sf*)pffft_aligned_malloc(2*s->Ncvec * sizeof(v4sf));
+  s->data = (v4sf*)pffft_aligned_malloc(2*(size_t)s->Ncvec * sizeof(v4sf));
   s->e = (float*)s->data;
   s->twiddle = (float*)(s->data + (2*s->Ncvec*(SIMD_SZ-1))/SIMD_SZ);
 
@@ -1259,9 +1261,9 @@ PFFFT_Setup *pffft_new_setup(int N, pffft_transform_t transform) {
     int i = k/SIMD_SZ;
     int j = k%SIMD_SZ;
     for (m=0; m < SIMD_SZ-1; ++m) {
-      float A = -2*M_PI*(m+1)*k / N;
-      s->e[(2*(i*3 + m) + 0) * SIMD_SZ + j] = cos(A);
-      s->e[(2*(i*3 + m) + 1) * SIMD_SZ + j] = sin(A);
+      float A = -2*(float)M_PI*(m+1)*k / N;
+      s->e[(2*(i*3 + m) + 0) * SIMD_SZ + j] = cosf(A);
+      s->e[(2*(i*3 + m) + 1) * SIMD_SZ + j] = sinf(A);
     }
   }
 

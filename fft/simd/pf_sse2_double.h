@@ -48,11 +48,7 @@
 /*
   SSE2 64bit support macros
 */
-#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && \
-	(defined( __SSE4_2__ ) || defined( __SSE4_1__ ) || \
-	defined( __SSSE3__ ) || defined( __SSE3__ ) || defined( __SSE2__ ) || \
-	defined( __x86_64__ ) || defined( _M_AMD64 ) || defined( _M_X64 ) || \
-	defined( __amd64 ))
+#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && (defined( __SSE4_2__ ) |  defined( __SSE4_1__ ) || defined( __SSE3__ ) || defined( __SSE2__ ) || defined ( __x86_64__ ) || defined( _M_AMD64 ) || defined( _M_X64 ) || defined( __amd64 ))
 #pragma message (__FILE__ ": SSE2 double macros are defined" )
 
 #include <emmintrin.h>
@@ -80,12 +76,10 @@ typedef union v4sf_union {
 #define FORCE_INLINE static __forceinline
 
 #else
-
+#error "Macro name collisions may happens with unknown compiler"
 #ifdef FORCE_INLINE
-#warning PFFFT: Macro name collision happened with unknown compiler
 #undef FORCE_INLINE
 #endif
-
 #define FORCE_INLINE static inline
 #endif
 
