@@ -27,6 +27,9 @@ alternative being only the whole number-factored SRC, which can be slower.
 P.S. Please credit the creator of this library in your documentation in the
 following way: "Sample rate converter designed by Aleksey Vaneev of Voxengo".
 
+r8brain-free-src is the same algorithm featured in the free
+[Voxengo](https://www.voxengo.com/) r8brain sample rate converter application.
+
 ## Requirements
 
 C++ compiler and system with the "double" floating-point type (53-bit
