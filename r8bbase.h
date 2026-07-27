@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.1
+ * @version 7.2
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -33,7 +33,7 @@
  *
  * The MIT License (MIT)
  * 
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.1" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.2" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -297,7 +297,7 @@ public:
 
 	CFixedBuffer( const int Capacity )
 	{
-		R8BASSERT( Capacity > 0 || Capacity == 0 );
+		R8BASSERT( Capacity >= 0 );
 
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );
 		Data = (T*) alignptr( Data0, Alignment );
@@ -319,7 +319,7 @@ public:
 
 	void alloc( const int Capacity )
 	{
-		R8BASSERT( Capacity > 0 || Capacity == 0 );
+		R8BASSERT( Capacity >= 0 );
 
 		freemem( Data0 );
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );

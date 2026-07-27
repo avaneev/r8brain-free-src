@@ -8,7 +8,7 @@
  *
  * This file includes half-band upsampling class.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -665,7 +665,10 @@ public:
 		}
 
 		WritePos = 0;
-		ReadPos = flb; // Set "read" position to account for filter's latency.
+		ReadPos = flb & BufLenMask; // Set "read" position to account
+			// for filter's latency. The mask also normalizes the `fll` equal
+			// 0 case, where `flb` equals `BufLen`, thus preventing an overrun
+			// read past the ring buffer's mirror zone.
 
 		memset( &Buf[ ReadPos ], 0,
 			(size_t) ( BufLen - flb ) * sizeof( Buf[ 0 ]));
@@ -677,11 +680,18 @@ public:
 
 		double* op = op0;
 
-		while( l > 0 )
+		// Copy at most `flo` new input samples to the ring buffer. This is
+		// sufficient to produce all output whose convolution window overlaps
+		// the input samples that preceded the current block.
+
+		int ac = 0; // The number of samples copied to the ring buffer.
+
+		while( l > 0 && ac < flo )
 		{
 			// Copy new input samples to the ring buffer.
 
-			const int b = min( l, min( BufLen - WritePos, flb - BufLeft ));
+			const int b = min( min( l, flo - ac ),
+				min( BufLen - WritePos, flb - BufLeft ));
 
 			double* const wp1 = Buf + WritePos;
 			memcpy( wp1, ip, (size_t) b * sizeof( wp1[ 0 ]));
@@ -697,20 +707,52 @@ public:
 			WritePos = ( WritePos + b ) & BufLenMask;
 			l -= b;
 			BufLeft += b;
+			ac += b;
 
 			// Produce output.
 
-			const int c = BufLeft - fl2;
+			int c = BufLeft - fl2;
 
-			if( c > 0 )
+			while( c > 0 )
 			{
-				double* const opend = op + c * 2;
-				( *convfn )( op, opend, fltp, BufRP, ReadPos );
+				const int cb = min( c, BufLen - ReadPos );
+				double* const opend = op + cb * 2;
+				( *convfn )( op, opend, fltp, BufRP + ReadPos );
 
 				op = opend;
-				ReadPos = ( ReadPos + c ) & BufLenMask;
-				BufLeft -= c;
+				ReadPos = ( ReadPos + cb ) & BufLenMask;
+				BufLeft -= cb;
+				c -= cb;
 			}
+		}
+
+		if( l > 0 )
+		{
+			R8BASSERT( ac == flo );
+
+			// The convolution window is now contained wholly within the
+			// input buffer: convolve it directly, without copying it to the
+			// ring buffer. The `ip` is offset by `fl2` samples to account
+			// for the input already processed via the ring buffer.
+
+			double* const opend = op + l * 2;
+			( *convfn )( op, opend, fltp, ip - fl2 );
+
+			ip += l;
+			op = opend;
+
+			// Rebase the ring buffer to the last `flo` input samples, to
+			// provide a convolution window for the next call, with `fl2`
+			// samples left unprocessed.
+
+			ip -= flo;
+
+			memcpy( Buf, ip, (size_t) flo * sizeof( Buf[ 0 ]));
+			memcpy( Buf + BufLen, ip, (size_t) flo * sizeof( Buf[ 0 ]));
+
+			ReadPos = 0;
+			WritePos = flo;
+			BufLeft = fl2;
 		}
 
 		int ol = (int) ( op - op0 );
@@ -732,7 +774,7 @@ public:
 	}
 
 private:
-	static const int BufLenBits = 9; ///< The length of the ring buffer,
+	static const int BufLenBits = 7; ///< The length of the ring buffer,
 		///< expressed as Nth power of 2. This value can be reduced if it is
 		///< known that only short input buffers will be passed to the
 		///< interpolator. The minimum value of this parameter is 5, and
@@ -766,22 +808,21 @@ private:
 		///< (if such part is available).
 
 	typedef void( *CConvolveFn )( double* op, double* const opend,
-		const double* const flt, const double* const rp0, int rpos ); ///<
-		///< Convolution function type.
+		const double* const flt, const double* rp ); ///< Convolution function
+		///< type.
 	CConvolveFn convfn; ///< Convolution function in use.
 
 #define R8BHBC1( fn ) \
 	static void fn( double* op, double* const opend, const double* const flt, \
-		const double* const rp0, int rpos ) \
+		const double* rp ) \
 	{ \
 		while( op != opend ) \
 		{ \
-			const double* const rp = rp0 + rpos; \
 			op[ 0 ] = rp[ 0 ];
 
 #define R8BHBC2 \
-			rpos = ( rpos + 1 ) & BufLenMask; \
 			op += 2; \
+			rp++; \
 		} \
 	}
 

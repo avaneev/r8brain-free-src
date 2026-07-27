@@ -4,7 +4,7 @@
  * @brief Mass randomized/stochastic test of various combinations of sample
  * rate conversions, designed for Dr.Memory debugger.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -115,7 +115,7 @@ VOXMAIN
 		const double ReqAtten = 180.15;// - 130 * rnd.getUniform();
 
 		const double tb = 0.5 + 4.5 * rnd.getUniform();
-		const int MaxInLen = 50 + (int) ( 2000 * rnd.getUniform() );
+		const int MaxInLen = 5 + (int) ( 500 * rnd.getUniform() );
 		const int rlen1 = 1 + (int) ( 1024 * rnd.getUniform() );
 		const int rlen2 = 1 + (int) ( 1024 * rnd.getUniform() );
 

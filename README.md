@@ -217,6 +217,12 @@ This library is used by:
 
 ## Change Log
 
+Version 7.2:
+
+* Improved CDSPHBUpsampler's performance by 8%.
+* Fixed buffer overrun in CDSPHBUpsampler on smallest filters.
+* Added `R8B_FILTER_CACHE_MAX` value check.
+
 Version 7.1:
 
 * Updated FFT routines to the latest versions.

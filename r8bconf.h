@@ -9,7 +9,7 @@
  * This is the "configuration" inclusion file for the "r8brain-free-src"
  * sample rate converter. You may redefine the macros here as you see fit.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -89,6 +89,10 @@
 
 	#define R8B_FILTER_CACHE_MAX 96
 #endif // !defined( R8B_FILTER_CACHE_MAX )
+
+#if R8B_FILTER_CACHE_MAX < 2
+	#error R8B_FILTER_CACHE_MAX must be greater than 1.
+#endif // R8B_FILTER_CACHE_MAX < 2
 
 #if !defined( R8B_FRACBANK_CACHE_MAX )
 	/**
