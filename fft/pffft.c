@@ -62,7 +62,6 @@
 #endif
 
 #include "pffft.h"
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -275,7 +274,8 @@ void validate_pffft_simd() {} // allow test_pffft.c to call this function even w
 void *pffft_aligned_malloc(size_t nb_bytes) {
   void *p, *p0 = malloc(nb_bytes + MALLOC_V4SF_ALIGNMENT);
   if (!p0) return (void *) 0;
-  p = (void *) (((uintptr_t) p0 + MALLOC_V4SF_ALIGNMENT) & (~((uintptr_t) (MALLOC_V4SF_ALIGNMENT-1))));
+  // enforce alignment -- formula works even on weird platforms were sizeof(size_t) < sizeof(void*)
+  p = (void *) (((char*) p0 + MALLOC_V4SF_ALIGNMENT) - (((size_t) p0) & (MALLOC_V4SF_ALIGNMENT-1)));
   *((void **) p - 1) = p0;
   return p;
 }

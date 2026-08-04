@@ -8,7 +8,7 @@
  *
  * This file includes half-band downsampling convolver class.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -82,8 +82,7 @@ public:
 		fl2 = fltt - 1;
 		flo = fll + fl2;
 		flb = BufLen - fll;
-		BufRP1 = Buf1 + fll;
-		BufRP2 = Buf2 + fll - 1;
+		BufRP = Buf + fll;
 
 		LatencyFrac = PrevLatency * 0.5;
 		Latency = (int) LatencyFrac;
@@ -127,11 +126,11 @@ public:
 		WritePos2 = 0;
 		ReadPos = flb; // Set "read" position to account for filter's latency.
 
-		memset( &Buf1[ ReadPos ], 0,
-			(size_t) ( BufLen - flb ) * sizeof( Buf1[ 0 ]));
+		memset( &Buf[ ReadPos ], 0,
+			(size_t) ( BufLen - flb ) * sizeof( Buf[ 0 ]));
 
-		memset( &Buf2[ ReadPos ], 0,
-			(size_t) ( BufLen - flb ) * sizeof( Buf2[ 0 ]));
+		memset( &Buf[ BufLenPad + ReadPos ], 0,
+			(size_t) ( BufLen - flb ) * sizeof( Buf[ 0 ]));
 	}
 
 	virtual int process( double* ip, int l, double*& op0 )
@@ -147,9 +146,9 @@ public:
 			if( WritePos1 != WritePos2 )
 			{
 				// If previous fill was asymmetrical, put a single sample to
-				// Buf2.
+				// the second buffer.
 
-				double* const wp2 = Buf2 + WritePos2;
+				double* const wp2 = Buf + BufLenPad + WritePos2;
 				*wp2 = *ip;
 
 				if( WritePos2 < flo )
@@ -168,22 +167,20 @@ public:
 
 			const int b2 = b1 - ( b1 * 2 > l );
 
-			double* wp1 = Buf1 + WritePos1;
-			double* wp2 = Buf2 + WritePos1;
-			double* const ipe = ip + b2 * 2;
+			double* const wp1 = Buf + WritePos1;
+			double* const wp2 = Buf + BufLenPad + WritePos1;
+			int i;
 
-			while( ip != ipe )
+			for( i = 0; i < b2; i++ )
 			{
-				*wp1 = ip[ 0 ];
-				*wp2 = ip[ 1 ];
-				wp1++;
-				wp2++;
+				wp1[ i ] = ip[ 0 ];
+				wp2[ i ] = ip[ 1 ];
 				ip += 2;
 			}
 
 			if( b1 != b2 )
 			{
-				*wp1 = *ip;
+				wp1[ b2 ] = *ip;
 				ip++;
 			}
 
@@ -191,11 +188,9 @@ public:
 
 			if( ec > 0 )
 			{
-				wp1 = Buf1 + WritePos1;
 				memcpy( wp1 + BufLen, wp1,
 					(size_t) min( b1, ec ) * sizeof( wp1[ 0 ]));
 
-				wp2 = Buf2 + WritePos1;
 				memcpy( wp2 + BufLen, wp2,
 					(size_t) min( b2, ec ) * sizeof( wp2[ 0 ]));
 			}
@@ -207,16 +202,18 @@ public:
 
 			// Produce output.
 
-			const int c = BufLeft - fl2;
+			int c = BufLeft - fl2;
 
-			if( c > 0 )
+			while( c > 0 )
 			{
-				double* const opend = op + c;
-				( *convfn )( op, opend, fltp, BufRP1, BufRP2, ReadPos );
+				const int cb = min( c, BufLen - ReadPos );
+				double* const opend = op + cb;
+				( *convfn )( op, opend, fltp, BufRP + ReadPos );
 
 				op = opend;
-				ReadPos = ( ReadPos + c ) & BufLenMask;
-				BufLeft -= c;
+				ReadPos = ( ReadPos + cb ) & BufLenMask;
+				BufLeft -= cb;
+				c -= cb;
 			}
 		}
 
@@ -250,14 +247,13 @@ private:
 		///< positioning.
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
-	double Buf1[ BufLen + 27 ]; ///< The ring buffer 1, including overrun
-		///< protection for the largest filter.
-	double Buf2[ BufLen + 27 ]; ///< The ring buffer 2, including overrun
-		///< protection for the largest filter.
+	static const int BufLenPad = BufLen + 27; ///< The length of the ring
+		///< buffer including overrun protection for the largest filter.
+	double Buf[ BufLenPad * 2 ]; ///< The ring buffers 1 and 2, spaced
+		///< `BufLenPad` apart.
 	double FltBuf[ 14 + 2 ]; ///< Holder for half-band filter taps, used with
 		///< 16-byte address-aligning, for SIMD use.
-	const double* BufRP1; ///< Offseted Buf1 pointer at `ReadPos` equal 0.
-	const double* BufRP2; ///< Offseted Buf2 pointer at `ReadPos` equal 0.
+	const double* BufRP; ///< Offseted Buf pointer at `ReadPos` equal 0.
 	double* fltp; ///< Half-band filter taps, points to `FltBuf`.
 	double LatencyFrac; ///< Fractional latency left on the output.
 	int Latency; ///< Initial latency that should be removed from the output.
@@ -274,23 +270,21 @@ private:
 	int ReadPos; ///< The current buffer read position.
 
 	typedef void( *CConvolveFn )( double* op, double* const opend,
-		const double* const flt, const double* const rp01,
-		const double* const rp02, int rpos ); ///<
+		const double* const flt, const double* rp1 ); ///<
 		///< Convolution function type.
 	CConvolveFn convfn; ///< Convolution function in use.
 
 #define R8BHBC1( fn ) \
 	static void fn( double* op, double* const opend, const double* const flt, \
-		const double* const rp01, const double* const rp02, int rpos ) \
+		const double* rp1 ) \
 	{ \
 		while( op != opend ) \
 		{ \
-			const double* const rp1 = rp01 + rpos; \
-			const double* const rp = rp02 + rpos;
+			const double* const rp = rp1 + BufLenPad - 1;
 
 #define R8BHBC2 \
-			rpos = ( rpos + 1 ) & BufLenMask; \
 			op++; \
+			rp1++; \
 		} \
 	}
 

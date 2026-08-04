@@ -9,7 +9,7 @@
  * This file includes the master sample rate converter (resampler) class that
  * combines all elements of this library into a single front-end class.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -35,6 +35,11 @@ namespace r8b {
  * Note that objects of this class can be constructed on the stack as it has a
  * small member data size. The default template parameters of this class are
  * suited for 27-bit fixed point resampling.
+ *
+ * WARNING: Since FFT and filter object caches are global static variables,
+ * objects of the resampler class should not be declared as global variables
+ * so as to not cause crashes on exit, and should be allocated on the heap or
+ * stack instead.
  *
  * Use the CDSPResampler16 class for 16-bit resampling.
  *
@@ -176,11 +181,12 @@ public:
 		for( i = 2; i <= 3; i++ )
 		{
 			bool WasFound = false;
+			double sm = i;
 			int c = 0;
 
 			while( true )
 			{
-				const double NewSR = SrcSampleRate * ( i << c );
+				const double NewSR = SrcSampleRate * sm;
 
 				if( NewSR == DstSampleRate )
 				{
@@ -193,6 +199,7 @@ public:
 					break;
 				}
 
+				sm *= 2.0;
 				c++;
 			}
 
@@ -237,11 +244,11 @@ public:
 				// (this keeps the latency under control).
 
 			int c = 0;
-			int div = 1;
+			double div = 1.0;
 
 			while( true )
 			{
-				const int ndiv = div * 2;
+				const double ndiv = div * 2.0;
 
 				if( DstSampleRate < ThreshSampleRate * ndiv )
 				{
@@ -253,11 +260,11 @@ public:
 			}
 
 			int c2 = 0;
-			int div2 = 1;
+			double div2 = 1.0;
 
 			while( true )
 			{
-				const int ndiv = div * ( c2 == 0 ? 3 : 2 );
+				const double ndiv = div * ( c2 == 0 ? 3.0 : 2.0 );
 
 				if( DstSampleRate < ThreshSampleRate * ndiv )
 				{
@@ -335,21 +342,22 @@ public:
 		// Use downsampling steps, including power-of-2 downsampling.
 
 		double CheckSR = DstSampleRate * 4.0;
+		double SrcSRDiv = 1.0;
 		int c = 0;
-		double FinGain = 1.0;
 
 		while( CheckSR <= SrcSampleRate )
 		{
 			c++;
 			CheckSR *= 2.0;
-			FinGain *= 0.5;
+			SrcSRDiv *= 2.0;
 		}
 
-		const int SrcSRDiv = ( 1 << c );
-		int downf;
+		const double FinGain = 1.0 / SrcSRDiv;
+
 		double NormFreq = 0.5;
 		bool UseInterp = true;
 		bool IsThird = false;
+		int downf;
 
 		for( downf = 2; downf <= 3; downf++ )
 		{
@@ -372,9 +380,9 @@ public:
 		for( i = 0; i < c; i++ )
 		{
 			// Use fixed, very relaxed 2X downsampling filters, that at the
-			// final stage only guarantee stop-band between 0.75 and pi.
-			// 0.5-0.75 range will be aliased to 0.25-0.5 range which will
-			// then be filtered out by the final filter.
+			// final stage only guarantee stop-band between 0.75 and 1.0 of
+			// Nyquist. 0.5-0.75 range will be aliased to 0.25-0.5 range which
+			// will then be filtered out by the final filter.
 
 			addProcessor( new CDSPHBDownsampler( ReqAtten, c - 1 - i, IsThird,
 				LatencyFrac ));
@@ -590,7 +598,7 @@ public:
 	 */
 
 	template< typename Tin, typename Tout >
-	void oneshot( const Tin* ip, int iplen, Tout* op, int oplen )
+	void oneshot( Tin* ip, int iplen, Tout* op, int oplen )
 	{
 		CFixedBuffer< double > Buf( MaxInLen );
 		bool IsZero = false;
@@ -615,21 +623,7 @@ public:
 			else
 			{
 				rc = min( iplen, MaxInLen );
-
-				if( sizeof( Tin ) == sizeof( double ))
-				{
-					p = (double*) ip;
-				}
-				else
-				{
-					p = &Buf[ 0 ];
-
-					for( i = 0; i < rc; i++ )
-					{
-						p[ i ] = ip[ i ];
-					}
-				}
-
+				p = getOneshotBuf( ip, Buf, rc );
 				ip += rc;
 				iplen -= rc;
 			}
@@ -715,6 +709,42 @@ private:
 		}
 
 		R8BCONSOLE( "* CDSPResampler: init done\n" );
+	}
+
+	/**
+	 * @brief Auxiliary function for input buffer type convrsion in the
+	 * oneshot() function.
+	 *
+	 * @param ip Input buffer pointer.
+	 * @return `ip` verbatim, without type conversion.
+	 */
+
+	static double* getOneshotBuf( double* const ip, double* const, const int )
+	{
+		return( ip );
+	}
+
+	/**
+	 * @brief Auxiliary function for input buffer type conversion in the
+	 * oneshot() function.
+	 *
+	 * @param ip Input buffer pointer.
+	 * @param Buf Temporary buffer.
+	 * @param rc Input sample count.
+	 * @return `Buf` filled with input samples converted from `float`.
+	 */
+
+	static double* getOneshotBuf( float* const ip, double* const Buf,
+		const int rc )
+	{
+		int i;
+
+		for( i = 0; i < rc; i++ )
+		{
+			Buf[ i ] = ip[ i ];
+		}
+
+		return( Buf );
 	}
 };
 

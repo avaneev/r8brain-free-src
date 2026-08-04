@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.2
+ * @version 7.3
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.2" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.3" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -166,6 +166,7 @@ namespace r8b {
 	using std :: ceil;
 	using std :: exp;
 	using std :: log;
+	using std :: pow;
 	using std :: fabs;
 	using std :: sqrt;
 	using std :: sin;
@@ -182,6 +183,7 @@ R8B_CONST double R8B_3PI = 9.42477796076937972; ///< Equals `3*pi`.
 R8B_CONST double R8B_PId2 = 1.57079632679489662; ///< Equals `0.5*pi`.
 
 /**
+ * @def R8BNOCTOR( ClassName )
  * @brief Macro that defines empty copy-constructor and copy operator with
  * the "private:" prefix.
  *
@@ -195,10 +197,21 @@ R8B_CONST double R8B_PId2 = 1.57079632679489662; ///< Equals `0.5*pi`.
  * @param ClassName The name of the class which uses this macro.
  */
 
-#define R8BNOCTOR( ClassName ) \
-	private: \
-		ClassName( const ClassName& ) { } \
-		ClassName& operator = ( const ClassName& ) { return( *this ); }
+#if __cplusplus >= 201103L
+
+	#define R8BNOCTOR( ClassName ) \
+		public: \
+			ClassName( const ClassName& ) = delete; \
+			ClassName& operator = ( const ClassName& ) = delete;
+
+#else // __cplusplus >= 201103L
+
+	#define R8BNOCTOR( ClassName ) \
+		private: \
+			ClassName( const ClassName& ) { } \
+			ClassName& operator = ( const ClassName& ) { return( *this ); }
+
+#endif // __cplusplus >= 201103L
 
 /**
  * @brief The default base class for objects created on heap.

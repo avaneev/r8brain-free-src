@@ -8,7 +8,7 @@
  *
  * This file includes fractional delay interpolator class.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -652,20 +652,23 @@ inline bool getWholeStepping( const double SSampleRate,
 	}
 
 	const double InStep0 = SSampleRate / GCD;
-	ResInStep = (int) InStep0;
 	const double OutStep0 = DSampleRate / GCD;
-	ResOutStep = (int) OutStep0;
 
-	if( InStep0 != ResInStep || OutStep0 != ResOutStep )
-	{
-		return( false );
-	}
-
-	if( ResOutStep > 1500 )
+	if( OutStep0 > 1500.0 )
 	{
 		// Do not allow large output stepping due to low cache
 		// performance of large filter banks.
 
+		return( false );
+	}
+
+	ResInStep = (int) InStep0;
+	ResOutStep = (int) OutStep0;
+
+	// Check for double-to-int precision and overflows.
+
+	if( InStep0 != ResInStep || OutStep0 != ResOutStep )
+	{
 		return( false );
 	}
 

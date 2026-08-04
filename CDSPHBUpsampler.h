@@ -745,10 +745,7 @@ public:
 			// provide a convolution window for the next call, with `fl2`
 			// samples left unprocessed.
 
-			ip -= flo;
-
-			memcpy( Buf, ip, (size_t) flo * sizeof( Buf[ 0 ]));
-			memcpy( Buf + BufLen, ip, (size_t) flo * sizeof( Buf[ 0 ]));
+			memcpy( Buf, ip - flo, (size_t) flo * sizeof( Buf[ 0 ]));
 
 			ReadPos = 0;
 			WritePos = flo;

@@ -22,13 +22,16 @@ signal, then performs interpolation using a bank of short (8 to 30 taps,
 depending on the required precision) polynomial-interpolated sinc
 function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
-alternative being only the whole number-factored SRC, which can be slower.
+alternative being only the whole number-factored SRC (e.g., implemented in
+[Voxengo r8brain PRO](https://www.voxengo.com/product/r8brainpro/?eref=ghr),
+which can be slower.
 
 P.S. Please credit the creator of this library in your documentation in the
 following way: "Sample rate converter designed by Aleksey Vaneev of Voxengo".
 
 r8brain-free-src is the same algorithm featured in the free
-[Voxengo](https://www.voxengo.com/) r8brain sample rate converter application.
+[Voxengo](https://www.voxengo.com/?eref=ghr) r8brain sample rate converter
+application.
 
 ## Requirements
 
@@ -41,7 +44,7 @@ beside the standard C++ library.  If you are using a pre-C++11 compiler,
 the added dependency is the "Windows.h" on Windows and the "pthread.h" on
 macOS and Linux.
 
-## Usage Information
+## Usage
 
 The sample rate converter (resampler) is represented by the
 **r8b::CDSPResampler** class, which is a single front-end class for the
@@ -132,6 +135,11 @@ folder on the project's homepage.  On non-Windows systems it is preferrable
 to use the C++ library directly.  Note that the DLL was compiled with the
 Intel IPP enabled.
 
+## Ports
+
+* [Rust, by baadc0de](https://crates.io/crates/r8brain-rs)
+* [WebAssembly, by jlagedo](https://github.com/jlagedo/r8brain-wasm)
+
 ## Real-Time Applications
 
 The resampler class of this library was designed as an asynchronous processor:
@@ -205,7 +213,7 @@ This library is used by:
 * [Red Dead Redemption 2](https://www.rockstargames.com/reddeadredemption2/credits)
 * [Mini Piano Lite](https://play.google.com/store/apps/details?id=umito.android.minipiano)
 * [OpenMPT](https://openmpt.org/)
-* [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/)
+* [Boogex Guitar Amp audio plugin](https://www.voxengo.com/product/boogex/?eref=ghr)
 * [Voice Aloud Reader](https://play.google.com/store/apps/details?id=com.hyperionics.avarLic)
 * [Zynewave Podium](https://zynewave.com/podium/)
 * [Phonometrica](http://www.phonometrica-ling.org/index.html)
@@ -216,6 +224,15 @@ This library is used by:
 * [Wave Breaker](https://pressplay-music.com/wave-breaker/)
 
 ## Change Log
+
+Version 7.3:
+
+* Hardened handling of extreme resampling ratios.
+* Slightly improved performance of CDSPHBDownsampler and CDSPHBUpsampler.
+* Added `R8B_FRACBANK_CACHE_MAX` value check.
+* Fixed type conversion in `CDSPResampler::oneshot()`. Inputs are now limited
+to `float` and `double`.
+* Updated FFT routines to the latest versions.
 
 Version 7.2:
 

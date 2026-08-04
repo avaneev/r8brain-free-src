@@ -84,6 +84,24 @@
 
 #include <stddef.h> /* for size_t */
 
+#define PFFFT_EXPORT
+
+#ifndef PFFFT_EXPORT
+  #ifdef PFFFT_STATIC_DEFINE
+    #define PFFFT_EXPORT
+  #elif defined(_WIN32) || defined(__CYGWIN__)
+    #ifdef PFFFT_EXPORTS
+      #define PFFFT_EXPORT __declspec(dllexport)
+    #else
+      #define PFFFT_EXPORT __declspec(dllimport)
+    #endif
+  #elif defined(PFFFT_EXPORTS) && (defined(__GNUC__) || defined(__clang__))
+    #define PFFFT_EXPORT __attribute__((visibility("default")))
+  #else
+    #define PFFFT_EXPORT
+  #endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -110,8 +128,8 @@ extern "C" {
     PFFFTD_Setup structure is read-only so it can safely be shared by
     multiple concurrent threads. 
   */
-  PFFFTD_Setup *pffftd_new_setup(int N, pffft_transform_t transform);
-  void pffftd_destroy_setup(PFFFTD_Setup *);
+  PFFFT_EXPORT PFFFTD_Setup *pffftd_new_setup(int N, pffft_transform_t transform);
+  PFFFT_EXPORT void pffftd_destroy_setup(PFFFTD_Setup *);
   /* 
      Perform a Fourier transform , The z-domain data is stored in the
      most efficient order for transforming it back, or using it for
@@ -132,7 +150,7 @@ extern "C" {
 
      input and output may alias.
   */
-  void pffftd_transform(PFFFTD_Setup *setup, const double *input, double *output, double *work, pffft_direction_t direction);
+  PFFFT_EXPORT void pffftd_transform(PFFFTD_Setup *setup, const double *input, double *output, double *work, pffft_direction_t direction);
 
   /* 
      Similar to pffft_transform, but makes sure that the output is
@@ -141,7 +159,7 @@ extern "C" {
      
      input and output may alias.
   */
-  void pffftd_transform_ordered(PFFFTD_Setup *setup, const double *input, double *output, double *work, pffft_direction_t direction);
+  PFFFT_EXPORT void pffftd_transform_ordered(PFFFTD_Setup *setup, const double *input, double *output, double *work, pffft_direction_t direction);
 
   /* 
      call pffft_zreorder(.., PFFFT_FORWARD) after pffft_transform(...,
@@ -155,7 +173,7 @@ extern "C" {
      
      input and output should not alias.
   */
-  void pffftd_zreorder(PFFFTD_Setup *setup, const double *input, double *output, pffft_direction_t direction);
+  PFFFT_EXPORT void pffftd_zreorder(PFFFTD_Setup *setup, const double *input, double *output, pffft_direction_t direction);
 
   /* 
      Perform a multiplication of the frequency components of dft_a and
@@ -169,7 +187,7 @@ extern "C" {
      
      The dft_a, dft_b and dft_ab pointers may alias.
   */
-  void pffftd_zconvolve_accumulate(PFFFTD_Setup *setup, const double *dft_a, const double *dft_b, double *dft_ab, double scaling);
+  PFFFT_EXPORT void pffftd_zconvolve_accumulate(PFFFTD_Setup *setup, const double *dft_a, const double *dft_b, double *dft_ab, double scaling);
 
   /* 
      Perform a multiplication of the frequency components of dft_a and
@@ -183,27 +201,27 @@ extern "C" {
 
      The dft_a, dft_b and dft_ab pointers may alias.
   */
-  void pffftd_zconvolve_no_accu(PFFFTD_Setup *setup, const double *dft_a, const double *dft_b, double*dft_ab, double scaling);
+  PFFFT_EXPORT void pffftd_zconvolve_no_accu(PFFFTD_Setup *setup, const double *dft_a, const double *dft_b, double*dft_ab, double scaling);
 
   /* return 4 or 1 wether support AVX instructions was enabled when building pffft-double.c */
-  int pffftd_simd_size();
+  PFFFT_EXPORT int pffftd_simd_size();
 
   /* return string identifier of used architecture (AVX/..) */
-  const char * pffftd_simd_arch();
+  PFFFT_EXPORT const char * pffftd_simd_arch();
 
   /* simple helper to get minimum possible fft size */
-  int pffftd_min_fft_size(pffft_transform_t transform);
+  PFFFT_EXPORT int pffftd_min_fft_size(pffft_transform_t transform);
 
   /* simple helper to determine size N is valid
      - factorizable to pffft_min_fft_size() with factors 2, 3, 5
   */
-  int pffftd_is_valid_size(int N, pffft_transform_t cplx);
+  PFFFT_EXPORT int pffftd_is_valid_size(int N, pffft_transform_t cplx);
 
   /* determine nearest valid transform size  (by brute-force testing)
      - factorizable to pffft_min_fft_size() with factors 2, 3, 5.
      higher: bool-flag to find nearest higher value; else lower.
   */
-  int pffftd_nearest_transform_size(int N, pffft_transform_t cplx, int higher);
+  PFFFT_EXPORT int pffftd_nearest_transform_size(int N, pffft_transform_t cplx, int higher);
 
 
   /* following functions are identical to the pffft_ functions - both declared */
@@ -211,22 +229,22 @@ extern "C" {
   /* simple helper to determine next power of 2
      - without inexact/rounding floating point operations
   */
-  int pffftd_next_power_of_two(int N);
-  int pffft_next_power_of_two(int N);
+  PFFFT_EXPORT int pffftd_next_power_of_two(int N);
+  PFFFT_EXPORT int pffft_next_power_of_two(int N);
 
   /* simple helper to determine if power of 2 - returns bool */
-  int pffftd_is_power_of_two(int N);
-  int pffft_is_power_of_two(int N);
+  PFFFT_EXPORT int pffftd_is_power_of_two(int N);
+  PFFFT_EXPORT int pffft_is_power_of_two(int N);
 
   /*
     the double buffers must have the correct alignment (32-byte boundary
     on intel and powerpc). This function may be used to obtain such
-    correctly aligned buffers.  
+    correctly aligned buffers.
   */
-  void *pffftd_aligned_malloc(size_t nb_bytes);
-  void *pffft_aligned_malloc(size_t nb_bytes);
-  void pffftd_aligned_free(void *);
-  void pffft_aligned_free(void *);
+  PFFFT_EXPORT void *pffftd_aligned_malloc(size_t nb_bytes);
+  PFFFT_EXPORT void *pffft_aligned_malloc(size_t nb_bytes);
+  PFFFT_EXPORT void pffftd_aligned_free(void *);
+  PFFFT_EXPORT void pffft_aligned_free(void *);
 
 #ifdef __cplusplus
 }

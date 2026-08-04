@@ -48,7 +48,8 @@
 /*
   SSE2 64bit support macros
 */
-#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && (defined( __SSE4_2__ ) |  defined( __SSE4_1__ ) || defined( __SSE3__ ) || defined( __SSE2__ ) || defined ( __x86_64__ ) || defined( _M_AMD64 ) || defined( _M_X64 ) || defined( __amd64 ))
+/* we test _M_ARM64EC before _M_X64 because when _M_ARM64EC is defined, the microsoft compiler also defines _M_X64 */
+#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && !defined(_M_ARM64EC) && (defined( __SSE4_2__ ) |  defined( __SSE4_1__ ) || defined( __SSE3__ ) || defined( __SSE2__ ) || defined ( __x86_64__ ) || defined( _M_AMD64 ) || defined( _M_X64 ) || defined( __amd64 ))
 #pragma message (__FILE__ ": SSE2 double macros are defined" )
 
 #include <emmintrin.h>

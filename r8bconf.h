@@ -107,6 +107,10 @@
 	#define R8B_FRACBANK_CACHE_MAX 12
 #endif // !defined( R8B_FRACBANK_CACHE_MAX )
 
+#if R8B_FRACBANK_CACHE_MAX < 2
+	#error R8B_FRACBANK_CACHE_MAX must be greater than 1.
+#endif // R8B_FRACBANK_CACHE_MAX < 2
+
 #if !defined( R8B_FLTTEST )
 	/**
 	 * @brief This macro, when equal to 1, enables fractional delay filter
@@ -202,6 +206,9 @@
 	/**
 	 * @brief The macro enables double-to-float buffer conversions for FFT
 	 * operations, for algorithms that work with "float" values.
+	 *
+	 * WARNING: When this macro is `true`, r8brain-free-src uses code which is
+	 * not compliant with strict aliasing.
 	 *
 	 * This macro should not be changed from the default `0` here.
 	 */
