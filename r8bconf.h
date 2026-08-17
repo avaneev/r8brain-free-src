@@ -90,10 +90,6 @@
 	#define R8B_FILTER_CACHE_MAX 96
 #endif // !defined( R8B_FILTER_CACHE_MAX )
 
-#if R8B_FILTER_CACHE_MAX < 2
-	#error R8B_FILTER_CACHE_MAX must be greater than 1.
-#endif // R8B_FILTER_CACHE_MAX < 2
-
 #if !defined( R8B_FRACBANK_CACHE_MAX )
 	/**
 	 * @brief Macro specifies the number of whole-number stepping fractional
@@ -107,10 +103,6 @@
 	#define R8B_FRACBANK_CACHE_MAX 12
 #endif // !defined( R8B_FRACBANK_CACHE_MAX )
 
-#if R8B_FRACBANK_CACHE_MAX < 2
-	#error R8B_FRACBANK_CACHE_MAX must be greater than 1.
-#endif // R8B_FRACBANK_CACHE_MAX < 2
-
 #if !defined( R8B_FLTTEST )
 	/**
 	 * @brief This macro, when equal to 1, enables fractional delay filter
@@ -122,23 +114,6 @@
 
 	#define R8B_FLTTEST 0
 #endif // !defined( R8B_FLTTEST )
-
-#if !defined( R8B_FASTTIMING )
-	/**
-	 * @brief This macro, when equal to 1, enables a fast interpolation sample
-	 * timing technique.
-	 *
-	 * This technique improves interpolation performance (by around 10%) at
-	 * the expense of a minor sample-timing drift which is on the order of
-	 * 1e-6 samples per 10 billion output samples. This setting does not apply
-	 * to whole-number stepping, if it is in use, as such stepping provides
-	 * zero timing error without performance impact. Also does not apply to
-	 * cases when a whole-numbered (2X, 3X, etc.) resampling is in the actual
-	 * use.
-	 */
-
-	#define R8B_FASTTIMING 0
-#endif // !defined( R8B_FASTTIMING )
 
 #if !defined( R8B_EXTFFT )
 	/**
@@ -194,26 +169,32 @@
 		// Handle the case when both `R8B_PFFFT` and `R8B_PFFFT_DOUBLE` were
 		// enabled together by mistake.
 
-		#error r8brain-free-src: R8B_PFFFT and R8B_PFFFT_DOUBLE collision.
+		#error R8B_PFFFT and R8B_PFFFT_DOUBLE collision.
 	#endif // R8B_PFFFT && R8B_PFFFT_DOUBLE
 #endif // !defined( R8B_PFFFT )
 
-#if R8B_PFFFT
-	#define R8B_FLOATFFT 1
-#endif // R8B_PFFFT
+#if defined( R8B_OOURA )
+	#error R8B_OOURA should not be pre-defined.
+#endif // defined( R8B_OOURA )
 
-#if !defined( R8B_FLOATFFT )
+#if !R8B_IPP && !R8B_PFFFT && !R8B_PFFFT_DOUBLE
 	/**
-	 * @brief The macro enables double-to-float buffer conversions for FFT
-	 * operations, for algorithms that work with "float" values.
+	 * @brief This macro is set to 1 if the default Ooura FFT is in use.
 	 *
-	 * WARNING: When this macro is `true`, r8brain-free-src uses code which is
-	 * not compliant with strict aliasing.
-	 *
-	 * This macro should not be changed from the default `0` here.
+	 * This macro should not be defined externally.
 	 */
 
-	#define R8B_FLOATFFT 0
-#endif // !defined( R8B_FLOATFFT )
+	#define R8B_OOURA 1
+#else // Non-Ooura FFT
+	#define R8B_OOURA 0
+#endif // Non-Ooura FFT
+
+#if R8B_FILTER_CACHE_MAX < 2
+	#error R8B_FILTER_CACHE_MAX must be greater than 1.
+#endif // R8B_FILTER_CACHE_MAX < 2
+
+#if R8B_FRACBANK_CACHE_MAX < 2
+	#error R8B_FRACBANK_CACHE_MAX must be greater than 1.
+#endif // R8B_FRACBANK_CACHE_MAX < 2
 
 #endif // R8BCONF_INCLUDED

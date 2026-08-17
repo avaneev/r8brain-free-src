@@ -38,8 +38,10 @@ namespace r8b {
  *
  * WARNING: Since FFT and filter object caches are global static variables,
  * objects of the resampler class should not be declared as global variables
- * so as to not cause crashes on exit, and should be allocated on the heap or
- * stack instead.
+ * to avoid causing crashes on exit; they should instead be allocated on the
+ * heap or stack. Additionally, under pre-C++11 standards only, the first-ever
+ * resampler object must be constructed in a non-concurrent context (i.e.,
+ * not concurrently).
  *
  * Use the CDSPResampler16 class for 16-bit resampling.
  *
@@ -123,9 +125,7 @@ public:
 		const int aMaxInLen, const double ReqTransBand = 2.0,
 		const double ReqAtten = 206.91,
 		const EDSPFilterPhaseResponse ReqPhase = fprLinearPhase )
-		: StepCapacity( 0 )
-		, StepCount( 0 )
-		, MaxInLen( aMaxInLen )
+		: MaxInLen( aMaxInLen )
 		, CurMaxOutLen( aMaxInLen )
 		, LatencyFrac( 0.0 )
 	{
@@ -209,12 +209,12 @@ public:
 					CDSPFIRFilterCache :: getLPFilter( 1.0 / i, ReqTransBand,
 					ReqAtten, ReqPhase, i ), i, 1, LatencyFrac ));
 
-				const bool IsThird = ( i == 3 );
+				const bool IsThirdFirst = ( i == 3 );
 
 				for( i = 0; i < c; i++ )
 				{
-					addProcessor( new CDSPHBUpsampler( ReqAtten, i, IsThird,
-						LatencyFrac ));
+					addProcessor( new CDSPHBUpsampler( ReqAtten, i,
+						( IsThirdFirst || i > 1 ), LatencyFrac ));
 				}
 
 				createTmpBuffers();
@@ -259,22 +259,6 @@ public:
 				c++;
 			}
 
-			int c2 = 0;
-			double div2 = 1.0;
-
-			while( true )
-			{
-				const double ndiv = div * ( c2 == 0 ? 3.0 : 2.0 );
-
-				if( DstSampleRate < ThreshSampleRate * ndiv )
-				{
-					break;
-				}
-
-				div2 = ndiv;
-				c2++;
-			}
-
 			const double SrcSampleRate2 = SrcSampleRate * 2.0;
 			int tmp1;
 			int tmp2;
@@ -292,18 +276,7 @@ public:
 			{
 				// Add steps using intermediate interpolation.
 
-				int num;
-
-				if( c2 > 0 && div2 > div )
-				{
-					div = div2;
-					c = c2;
-					num = 3;
-				}
-				else
-				{
-					num = 2;
-				}
+				const int num = 2;
 
 				addProcessor( new CDSPFracInterpolator( SrcSampleRate2 * div,
 					DstSampleRate, ReqAtten, false, LatencyFrac ));
@@ -321,12 +294,10 @@ public:
 					CDSPFIRFilterCache :: getLPFilter( 1.0 / num, tb,
 					ReqAtten, ReqPhase, num ), num, 1, LatencyFrac ));
 
-				const bool IsThird = ( num == 3 );
-
 				for( i = 1; i < c; i++ )
 				{
 					addProcessor( new CDSPHBUpsampler( ReqAtten, i - 1,
-						IsThird, LatencyFrac ));
+						( i > 2 ), LatencyFrac ));
 				}
 			}
 			else
@@ -356,7 +327,7 @@ public:
 
 		double NormFreq = 0.5;
 		bool UseInterp = true;
-		bool IsThird = false;
+		bool IsThirdFirst = false;
 		int downf;
 
 		for( downf = 2; downf <= 3; downf++ )
@@ -365,7 +336,7 @@ public:
 			{
 				NormFreq = 1.0 / downf;
 				UseInterp = false;
-				IsThird = ( downf == 3 );
+				IsThirdFirst = ( downf == 3 );
 				break;
 			}
 		}
@@ -374,7 +345,7 @@ public:
 		{
 			downf = 1;
 			NormFreq = DstSampleRate * SrcSRDiv / SrcSampleRate;
-			IsThird = ( NormFreq * 3.0 <= 1.0 );
+			IsThirdFirst = ( NormFreq * 3.0 <= 1.0 );
 		}
 
 		for( i = 0; i < c; i++ )
@@ -384,8 +355,8 @@ public:
 			// Nyquist. 0.5-0.75 range will be aliased to 0.25-0.5 range which
 			// will then be filtered out by the final filter.
 
-			addProcessor( new CDSPHBDownsampler( ReqAtten, c - 1 - i, IsThird,
-				LatencyFrac ));
+			addProcessor( new CDSPHBDownsampler( ReqAtten, c - 1 - i,
+				( IsThirdFirst || i < c - 2 ), LatencyFrac ));
 		}
 
 		addProcessor( new CDSPBlockConvolver(
@@ -395,35 +366,28 @@ public:
 		if( UseInterp )
 		{
 			addProcessor( new CDSPFracInterpolator( SrcSampleRate,
-				DstSampleRate * SrcSRDiv, ReqAtten, IsThird, LatencyFrac ));
+				DstSampleRate * SrcSRDiv, ReqAtten, IsThirdFirst,
+				LatencyFrac ));
 		}
 
 		createTmpBuffers();
 	}
 
-	virtual ~CDSPResampler()
-	{
-		int i;
-
-		for( i = 0; i < StepCount; i++ )
-		{
-			delete Steps[ i ];
-		}
-	}
-
-	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
+	virtual int getInLenBeforeOutPos( int ReqOutPos ) const
 	{
 		R8BASSERT( ReqOutPos >= 0 );
 
-		int ReqInSamples = ReqOutPos;
-		int c = StepCount;
-
-		while( --c >= 0 )
+		if( Next != R8B_NULL )
 		{
-			ReqInSamples = Steps[ c ] -> getInLenBeforeOutPos( ReqInSamples );
+			ReqOutPos = Next -> getInLenBeforeOutPos( ReqOutPos );
 		}
 
-		return( ReqInSamples );
+		if( StepFirst != R8B_NULL )
+		{
+			ReqOutPos = StepFirst -> getInLenBeforeOutPos( ReqOutPos );
+		}
+
+		return( ReqOutPos );
 	}
 
 	/**
@@ -528,11 +492,12 @@ public:
 
 	virtual void clear()
 	{
-		int i;
+		CDSPProcessor* ps = StepFirst;
 
-		for( i = 0; i < StepCount; i++ )
+		while( ps != R8B_NULL )
 		{
-			Steps[ i ] -> clear();
+			ps -> clear();
+			ps = ps -> Next;
 		}
 	}
 
@@ -569,13 +534,16 @@ public:
 		R8BASSERT( l >= 0 );
 
 		double* ip = ip0;
-		int i;
+		int tp = 0;
+		CDSPProcessor* ps = StepFirst;
 
-		for( i = 0; i < StepCount; i++ )
+		while( ps != R8B_NULL )
 		{
-			double* op = TmpBufs[ i & 1 ];
-			l = Steps[ i ] -> process( ip, l, op );
+			double* op = TmpBufs[ tp ];
+			l = ps -> process( ip, l, op );
+			ps = ps -> Next;
 			ip = op;
+			tp ^= 1;
 		}
 
 		op0 = ip;
@@ -645,9 +613,10 @@ public:
 	}
 
 private:
-	CFixedBuffer< CDSPProcessor* > Steps; ///< Array of processing steps.
-	int StepCapacity; ///< The capacity of the `Steps` array.
-	int StepCount; ///< The number of created processing steps.
+	CPtrKeeper< CDSPProcessor > StepFirst; ///< The first processor in the
+		///< singly-linked list.
+	CDSPProcessor* StepLast; ///< The last processor in the singly-linked
+		///< list.
 	int MaxInLen; ///< Maximal input length.
 	CFixedBuffer< double > TmpBufAll; ///< Buffer containing both temporary
 		///< buffers.
@@ -670,14 +639,16 @@ private:
 
 	void addProcessor( CDSPProcessor* const Proc )
 	{
-		if( StepCount == StepCapacity )
+		if( StepFirst != R8B_NULL )
 		{
-			// Reallocate and increase Steps array's capacity.
-
-			const int NewCapacity = StepCapacity + 8;
-			Steps.realloc( StepCapacity, NewCapacity );
-			StepCapacity = NewCapacity;
+			StepLast -> Next = Proc;
 		}
+		else
+		{
+			StepFirst = Proc;
+		}
+
+		StepLast = Proc;
 
 		LatencyFrac = Proc -> getLatencyFrac();
 		CurMaxOutLen = Proc -> getMaxOutLen( CurMaxOutLen );
@@ -688,9 +659,6 @@ private:
 		}
 
 		CurTmpBuf ^= 1;
-
-		Steps[ StepCount ] = Proc;
-		StepCount++;
 	}
 
 	/**

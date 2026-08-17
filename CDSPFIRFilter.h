@@ -8,7 +8,7 @@
  *
  * This file includes low-pass FIR filter generator and filter cache.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -64,9 +64,13 @@ class CDSPFIRFilter : public R8B_BASECLASS
 public:
 	~CDSPFIRFilter()
 	{
-		R8BASSERT( RefCount == 0 );
-
-		delete Next;
+		while( Next != R8B_NULL )
+		{
+			CDSPFIRFilter* const nn = Next -> Next;
+			Next -> Next = R8B_NULL;
+			delete Next;
+			Next = nn;
+		}
 	}
 
 	/**
@@ -168,9 +172,9 @@ public:
 	 * isZeroPhase() function's result.
 	 */
 
-	const double* getKernelBlock() const
+	const realfft_t* getKernelBlock() const
 	{
-		return( KernelBlock );
+		return( KernelBlockFFT );
 	}
 
 	/**
@@ -204,9 +208,12 @@ private:
 		///< equals to `1 << ( BlockLenBits + 1 )`. Second half of the buffer
 		///< contains zero-padding to allow alias-free convolution.
 		///< Address-aligned.
+	realfft_t* KernelBlockFFT; ///< Pointer to FFT-transformed kernel block in
+		///< native resolution.
 
 	CDSPFIRFilter()
-		: RefCount( 1 )
+		: Next( R8B_NULL )
+		, RefCount( 1 )
 	{
 	}
 
@@ -516,8 +523,8 @@ private:
 				(size_t) ( BlockLen * 2 - KernelLen ) *
 				sizeof( KernelBlock[ 0 ]));
 
-			ffto -> forward( KernelBlock );
-			ffto -> convertToZP( KernelBlock );
+			KernelBlockFFT = ffto -> forward( KernelBlock );
+			ffto -> convertToZP( KernelBlockFFT );
 		}
 		else
 		{
@@ -528,7 +535,7 @@ private:
 				(size_t) ( BlockLen * 2 - KernelLen ) *
 				sizeof( KernelBlock[ 0 ]));
 
-			ffto -> forward( KernelBlock );
+			KernelBlockFFT = ffto -> forward( KernelBlock );
 		}
 
 		R8BCONSOLE( "CDSPFIRFilter: flt_len=%i latency=%i nfreq=%.4f "
@@ -674,15 +681,16 @@ public:
 			// Create a new filter object (with RefCount == 1) and build the
 			// filter kernel.
 
-			CurObj = new CDSPFIRFilter();
-			CurObj -> ReqNormFreq = ReqNormFreq;
-			CurObj -> ReqTransBand = ReqTransBand;
-			CurObj -> ReqAtten = ReqAtten;
-			CurObj -> ReqPhase = ReqPhase;
-			CurObj -> ReqGain = ReqGain;
-			ObjCount++;
+			CPtrKeeper< CDSPFIRFilter > f( new CDSPFIRFilter() );
+			f -> ReqNormFreq = ReqNormFreq;
+			f -> ReqTransBand = ReqTransBand;
+			f -> ReqAtten = ReqAtten;
+			f -> ReqPhase = ReqPhase;
+			f -> ReqGain = ReqGain;
+			f -> buildLPFilter( AttenCorrs );
 
-			CurObj -> buildLPFilter( AttenCorrs );
+			CurObj = f.unkeep();
+			ObjCount++;
 		}
 
 		// Insert the filter at the start of the list.

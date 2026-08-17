@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.3
+ * @version 7.4
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.3" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.4" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -75,11 +75,13 @@
  * versions.
  */
 
+#include <cstring>
+#include <cmath>
+#include <new>
+
 #if __cplusplus >= 201103L
 
 	#include <cstdint>
-	#include <cstring>
-	#include <cmath>
 	#include <mutex>
 
 	#define R8B_CONST constexpr
@@ -87,9 +89,7 @@
 
 #else // __cplusplus >= 201103L
 
-	#include <stdint.h>
-	#include <string.h>
-	#include <math.h>
+	#include <stdint.h> // A C99 fallback, as C++98 has no cstdint header.
 
 	#if defined( _WIN32 )
 		#include <Windows.h>
@@ -158,21 +158,26 @@
 
 namespace r8b {
 
+using std :: memcpy;
+using std :: memset;
+using std :: floor;
+using std :: ceil;
+using std :: fabs;
+using std :: sqrt;
+using std :: log;
+using std :: exp;
+using std :: pow;
+using std :: sin;
+using std :: cos;
+using std :: tan;
+using std :: atan;
+using std :: atan2;
+using std :: tanh;
+using std :: cosh;
+using std :: size_t;
+
 #if __cplusplus >= 201103L
 
-	using std :: memcpy;
-	using std :: memset;
-	using std :: floor;
-	using std :: ceil;
-	using std :: exp;
-	using std :: log;
-	using std :: pow;
-	using std :: fabs;
-	using std :: sqrt;
-	using std :: sin;
-	using std :: cos;
-	using std :: atan2;
-	using std :: size_t;
 	using std :: uintptr_t;
 
 #endif // __cplusplus >= 201103L
@@ -184,8 +189,7 @@ R8B_CONST double R8B_PId2 = 1.57079632679489662; ///< Equals `0.5*pi`.
 
 /**
  * @def R8BNOCTOR( ClassName )
- * @brief Macro that defines empty copy-constructor and copy operator with
- * the "private:" prefix.
+ * @brief Macro that defines empty copy-constructor and copy operator.
  *
  * This macro should be used in classes that cannot be copied in a standard
  * C++ way. It is also assumed that objects of such classes are
@@ -272,6 +276,22 @@ inline T* alignptr( T* const ptr, const uintptr_t align )
 }
 
 /**
+ * @brief Performs placement `new` to turn a block of unoccupied memory into
+ * a "constructed" array of elements of type `T`.
+ *
+ * @param ptr Pointer for placement of elements.
+ * @param c The number of elements to "construct".
+ * @tparam T Required element type.
+ * @return The pointer to a formally-constructed array of elements.
+ */
+
+template< typename T >
+inline T* constructptr( void* const ptr, const size_t c )
+{
+	return( :: new( ptr ) T[ c ]);
+}
+
+/**
  * @brief Templated memory buffer class for element buffers of fixed capacity.
  *
  * Fixed memory buffer object. Supports allocation of a fixed amount of
@@ -313,7 +333,8 @@ public:
 		R8BASSERT( Capacity >= 0 );
 
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );
-		Data = (T*) alignptr( Data0, Alignment );
+		Data = constructptr< T >( alignptr( Data0, Alignment ),
+			(size_t) Capacity );
 
 		R8BASSERT( Data0 != R8B_NULL || Capacity == 0 );
 	}
@@ -336,7 +357,8 @@ public:
 
 		freemem( Data0 );
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );
-		Data = (T*) alignptr( Data0, Alignment );
+		Data = constructptr< T >( alignptr( Data0, Alignment ),
+			(size_t) Capacity );
 
 		R8BASSERT( Data0 != R8B_NULL || Capacity == 0 );
 	}
@@ -358,7 +380,9 @@ public:
 		void* const NewData0 = allocmem( (size_t) NewCapacity * sizeof( T ) +
 			Alignment );
 
-		T* const NewData = (T*) alignptr( NewData0, Alignment );
+		T* const NewData = constructptr< T >( alignptr( NewData0, Alignment ),
+			(size_t) NewCapacity );
+
 		const size_t CopySize = ( PrevCapacity > NewCapacity ?
 			(size_t) NewCapacity : (size_t) PrevCapacity ) * sizeof( T );
 
@@ -498,6 +522,100 @@ public:
 		T* const ResObject = Object;
 		Object = R8B_NULL;
 		return( ResObject );
+	}
+
+private:
+	T* Object; ///< Pointer to keeped object.
+};
+
+/**
+ * @brief Reference "keeper" class with automatic unref() call.
+ *
+ * An auxiliary class that can be used for keeping a reference to object that
+ * should be unreferenced when the "keeper" is deleted.
+ *
+ * @tparam T Type of the referenced object, must have the unref() function.
+ */
+
+template< typename T >
+class CRefKeeper
+{
+	R8BNOCTOR( CRefKeeper )
+
+public:
+	CRefKeeper()
+		: Object( R8B_NULL )
+	{
+	}
+
+	/**
+	 * @brief Constructor assigns a pointer to object to *this* keeper.
+	 *
+	 * @param aObject Pointer to object to keep, can be `nullptr`.
+	 * @tparam T2 Object's pointer type.
+	 */
+
+	template< typename T2 >
+	CRefKeeper( T2 const aObject )
+		: Object( aObject )
+	{
+	}
+
+	~CRefKeeper()
+	{
+		if( Object != R8B_NULL )
+		{
+			Object -> unref();
+		}
+	}
+
+	/**
+	 * @brief Assigns a pointer to object to *this* keeper. A previously
+	 * keeped pointer will be reset and object unreferenced.
+	 *
+	 * @param aObject Pointer to object to keep; it can be `nullptr`.
+	 * @tparam T2 Object's pointer type.
+	 */
+
+	template< typename T2 >
+	void operator = ( T2 const aObject )
+	{
+		reset();
+		Object = aObject;
+	}
+
+	/**
+	 * @brief Returns pointer to keeped object, or `nullptr`, if no object is
+	 * being kept.
+	 */
+
+	T* operator -> () const
+	{
+		return( Object );
+	}
+
+	/**
+	 * @brief Returns pointer to keeped object, or `nullptr`, if no object is
+	 * kept.
+	 */
+
+	operator T* () const
+	{
+		return( Object );
+	}
+
+	/**
+	 * @brief Resets the keeped pointer and unreferences the keeped object.
+	 */
+
+	void reset()
+	{
+		if( Object != R8B_NULL )
+		{
+			T* const RefObj = Object;
+			Object = R8B_NULL;
+			RefObj -> unref();
+		}
 	}
 
 private:

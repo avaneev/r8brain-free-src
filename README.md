@@ -23,7 +23,7 @@ depending on the required precision) polynomial-interpolated sinc
 function-based fractional delay filters.  This puts the algorithm into the
 league of the fastest among the most precise SRC algorithms.  The more precise
 alternative being only the whole number-factored SRC (e.g., implemented in
-[Voxengo r8brain PRO](https://www.voxengo.com/product/r8brainpro/?eref=ghr),
+[Voxengo r8brain PRO](https://www.voxengo.com/product/r8brainpro/?eref=ghr)),
 which can be slower.
 
 P.S. Please credit the creator of this library in your documentation in the
@@ -75,13 +75,11 @@ makes sample rate conversion faster by 23% on average.
 #define R8B_IPP 1
 ```
 
-If a larger initial processing delay and a very minor sample-timing error are
-not an issue, for the most efficiency you can define these macros at
-the beginning of the `r8bconf.h` file, or during compilation:
+If a larger initial processing delay is not an issue, for the most efficiency
+you can define this macro at the beginning of the `r8bconf.h` file, or during
+compilation:
 
 ```c++
-#define R8B_IPP 1
-#define R8B_FASTTIMING 1
 #define R8B_EXTFFT 1
 ```
 
@@ -224,6 +222,26 @@ This library is used by:
 * [Wave Breaker](https://pressplay-music.com/wave-breaker/)
 
 ## Change Log
+
+Version 7.4:
+
+* Implemented fixed FFT "setup" objects resulting in memory savings and faster
+init.
+* Optimized interpolator's timing method making the `R8B_FASTTIMING` option
+obsolete.
+* Modified Ooura RDFT to use pre-initialized coefficients, removing its "work"
+buffer completely.
+* Added preferential utilization of `third` HB filters yielding 3% performance
+improvement in some cases.
+* Removed an unused `third` HB filter path in intermediate interpolation.
+* Resolved strict-aliasing violations in the `R8B_PFFFT` mode.
+* Simplified and de-cluttered float-type FFT handling.
+* Transformed recursive `delete Next` into linked-list loops to avoid stack
+overflows.
+* Implemented resampler's Steps array as a singly-linked list resulting in
+fewer memory allocations on init.
+* Eliminated memory leaks on `bad_alloc` at any stage.
+* Hardened object unreferencing.
 
 Version 7.3:
 

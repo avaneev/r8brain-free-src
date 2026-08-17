@@ -9,7 +9,9 @@
  * Functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
  * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
  *
- * Modified and used with permission granted by the license.
+ * Modified and used with permission granted by the license. Modifications
+ * include a one-time `ip` and `w` arrays initialization for the rdft()
+ * function, which are then passed to it as `const` arrays.
  *
  * Here, the original "fft4g.c" file was wrapped into the "ooura_fft" class.
  */
@@ -17,21 +19,13 @@
 #ifndef R8B_FFT4G_INCLUDED
 #define R8B_FFT4G_INCLUDED
 
-#if __cplusplus >= 201103L
-	#include <cmath>
-#else // __cplusplus >= 201103L
-	#include <math.h>
-#endif // __cplusplus >= 201103L
+#include <cmath>
 
 namespace r8b {
 
-#if __cplusplus >= 201103L
-
-	using std :: sin;
-	using std :: cos;
-	using std :: atan;
-
-#endif // __cplusplus >= 201103L
+using std :: sin;
+using std :: cos;
+using std :: atan;
 
 /**
  * @brief A wrapper class around Takuya OOURA's FFT functions.
@@ -327,6 +321,7 @@ static void cdft(int n, int isgn, double *a, int *ip, double *w)
     }
     if (n > 4) {
         if (isgn >= 0) {
+            bitrv2init(n, ip + 2);
             bitrv2(n, ip + 2, a);
             cftfsub(n, a, w);
         } else {
@@ -339,21 +334,30 @@ static void cdft(int n, int isgn, double *a, int *ip, double *w)
 }
 
 
-static void rdft(int n, int isgn, double *a, int *ip, double *w)
+static void rdftinit(int n, int *ip, double *w)
 {
     int nw, nc;
-    double xi;
     
-    nw = ip[0];
-    if (n > (nw << 2)) {
-        nw = n >> 2;
-        makewt(nw, ip, w);
-    }
+    nw = n >> 2;
+    makewt(nw, ip, w);
     nc = ip[1];
     if (n > (nc << 2)) {
         nc = n >> 2;
         makect(nc, ip, w + nw);
     }
+    if (n > 4) {
+        bitrv2init(n, ip + 2);
+    }
+}
+
+
+static void rdft(int n, int isgn, double *a, const int *ip, const double *w)
+{
+    int nw, nc;
+    double xi;
+    
+    nw = ip[0];
+    nc = ip[1];
     if (isgn >= 0) {
         if (n > 4) {
             bitrv2(n, ip + 2, a);
@@ -404,6 +408,7 @@ static void ddct(int n, int isgn, double *a, int *ip, double *w)
         a[0] += xr;
         if (n > 4) {
             rftbsub(n, a, nc, w + nw);
+            bitrv2init(n, ip + 2);
             bitrv2(n, ip + 2, a);
             cftbsub(n, a, w);
         } else if (n == 4) {
@@ -413,6 +418,7 @@ static void ddct(int n, int isgn, double *a, int *ip, double *w)
     dctsub(n, a, nc, w + nw);
     if (isgn >= 0) {
         if (n > 4) {
+            bitrv2init(n, ip + 2);
             bitrv2(n, ip + 2, a);
             cftfsub(n, a, w);
             rftfsub(n, a, nc, w + nw);
@@ -455,6 +461,7 @@ static void ddst(int n, int isgn, double *a, int *ip, double *w)
         a[0] -= xr;
         if (n > 4) {
             rftbsub(n, a, nc, w + nw);
+            bitrv2init(n, ip + 2);
             bitrv2(n, ip + 2, a);
             cftbsub(n, a, w);
         } else if (n == 4) {
@@ -464,6 +471,7 @@ static void ddst(int n, int isgn, double *a, int *ip, double *w)
     dstsub(n, a, nc, w + nw);
     if (isgn >= 0) {
         if (n > 4) {
+            bitrv2init(n, ip + 2);
             bitrv2(n, ip + 2, a);
             cftfsub(n, a, w);
             rftfsub(n, a, nc, w + nw);
@@ -519,6 +527,7 @@ static void dfct(int n, double *a, double *t, int *ip, double *w)
         a[mh] -= a[n - mh];
         dctsub(m, a, nc, w + nw);
         if (m > 4) {
+            bitrv2init(m, ip + 2);
             bitrv2(m, ip + 2, a);
             cftfsub(m, a, w);
             rftfsub(m, a, nc, w + nw);
@@ -536,6 +545,7 @@ static void dfct(int n, double *a, double *t, int *ip, double *w)
         while (m >= 2) {
             dctsub(m, t, nc, w + nw);
             if (m > 4) {
+                bitrv2init(m, ip + 2);
                 bitrv2(m, ip + 2, t);
                 cftfsub(m, t, w);
                 rftfsub(m, t, nc, w + nw);
@@ -605,6 +615,7 @@ static void dfst(int n, double *a, double *t, int *ip, double *w)
         a[0] = a[m];
         dstsub(m, a, nc, w + nw);
         if (m > 4) {
+            bitrv2init(m, ip + 2);
             bitrv2(m, ip + 2, a);
             cftfsub(m, a, w);
             rftfsub(m, a, nc, w + nw);
@@ -622,6 +633,7 @@ static void dfst(int n, double *a, double *t, int *ip, double *w)
         while (m >= 2) {
             dstsub(m, t, nc, w + nw);
             if (m > 4) {
+                bitrv2init(m, ip + 2);
                 bitrv2(m, ip + 2, t);
                 cftfsub(m, t, w);
                 rftfsub(m, t, nc, w + nw);
@@ -679,6 +691,7 @@ static void makewt(int nw, int *ip, double *w)
                 w[nw - j] = y;
                 w[nw - j + 1] = x;
             }
+            bitrv2init(nw, ip + 2);
             bitrv2(nw, ip + 2, w);
         }
     }
@@ -707,10 +720,9 @@ static void makect(int nc, int *ip, double *c)
 /* -------- child routines -------- */
 
 
-static void bitrv2(int n, int *ip, double *a)
+static void bitrv2init(int n, int *ip)
 {
-    int j, j1, k, k1, l, m, m2;
-    double xr, xi, yr, yi;
+    int j, l, m;
     
     ip[0] = 0;
     l = n;
@@ -720,6 +732,19 @@ static void bitrv2(int n, int *ip, double *a)
         for (j = 0; j < m; j++) {
             ip[m + j] = ip[j] + l;
         }
+        m <<= 1;
+    }
+}
+
+static void bitrv2(int n, const int *ip, double *a)
+{
+    int j, j1, k, k1, l, m, m2;
+    double xr, xi, yr, yi;
+    
+    l = n;
+    m = 1;
+    while ((m << 3) < l) {
+        l >>= 1;
         m <<= 1;
     }
     m2 = 2 * m;
@@ -916,7 +941,7 @@ static void bitrv2conj(int n, int *ip, double *a)
 }
 
 
-static void cftfsub(int n, double *a, double *w)
+static void cftfsub(int n, double *a, const double *w)
 {
     int j, j1, j2, j3, l;
     double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
@@ -966,7 +991,7 @@ static void cftfsub(int n, double *a, double *w)
 }
 
 
-static void cftbsub(int n, double *a, double *w)
+static void cftbsub(int n, double *a, const double *w)
 {
     int j, j1, j2, j3, l;
     double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
@@ -1016,7 +1041,7 @@ static void cftbsub(int n, double *a, double *w)
 }
 
 
-static void cft1st(int n, double *a, double *w)
+static void cft1st(int n, double *a, const double *w)
 {
     int j, k1, k2;
     double wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -1121,7 +1146,7 @@ static void cft1st(int n, double *a, double *w)
 }
 
 
-static void cftmdl(int n, int l, double *a, double *w)
+static void cftmdl(int n, int l, double *a, const double *w)
 {
     int j, j1, j2, j3, k, k1, k2, m, m2;
     double wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -1248,7 +1273,7 @@ static void cftmdl(int n, int l, double *a, double *w)
 }
 
 
-static void rftfsub(int n, double *a, int nc, double *c)
+static void rftfsub(int n, double *a, int nc, const double *c)
 {
     int j, k, kk, ks, m;
     double wkr, wki, xr, xi, yr, yi;
@@ -1273,7 +1298,7 @@ static void rftfsub(int n, double *a, int nc, double *c)
 }
 
 
-static void rftbsub(int n, double *a, int nc, double *c)
+static void rftbsub(int n, double *a, int nc, const double *c)
 {
     int j, k, kk, ks, m;
     double wkr, wki, xr, xi, yr, yi;
@@ -1300,7 +1325,7 @@ static void rftbsub(int n, double *a, int nc, double *c)
 }
 
 
-static void dctsub(int n, double *a, int nc, double *c)
+static void dctsub(int n, double *a, int nc, const double *c)
 {
     int j, k, kk, ks, m;
     double wkr, wki, xr;
@@ -1321,7 +1346,7 @@ static void dctsub(int n, double *a, int nc, double *c)
 }
 
 
-static void dstsub(int n, double *a, int nc, double *c)
+static void dstsub(int n, double *a, int nc, const double *c)
 {
     int j, k, kk, ks, m;
     double wkr, wki, xr;

@@ -9,7 +9,7 @@
  * This file includes the base virtual class for DSP processing algorithm
  * classes like FIR filtering and interpolation.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -27,6 +27,8 @@ namespace r8b {
  * This class can be used as a base class for various DSP processing
  * algorithms (processors). DSP processors that are derived from this class
  * can be seamlessly integrated into various DSP processing graphs.
+ *
+ * This class provides a singly-linked list functionality.
  */
 
 class CDSPProcessor : public R8B_DSPBASECLASS
@@ -34,12 +36,22 @@ class CDSPProcessor : public R8B_DSPBASECLASS
 	R8BNOCTOR( CDSPProcessor )
 
 public:
+	CDSPProcessor* Next; ///< Next processor in a singly-linked list.
+
 	CDSPProcessor()
+		: Next( R8B_NULL )
 	{
 	}
 
 	virtual ~CDSPProcessor()
 	{
+		while( Next != R8B_NULL )
+		{
+			CDSPProcessor* const nn = Next -> Next;
+			Next -> Next = R8B_NULL;
+			delete Next;
+			Next = nn;
+		}
 	}
 
 	/**
@@ -55,13 +67,16 @@ public:
 	 * sample length value (e.g., greater than 100000) may overflow the
 	 * calculation or cause rounding errors.
 	 *
+	 * The implementation should first call the same function of the `Next`
+	 * processor.
+	 *
 	 * @param ReqOutPos The required output position. Set to 0 to obtain
 	 * "input length before output start" latency. Must be a non-negative
 	 * value.
 	 * @return The number of input samples required.
 	 */
 
-	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const = 0;
+	virtual int getInLenBeforeOutPos( int ReqOutPos ) const = 0;
 
 	/**
 	 * @brief Return the latency, in samples, which is present in the output

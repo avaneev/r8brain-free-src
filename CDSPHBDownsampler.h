@@ -96,8 +96,13 @@ public:
 		clear();
 	}
 
-	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
+	virtual int getInLenBeforeOutPos( int ReqOutPos ) const
 	{
+		if( Next != R8B_NULL )
+		{
+			ReqOutPos = Next -> getInLenBeforeOutPos( ReqOutPos );
+		}
+
 		return( flo + (int) (( Latency + LatencyFrac + ReqOutPos ) * 2.0 ));
 	}
 

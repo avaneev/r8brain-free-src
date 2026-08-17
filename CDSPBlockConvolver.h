@@ -8,7 +8,7 @@
  *
  * This file includes single-block overlap-save convolution processor class.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -184,13 +184,13 @@ public:
 			getLatency() );
 	}
 
-	virtual ~CDSPBlockConvolver()
+	virtual int getInLenBeforeOutPos( int ReqOutPos ) const
 	{
-		Filter -> unref();
-	}
+		if( Next != R8B_NULL )
+		{
+			ReqOutPos = Next -> getInLenBeforeOutPos( ReqOutPos );
+		}
 
-	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
-	{
 		return( (int) (( Latency + (double) ReqOutPos * DownFactor ) /
 			UpFactor + LatencyFrac * DownFactor / UpFactor ));
 	}
@@ -304,44 +304,34 @@ public:
 			memcpy( &CurInput[ ilu ], PrevInput, pil );
 			memcpy( PrevInput, &CurInput[ ilu - PrevInputLen ], pil );
 
-			(*fftin) -> forward( CurInput );
+			realfft_t* const CurInputFFT = (*fftin) -> forward( CurInput );
 
 			if( UpShift > 0 )
 			{
-				#if R8B_FLOATFFT
-					mirrorInputSpectrum( (float*) CurInput );
-				#else // R8B_FLOATFFT
-					mirrorInputSpectrum( CurInput );
-				#endif // R8B_FLOATFFT
+				mirrorInputSpectrum( CurInputFFT );
 			}
 
 			if( Filter -> isZeroPhase() )
 			{
 				(*fftout) -> multiplyBlocksZP( Filter -> getKernelBlock(),
-					CurInput );
+					CurInputFFT );
 			}
 			else
 			{
 				(*fftout) -> multiplyBlocks( Filter -> getKernelBlock(),
-					CurInput );
+					CurInputFFT );
 			}
 
 			if( DownShift > 0 )
 			{
+				const realfft_t* const kb = Filter -> getKernelBlock();
+				realfft_t* const p = CurInputFFT;
 				const int z = BlockLen2 >> DownShift;
-
-				#if R8B_FLOATFFT
-					float* const kb = (float*) Filter -> getKernelBlock();
-					float* const p = (float*) CurInput;
-				#else // R8B_FLOATFFT
-					const double* const kb = Filter -> getKernelBlock();
-					double* const p = CurInput;
-				#endif // R8B_FLOATFFT
 
 				p[ 1 ] = kb[ z ] * p[ z ] - kb[ z + 1 ] * p[ z + 1 ];
 			}
 
-			(*fftout) -> inverse( CurInput );
+			(*fftout) -> inverse( CurInputFFT );
 
 			copyToOutput( Offs - OutOffset, op, b, l0 );
 
@@ -354,7 +344,7 @@ public:
 	}
 
 private:
-	CDSPFIRFilter* Filter; ///< Filter in use.
+	CRefKeeper< CDSPFIRFilter > Filter; ///< Filter in use.
 	CPtrKeeper< CDSPRealFFTKeeper > fftin; ///< FFT object 1, used to produce
 		///< the input spectrum (can embed the "power of 2" upsampling).
 	CPtrKeeper< CDSPRealFFTKeeper > ffto2; ///< FFT object 2 (can be

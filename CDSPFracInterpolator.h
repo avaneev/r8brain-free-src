@@ -190,7 +190,13 @@ public:
 
 	~CDSPFracDelayFilterBank()
 	{
-		delete Next;
+		while( Next != R8B_NULL )
+		{
+			CDSPFracDelayFilterBank* const nn = Next -> Next;
+			Next -> Next = R8B_NULL;
+			delete Next;
+			Next = nn;
+		}
 	}
 
 	/**
@@ -685,9 +691,7 @@ inline bool getWholeStepping( const double SSampleRate,
  * precision they are interpolated between adjacent filters.
  *
  * To increase the sample-timing precision, this class uses "resettable
- * counter" approach. This gives zero overall sample-timing error. With the
- * R8B_FASTTIMING configuration option enabled, the sample timing experiences
- * a very minor drift.
+ * counter" approach. This gives zero overall sample-timing error.
  */
 
 class CDSPFracInterpolator : public CDSPProcessor
@@ -712,9 +716,7 @@ public:
 		const bool IsThird, const double PrevLatency )
 		: SrcSampleRate( aSrcSampleRate )
 		, DstSampleRate( aDstSampleRate )
-	#if R8B_FASTTIMING
 		, FracStep( aSrcSampleRate / aDstSampleRate )
-	#endif // R8B_FASTTIMING
 	{
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
@@ -793,17 +795,13 @@ public:
 		clear();
 	}
 
-	virtual ~CDSPFracInterpolator()
+	virtual int getInLenBeforeOutPos( int ReqOutPos ) const
 	{
-	#if R8B_FLTTEST
-		delete FilterBank;
-	#else // R8B_FLTTEST
-		FilterBank -> unref();
-	#endif // R8B_FLTTEST
-	}
+		if( Next != R8B_NULL )
+		{
+			ReqOutPos = Next -> getInLenBeforeOutPos( ReqOutPos );
+		}
 
-	virtual int getInLenBeforeOutPos( const int ReqOutPos ) const
-	{
 		const int ilat = fl2 + Latency;
 
 		if( IsWhole )
@@ -852,12 +850,8 @@ public:
 		else
 		{
 			InPosFrac = InitFracPos;
-
-		#if !R8B_FASTTIMING
-			InCounter = 0;
 			InPosInt = 0;
-			InPosShift = InitFracPos * DstSampleRate / SrcSampleRate;
-		#endif // !R8B_FASTTIMING
+			InPosShift = InitFracPos / SrcSampleRate * DstSampleRate;
 		}
 	}
 
@@ -907,19 +901,14 @@ public:
 			op = ( *this.*convfn )( op );
 		}
 
-	#if !R8B_FASTTIMING
-
-		if( !IsWhole && InCounter > 1000 )
+		if( !IsWhole && (int) InPosShift > 1000 )
 		{
 			// Reset the interpolation position counter to achieve a higher
 			// sample-timing precision.
 
-			InCounter = 0;
 			InPosInt = 0;
-			InPosShift = InPosFrac * DstSampleRate / SrcSampleRate;
+			InPosShift = InPosFrac / SrcSampleRate * DstSampleRate;
 		}
-
-	#endif // !R8B_FASTTIMING
 
 		return( (int) ( op - op0 ));
 	}
@@ -965,18 +954,18 @@ private:
 	int InPosFracW; ///< Interpolation position (fractional part) for
 		///< whole-number stepping. Corresponds to the index into the filter
 		///< bank.
-	double InPosFrac; ///< Interpolation position (fractional part).
-
-#if R8B_FASTTIMING
-	double FracStep; ///< Fractional sample-timing step.
-#else // R8B_FASTTIMING
-	int InCounter; ///< Interpolation step counter.
 	int InPosInt; ///< Interpolation position (integer part).
-	double InPosShift; ///< Interpolation position fractional shift.
-#endif // R8B_FASTTIMING
+	double InPosFrac; ///< Interpolation position (fractional part).
+	double FracStep; ///< Fractional sample-timing step.
+	double InPosShift; ///< Interpolation position's shift.
 
-	CDSPFracDelayFilterBank* FilterBank; ///< Filter bank in use, may be
-		///< whole-number stepping filter bank or static bank.
+	#if !R8B_FLTTEST
+	CRefKeeper< CDSPFracDelayFilterBank > FilterBank; ///< Filter bank in use,
+		///< may be whole-number stepping filter bank or static bank.
+	#else // !R8B_FLTTEST
+	CPtrKeeper< CDSPFracDelayFilterBank > FilterBank;
+	#endif // !R8B_FLTTEST
+
 	bool IsWhole; ///< `true` if whole-number stepping is in use.
 
 	typedef double*( CDSPFracInterpolator ::* CConvolveFn )( double* op ); ///<
@@ -1073,21 +1062,23 @@ private:
 	{
 		const CDSPFracDelayFilterBank& fb = *FilterBank;
 		const int fltlen = FilterLen;
-		const double ssr = SrcSampleRate;
-		const double dsr = DstSampleRate;
+		const double ffracs = fb.getFilterFracs();
+		const double fs = FracStep;
+		int ipos = InPosInt;
 		double fpos = InPosFrac;
+		double psh = InPosShift;
 		int rpos = ReadPos;
 		int bl = BufLeft - fl2;
 
 		while( bl > 0 )
 		{
-			double x = fpos * fb.getFilterFracs();
+			double x = fpos * ffracs;
 			const int fti = (int) x; // Function table index.
+			const double* ftp = &fb[ fti ];
 			x -= fti; // Coefficient for interpolation between adjacent
 				// fractional delay filters.
-			const double x2d = x * x;
-			const double* ftp = &fb[ fti ];
 			const double* const rp = Buf + rpos;
+			const double x2d = x * x;
 			int i;
 
 		#if defined( R8B_SSE2 ) && defined( R8B_SIMD_ISH )
@@ -1151,32 +1142,25 @@ private:
 
 		#endif // SIMD
 
+			psh += 1.0;
 			op++;
 
-		#if R8B_FASTTIMING
-
-			fpos += FracStep;
-			const int PosIncr = (int) fpos;
-			fpos -= PosIncr;
-
-		#else // R8B_FASTTIMING
-
-			InCounter++;
-			const double NextInPos = ( InCounter + InPosShift ) * ssr / dsr;
+			const double NextInPos = psh * fs;
 			const int NextInPosInt = (int) NextInPos;
-			const int PosIncr = NextInPosInt - InPosInt;
-			InPosInt = NextInPosInt;
+			const int PosIncr = NextInPosInt - ipos;
+
 			fpos = NextInPos - NextInPosInt;
+			ipos = NextInPosInt;
 
-		#endif // R8B_FASTTIMING
-
-			rpos = ( rpos + PosIncr ) & BufLenMask;
 			bl -= PosIncr;
+			rpos = ( rpos + PosIncr ) & BufLenMask;
 		}
 
 		BufLeft = bl + fl2;
 		ReadPos = rpos;
+		InPosInt = ipos;
 		InPosFrac = fpos;
+		InPosShift = psh;
 
 		return( op );
 	}
