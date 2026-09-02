@@ -304,11 +304,29 @@ public:
 			memcpy( &CurInput[ ilu ], PrevInput, pil );
 			memcpy( PrevInput, &CurInput[ ilu - PrevInputLen ], pil );
 
-			realfft_t* const CurInputFFT = (*fftin) -> forward( CurInput );
+			realfft_t* CurInputFFT = (*fftin) -> forward( CurInput );
+			realfft_t dsn = 0;
 
-			if( UpShift > 0 )
+			if( UpShift > 0 || DownShift > 0 )
 			{
-				mirrorInputSpectrum( CurInputFFT );
+				CurInputFFT = (*fftin) -> reorderForward( CurInputFFT,
+					( (*fftin) -> getLen() > (*fftout) -> getLen() ?
+					(*fftin) -> getWorkBuf() : (*fftout) -> getWorkBuf() ));
+
+				if( UpShift > 0 )
+				{
+					mirrorInputSpectrum( CurInputFFT );
+				}
+
+				if( DownShift > 0 )
+				{
+					const int z = BlockLen2 >> DownShift;
+					dsn = Filter -> calcDownShiftNyquist( CurInputFFT[ z ],
+						CurInputFFT[ z + 1 ]);
+				}
+
+				CurInputFFT = (*fftout) -> reorderInverse( CurInputFFT,
+					CurInput );
 			}
 
 			if( Filter -> isZeroPhase() )
@@ -324,11 +342,7 @@ public:
 
 			if( DownShift > 0 )
 			{
-				const realfft_t* const kb = Filter -> getKernelBlock();
-				realfft_t* const p = CurInputFFT;
-				const int z = BlockLen2 >> DownShift;
-
-				p[ 1 ] = kb[ z ] * p[ z ] - kb[ z + 1 ] * p[ z + 1 ];
+				(*fftout) -> setBinNyquist( CurInputFFT, dsn );
 			}
 
 			(*fftout) -> inverse( CurInputFFT );
@@ -597,7 +611,7 @@ private:
 	void mirrorInputSpectrum( T* const p )
 	{
 		const int bl1 = BlockLen2 >> UpShift;
-		const int bl2 = bl1 + bl1;
+		const int bl2 = bl1 * 2;
 		int i;
 
 		for( i = bl1 + 2; i < bl2; i += 2 )

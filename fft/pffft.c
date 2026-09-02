@@ -1324,7 +1324,7 @@ static void unreversed_copy(int N, const v4sf *in, v4sf *out, int out_stride) {
   UNINTERLEAVE2(h0, g1, out[0], out[1]);
 }
 
-void pffft_zreorder(PFFFT_Setup *setup, const float *in, float *out, pffft_direction_t direction) {
+void pffft_zreorder(const PFFFT_Setup *setup, const float *in, float *out, pffft_direction_t direction) {
   int k, N = setup->N, Ncvec = setup->Ncvec;
   const v4sf *vin = (const v4sf*)in;
   v4sf *vout = (v4sf*)out;
@@ -1631,7 +1631,7 @@ static NEVER_INLINE(void) pffft_real_preprocess(int Ncvec, const v4sf *in, v4sf 
 }
 
 
-void pffft_transform_internal(PFFFT_Setup *setup, const float *finput, float *foutput, v4sf *scratch,
+void pffft_transform_internal(const PFFFT_Setup *setup, const float *finput, float *foutput, v4sf *scratch,
                               pffft_direction_t direction, int ordered) {
   int k, Ncvec   = setup->Ncvec;
   int nf_odd = (setup->ifac[1] & 1);
@@ -1700,7 +1700,7 @@ void pffft_transform_internal(PFFFT_Setup *setup, const float *finput, float *fo
   assert(buff[ib] == voutput);
 }
 
-void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, float *ab, float scaling) {
+void pffft_zconvolve_accumulate(const PFFFT_Setup *s, const float *a, const float *b, float *ab, float scaling) {
   int Ncvec = s->Ncvec;
   const v4sf * RESTRICT va = (const v4sf*)a;
   const v4sf * RESTRICT vb = (const v4sf*)b;
@@ -1795,13 +1795,46 @@ void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, 
   }
 }
 
+void pffft_zconvolve(const PFFFT_Setup *s, const float *a, const float *b, float *ab) {
+  int Ncvec = s->Ncvec;
+  const v4sf * RESTRICT va = (const v4sf*)a;
+  const v4sf * RESTRICT vb = (const v4sf*)b;
+  v4sf * RESTRICT vab = (v4sf*)ab;
+
+  float ar0, ai0, br0, bi0;
+  int i;
+
+  assert(VALIGNED(a) && VALIGNED(b) && VALIGNED(ab));
+  ar0 = ((v4sf_union*)va)[0].f[0];
+  ai0 = ((v4sf_union*)va)[1].f[0];
+  br0 = ((v4sf_union*)vb)[0].f[0];
+  bi0 = ((v4sf_union*)vb)[1].f[0];
+
+  for (i=0; i < Ncvec; i += 2) {
+    v4sf ar, ai, br, bi;
+    ar = va[2*i+0]; ai = va[2*i+1];
+    br = vb[2*i+0]; bi = vb[2*i+1];
+    VCPLXMUL(ar, ai, br, bi);
+    vab[2*i+0] = ar;
+    vab[2*i+1] = ai;
+    ar = va[2*i+2]; ai = va[2*i+3];
+    br = vb[2*i+2]; bi = vb[2*i+3];
+    VCPLXMUL(ar, ai, br, bi);
+    vab[2*i+2] = ar;
+    vab[2*i+3] = ai;
+  }
+  if (s->transform == PFFFT_REAL) {
+    ((v4sf_union*)vab)[0].f[0] = ar0*br0;
+    ((v4sf_union*)vab)[1].f[0] = ai0*bi0;
+  }
+}
 
 #else // defined(PFFFT_SIMD_DISABLE)
 
 // standard routine using scalar floats, without SIMD stuff.
 
 #define pffft_zreorder_nosimd pffft_zreorder
-void pffft_zreorder_nosimd(PFFFT_Setup *setup, const float *in, float *out, pffft_direction_t direction) {
+void pffft_zreorder_nosimd(const PFFFT_Setup *setup, const float *in, float *out, pffft_direction_t direction) {
   int k, N = setup->N;
   if (setup->transform == PFFFT_COMPLEX) {
     for (k=0; k < 2*N; ++k) out[k] = in[k];
@@ -1821,7 +1854,7 @@ void pffft_zreorder_nosimd(PFFFT_Setup *setup, const float *in, float *out, pfff
 }
 
 #define pffft_transform_internal_nosimd pffft_transform_internal
-void pffft_transform_internal_nosimd(PFFFT_Setup *setup, const float *input, float *output, float *scratch,
+void pffft_transform_internal_nosimd(const PFFFT_Setup *setup, const float *input, float *output, float *scratch,
                                      pffft_direction_t direction, int ordered) {
   int Ncvec   = setup->Ncvec;
   int nf_odd = (setup->ifac[1] & 1);
@@ -1878,7 +1911,7 @@ void pffft_transform_internal_nosimd(PFFFT_Setup *setup, const float *input, flo
 }
 
 #define pffft_zconvolve_accumulate_nosimd pffft_zconvolve_accumulate
-void pffft_zconvolve_accumulate_nosimd(PFFFT_Setup *s, const float *a, const float *b,
+void pffft_zconvolve_accumulate_nosimd(const PFFFT_Setup *s, const float *a, const float *b,
                                        float *ab, float scaling) {
   int i, Ncvec = s->Ncvec;
 
@@ -1900,10 +1933,10 @@ void pffft_zconvolve_accumulate_nosimd(PFFFT_Setup *s, const float *a, const flo
 
 #endif // defined(PFFFT_SIMD_DISABLE)
 
-void pffft_transform(PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction) {
+void pffft_transform(const PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction) {
   pffft_transform_internal(setup, input, output, (v4sf*)work, direction, 0);
 }
 
-void pffft_transform_ordered(PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction) {
+void pffft_transform_ordered(const PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction) {
   pffft_transform_internal(setup, input, output, (v4sf*)work, direction, 1);
 }

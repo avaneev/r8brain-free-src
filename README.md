@@ -223,6 +223,13 @@ This library is used by:
 
 ## Change Log
 
+Version 7.5:
+
+* Added "unordered" FFT support for PFFFT and PFFFT DOUBLE yielding 9%
+performance improvement in CDSPBlockConvolver for some conversions.
+* Implemented a unified singly-linked list item class.
+* Updated PFFFT and PFFFT DOUBLE to the latest versions.
+
 Version 7.4:
 
 * Implemented fixed FFT "setup" objects resulting in memory savings and faster

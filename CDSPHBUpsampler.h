@@ -598,7 +598,7 @@ public:
 
 		// Copy obtained filter to address-aligned buffer.
 
-		fltp = alignptr( FltBuf, 16 );
+		fltp = align_ptr( FltBuf, 16 );
 		memcpy( fltp, fltp0, (size_t) fltt * sizeof( fltp[ 0 ]));
 
 		convfn = FltConvFn[ fltt - 1 ];
@@ -787,10 +787,12 @@ private:
 		///< positioning.
 	static const int BufLenMask = BufLen - 1; ///< Mask used for quick buffer
 		///< position wrapping.
-	double Buf[ BufLen + 27 ]; ///< The ring buffer, including overrun
-		///< protection for the largest filter.
-	double FltBuf[ 14 + 2 ]; ///< Holder for half-band filter taps, used with
-		///< 16-byte address-aligning, for SIMD use.
+	static const int FltBufLen = 14; ///< The length of the `FltBuf` able to
+		///< hold the largest filter.
+	double Buf[ BufLen + ( FltBufLen * 2 - 1 )]; ///< The ring buffer,
+		///< including overrun protection for the largest filter.
+	double FltBuf[ FltBufLen + 2 ]; ///< Holder for half-band filter taps,
+		///< used with 16-byte address-aligning, for SIMD use.
 	const double* BufRP; ///< Offseted Buf pointer at `ReadPos` equal 0.
 	double* fltp; ///< Half-band filter taps, points to `FltBuf`.
 	int fll; ///< Input latency (left-hand filter length).

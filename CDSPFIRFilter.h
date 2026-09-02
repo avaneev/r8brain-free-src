@@ -55,24 +55,15 @@ enum EDSPFilterPhaseResponse
  * obtained via the CDSPFilterCache::getLPFilter() static function.
  */
 
-class CDSPFIRFilter : public R8B_BASECLASS
+class CDSPFIRFilter : public R8B_BASECLASS,
+	private CSinglyLinkedListItem< CDSPFIRFilter >
 {
 	R8BNOCTOR( CDSPFIRFilter )
 
+	friend class CSinglyLinkedListItem< CDSPFIRFilter >;
 	friend class CDSPFIRFilterCache;
 
 public:
-	~CDSPFIRFilter()
-	{
-		while( Next != R8B_NULL )
-		{
-			CDSPFIRFilter* const nn = Next -> Next;
-			Next -> Next = R8B_NULL;
-			delete Next;
-			Next = nn;
-		}
-	}
-
 	/**
 	 * @brief Returns the minimal allowed low-pass filter's transition band,
 	 * in percent.
@@ -154,7 +145,9 @@ public:
 
 	/**
 	 * @brief Returns filter's block length, expressed as Nth power of 2.
-	 * The actual length is twice as large due to zero-padding.
+	 *
+	 * The actual length is twice as large due to zero-padding. Also it does
+	 * not account for length reduction due to `ReqDownShift`.
 	 */
 
 	int getBlockLenBits() const
@@ -170,11 +163,32 @@ public:
 	 * multiplied by `ReqGain` constant, immediately suitable for convolution.
 	 * Kernel block may have "zero-phase" response, depending on the
 	 * isZeroPhase() function's result.
+	 *
+	 * If `ReqDownShift` is positive, the actual length of the kernel block is
+	 * smaller by `2^ReqDownShift`.
 	 */
 
 	const realfft_t* getKernelBlock() const
 	{
 		return( KernelBlockFFT );
+	}
+
+	/**
+	 * @brief Calculates Nyquist bin value for downsampling using power-of-2
+	 * down-shifting.
+	 *
+	 * Multiplies the forward transform's complex component with filter's
+	 * response at the edge bin.
+	 *
+	 * @param re Input value, real part.
+	 * @param im Input value, imaginary part.
+	 * @return The value of the Nyquist bin.
+	 */
+
+	realfft_t calcDownShiftNyquist( const realfft_t re,
+		const realfft_t im ) const
+	{
+		return( dsnRe * re - dsnIm * im );
 	}
 
 	/**
@@ -194,7 +208,7 @@ private:
 		///< by the user (positive value).
 	EDSPFilterPhaseResponse ReqPhase; ///< Required filter's phase response.
 	double ReqGain; ///< Required overall filter's gain.
-	CDSPFIRFilter* Next; ///< Next FIR filter in cache's list.
+	int ReqDownShift; ///< Required downsampling shift, if a positive value.
 	int RefCount; ///< The number of references made to *this* FIR filter.
 	bool IsZeroPhase; ///< `true` if kernel block of *this* filter has
 		///< zero-phase response.
@@ -207,13 +221,14 @@ private:
 	CFixedBuffer< double > KernelBlock; ///< FIR filter buffer, capacity
 		///< equals to `1 << ( BlockLenBits + 1 )`. Second half of the buffer
 		///< contains zero-padding to allow alias-free convolution.
-		///< Address-aligned.
+		///< Address-aligned. Reused to store the FFT of the filter.
 	realfft_t* KernelBlockFFT; ///< Pointer to FFT-transformed kernel block in
 		///< native resolution.
+	realfft_t dsnRe; ///< Down-shift Nyquist bin's real value.
+	realfft_t dsnIm; ///< Down-shift Nyquist bin's imaginary value.
 
 	CDSPFIRFilter()
-		: Next( R8B_NULL )
-		, RefCount( 1 )
+		: RefCount( 1 )
 	{
 	}
 
@@ -492,6 +507,9 @@ private:
 
 		CDSPRealFFTKeeper ffto( BlockLenBits + 1 );
 
+		dsnRe = 0;
+		dsnIm = 0;
+
 		if( IsZeroPhase )
 		{
 			// Calculate DC gain.
@@ -524,7 +542,31 @@ private:
 				sizeof( KernelBlock[ 0 ]));
 
 			KernelBlockFFT = ffto -> forward( KernelBlock );
-			ffto -> convertToZP( KernelBlockFFT );
+
+			if( ReqDownShift > 0 )
+			{
+				KernelBlockFFT = ffto -> reorderForward( KernelBlockFFT,
+					ffto -> getWorkBuf() );
+
+				const int z = ( 2 << BlockLenBits ) >> ReqDownShift;
+				dsnRe = KernelBlockFFT[ z ];
+				dsnIm = KernelBlockFFT[ z + 1 ];
+
+				CDSPRealFFTKeeper ffto2( BlockLenBits + 1 - ReqDownShift );
+				CFixedBuffer< double > NewBlock( ffto2 -> getLen() *
+					(int) sizeof( realfft_t ) / (int) sizeof( double ));
+
+				KernelBlockFFT = ffto2 -> reorderInverse( KernelBlockFFT,
+					NewBlock );
+
+				ffto2 -> convertToZP( KernelBlockFFT );
+
+				KernelBlock.moveFrom( NewBlock );
+			}
+			else
+			{
+				ffto -> convertToZP( KernelBlockFFT );
+			}
 		}
 		else
 		{
@@ -536,11 +578,30 @@ private:
 				sizeof( KernelBlock[ 0 ]));
 
 			KernelBlockFFT = ffto -> forward( KernelBlock );
+
+			if( ReqDownShift > 0 )
+			{
+				KernelBlockFFT = ffto -> reorderForward( KernelBlockFFT,
+					ffto -> getWorkBuf() );
+
+				const int z = ( 2 << BlockLenBits ) >> ReqDownShift;
+				dsnRe = KernelBlockFFT[ z ];
+				dsnIm = KernelBlockFFT[ z + 1 ];
+
+				CDSPRealFFTKeeper ffto2( BlockLenBits + 1 - ReqDownShift );
+				CFixedBuffer< double > NewBlock( ffto2 -> getLen() *
+					(int) sizeof( realfft_t ) / (int) sizeof( double ));
+
+				KernelBlockFFT = ffto2 -> reorderInverse( KernelBlockFFT,
+					NewBlock );
+
+				KernelBlock.moveFrom( NewBlock );
+			}
 		}
 
 		R8BCONSOLE( "CDSPFIRFilter: flt_len=%i latency=%i nfreq=%.4f "
-			"tb=%.1f att=%.1f gain=%.3f\n", KernelLen, Latency,
-			ReqNormFreq, ReqTransBand, ReqAtten, ReqGain );
+			"tb=%.1f att=%.1f gain=%.3f dsh=%i\n", KernelLen, Latency,
+			ReqNormFreq, ReqTransBand, ReqAtten, ReqGain, ReqDownShift );
 	}
 };
 
@@ -593,6 +654,7 @@ public:
 	 * filter may be 0.40-4.46 dB higher.
 	 * @param ReqPhase Required filter's phase response.
 	 * @param ReqGain Required overall filter's gain (1.0 for unity gain).
+	 * @param ReqDownFactor Required downsampling factor; it must be positive.
 	 * @param AttenCorrs Attentuation correction table, to pass to the filter
 	 * generation function. For internal use.
 	 * @see EDSPFilterPhaseResponse
@@ -605,7 +667,7 @@ public:
 	static CDSPFIRFilter& getLPFilter( const double ReqNormFreq,
 		const double ReqTransBand, const double ReqAtten,
 		const EDSPFilterPhaseResponse ReqPhase, const double ReqGain,
-		const double* const AttenCorrs = R8B_NULL )
+		const int ReqDownFactor, const double* const AttenCorrs = R8B_NULL )
 	{
 		R8BASSERT( ReqNormFreq > 0.0 && ReqNormFreq <= 1.0 );
 		R8BASSERT( ReqTransBand >= CDSPFIRFilter :: getLPMinTransBand() );
@@ -613,9 +675,17 @@ public:
 		R8BASSERT( ReqAtten >= CDSPFIRFilter :: getLPMinAtten() );
 		R8BASSERT( ReqAtten <= CDSPFIRFilter :: getLPMaxAtten() );
 		R8BASSERT( ReqGain > 0.0 );
+		R8BASSERT( ReqDownFactor > 0 );
 
 		R8B_EXITDTOR static CPtrKeeper< CDSPFIRFilter > Objects; // The chain
 			// of cached objects.
+
+		int ReqDownShift = getBitOccupancy( ReqDownFactor ) - 1;
+
+		if(( 1 << ReqDownShift ) != ReqDownFactor )
+		{
+			ReqDownShift = 0;
+		}
 
 		R8BSYNC( getStateSync() );
 
@@ -628,6 +698,7 @@ public:
 			if( CurObj -> ReqNormFreq == ReqNormFreq &&
 				CurObj -> ReqTransBand == ReqTransBand &&
 				CurObj -> ReqGain == ReqGain &&
+				CurObj -> ReqDownShift == ReqDownShift &&
 				CurObj -> ReqAtten == ReqAtten &&
 				CurObj -> ReqPhase == ReqPhase )
 			{
@@ -682,11 +753,14 @@ public:
 			// filter kernel.
 
 			CPtrKeeper< CDSPFIRFilter > f( new CDSPFIRFilter() );
+
 			f -> ReqNormFreq = ReqNormFreq;
 			f -> ReqTransBand = ReqTransBand;
 			f -> ReqAtten = ReqAtten;
 			f -> ReqPhase = ReqPhase;
 			f -> ReqGain = ReqGain;
+			f -> ReqDownShift = ReqDownShift;
+
 			f -> buildLPFilter( AttenCorrs );
 
 			CurObj = f.unkeep();

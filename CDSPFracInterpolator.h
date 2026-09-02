@@ -35,10 +35,12 @@ namespace r8b {
  * "Kaiser" power-raised window function.
  */
 
-class CDSPFracDelayFilterBank : public R8B_BASECLASS
+class CDSPFracDelayFilterBank : public R8B_BASECLASS,
+	private CSinglyLinkedListItem< CDSPFracDelayFilterBank >
 {
 	R8BNOCTOR( CDSPFracDelayFilterBank )
 
+	friend class CSinglyLinkedListItem< CDSPFracDelayFilterBank >;
 	friend class CDSPFracDelayFilterBankCache;
 
 public:
@@ -65,7 +67,6 @@ public:
 		, InterpPoints( aInterpPoints )
 		, ReqAtten( aReqAtten )
 		, IsThird( aIsThird )
-		, Next( R8B_NULL )
 		, RefCount( 1 )
 	{
 		R8BASSERT( ElementSize >= 1 && ElementSize <= 4 );
@@ -188,17 +189,6 @@ public:
 			ReqAtten, (int) IsThird );
 	}
 
-	~CDSPFracDelayFilterBank()
-	{
-		while( Next != R8B_NULL )
-		{
-			CDSPFracDelayFilterBank* const nn = Next -> Next;
-			Next -> Next = R8B_NULL;
-			delete Next;
-			Next = nn;
-		}
-	}
-
 	/**
 	 * @brief Rounds the specified attenuation to the nearest effective value.
 	 *
@@ -268,7 +258,6 @@ private:
 	CFixedBuffer< double > Table; ///< The table of fractional delay filters
 		///< for all discrete fractional x = 0..1 sample positions, and
 		///< interpolation coefficients.
-	CDSPFracDelayFilterBank* Next; ///< Next filter bank in cache's list.
 	int RefCount; ///< The number of references made to *this* filter bank.
 		///< Not considered for "static" filter bank objects.
 

@@ -31,27 +31,18 @@ namespace r8b {
  * This class provides a singly-linked list functionality.
  */
 
-class CDSPProcessor : public R8B_DSPBASECLASS
+class CDSPProcessor : public R8B_DSPBASECLASS,
+	public CSinglyLinkedListItem< CDSPProcessor >
 {
 	R8BNOCTOR( CDSPProcessor )
 
 public:
-	CDSPProcessor* Next; ///< Next processor in a singly-linked list.
-
 	CDSPProcessor()
-		: Next( R8B_NULL )
 	{
 	}
 
 	virtual ~CDSPProcessor()
 	{
-		while( Next != R8B_NULL )
-		{
-			CDSPProcessor* const nn = Next -> Next;
-			Next -> Next = R8B_NULL;
-			delete Next;
-			Next = nn;
-		}
 	}
 
 	/**

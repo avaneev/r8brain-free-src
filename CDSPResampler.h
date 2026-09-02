@@ -132,6 +132,8 @@ public:
 		R8BASSERT( SrcSampleRate > 0.0 );
 		R8BASSERT( DstSampleRate > 0.0 );
 		R8BASSERT( MaxInLen > 0 );
+		R8BASSERT( ReqTransBand > 0.0 );
+		R8BASSERT( ReqAtten > 0.0 );
 
 		R8BCONSOLE( "* CDSPResampler: src=%.1f dst=%.1f len=%i tb=%.1f "
 			"att=%.2f ph=%i\n", SrcSampleRate, DstSampleRate, aMaxInLen,
@@ -169,7 +171,7 @@ public:
 				addProcessor( new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter(
 					1.0 / ( num > den ? num : den ), ReqTransBand,
-					ReqAtten, ReqPhase, num ), num, den, LatencyFrac ));
+					ReqAtten, ReqPhase, num, den ), num, den, LatencyFrac ));
 
 				createTmpBuffers();
 				return;
@@ -207,7 +209,7 @@ public:
 			{
 				addProcessor( new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 1.0 / i, ReqTransBand,
-					ReqAtten, ReqPhase, i ), i, 1, LatencyFrac ));
+					ReqAtten, ReqPhase, i, 1 ), i, 1, LatencyFrac ));
 
 				const bool IsThirdFirst = ( i == 3 );
 
@@ -231,7 +233,7 @@ public:
 
 			addProcessor( new CDSPBlockConvolver(
 				CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-				ReqAtten, ReqPhase, 2.0 ), 2, 1, LatencyFrac ));
+				ReqAtten, ReqPhase, 2.0, 1 ), 2, 1, LatencyFrac ));
 
 			// Try intermediate interpolated resampling with subsequent 2X
 			// or 3X upsampling.
@@ -292,7 +294,7 @@ public:
 
 				addProcessor( new CDSPBlockConvolver(
 					CDSPFIRFilterCache :: getLPFilter( 1.0 / num, tb,
-					ReqAtten, ReqPhase, num ), num, 1, LatencyFrac ));
+					ReqAtten, ReqPhase, num, 1 ), num, 1, LatencyFrac ));
 
 				for( i = 1; i < c; i++ )
 				{
@@ -361,7 +363,7 @@ public:
 
 		addProcessor( new CDSPBlockConvolver(
 			CDSPFIRFilterCache :: getLPFilter( NormFreq, ReqTransBand,
-			ReqAtten, ReqPhase, FinGain ), 1, downf, LatencyFrac ));
+			ReqAtten, ReqPhase, FinGain, downf ), 1, downf, LatencyFrac ));
 
 		if( UseInterp )
 		{
@@ -531,7 +533,7 @@ public:
 
 	virtual int process( double* ip0, int l, double*& op0 )
 	{
-		R8BASSERT( l >= 0 );
+		R8BASSERT( l >= 0 && l <= MaxInLen );
 
 		double* ip = ip0;
 		int tp = 0;

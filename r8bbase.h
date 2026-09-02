@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.4
+ * @version 7.5
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.4" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.5" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -270,7 +270,7 @@ public:
  */
 
 template< typename T >
-inline T* alignptr( T* const ptr, const uintptr_t align )
+inline T* align_ptr( T* const ptr, const uintptr_t align )
 {
 	return( (T*) (( (uintptr_t) ptr + align - 1 ) & ~( align - 1 )));
 }
@@ -286,7 +286,7 @@ inline T* alignptr( T* const ptr, const uintptr_t align )
  */
 
 template< typename T >
-inline T* constructptr( void* const ptr, const size_t c )
+inline T* construct_ptr( void* const ptr, const size_t c )
 {
 	return( :: new( ptr ) T[ c ]);
 }
@@ -310,7 +310,7 @@ inline T* constructptr( void* const ptr, const size_t c )
  */
 
 template< typename T >
-class CFixedBuffer : public R8B_MEMALLOCCLASS
+class CFixedBuffer : protected R8B_MEMALLOCCLASS
 {
 	R8BNOCTOR( CFixedBuffer )
 
@@ -333,7 +333,7 @@ public:
 		R8BASSERT( Capacity >= 0 );
 
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );
-		Data = constructptr< T >( alignptr( Data0, Alignment ),
+		Data = construct_ptr< T >( align_ptr( Data0, Alignment ),
 			(size_t) Capacity );
 
 		R8BASSERT( Data0 != R8B_NULL || Capacity == 0 );
@@ -357,7 +357,7 @@ public:
 
 		freemem( Data0 );
 		Data0 = allocmem( (size_t) Capacity * sizeof( T ) + Alignment );
-		Data = constructptr< T >( alignptr( Data0, Alignment ),
+		Data = construct_ptr< T >( align_ptr( Data0, Alignment ),
 			(size_t) Capacity );
 
 		R8BASSERT( Data0 != R8B_NULL || Capacity == 0 );
@@ -380,8 +380,8 @@ public:
 		void* const NewData0 = allocmem( (size_t) NewCapacity * sizeof( T ) +
 			Alignment );
 
-		T* const NewData = constructptr< T >( alignptr( NewData0, Alignment ),
-			(size_t) NewCapacity );
+		T* const NewData = construct_ptr< T >( align_ptr( NewData0,
+			Alignment ), (size_t) NewCapacity );
 
 		const size_t CopySize = ( PrevCapacity > NewCapacity ?
 			(size_t) NewCapacity : (size_t) PrevCapacity ) * sizeof( T );
@@ -396,6 +396,21 @@ public:
 		Data = NewData;
 
 		R8BASSERT( Data0 != R8B_NULL || NewCapacity == 0 );
+	}
+
+	/**
+	 * @brief Moves buffer from another object to *this* object.
+	 *
+	 * @param s Source buffer.
+	 */
+
+	void moveFrom( CFixedBuffer& s )
+	{
+		freemem( Data0 );
+		Data0 = s.Data0;
+		Data = s.Data;
+		s.Data0 = R8B_NULL;
+		s.Data = R8B_NULL;
 	}
 
 	/**
@@ -620,6 +635,38 @@ public:
 
 private:
 	T* Object; ///< Pointer to keeped object.
+};
+
+/**
+ * @brief Class for items of a singly-linked list.
+ *
+ * Implements automatic deletion of linked objects.
+ *
+ * @tparam T Name of the list item class.
+ */
+
+template< class T >
+class CSinglyLinkedListItem
+{
+public:
+	T* Next; ///< Next object of type `T` in a singly-linked list.
+
+protected:
+	CSinglyLinkedListItem()
+		: Next( R8B_NULL )
+	{
+	}
+
+	~CSinglyLinkedListItem()
+	{
+		while( Next != R8B_NULL )
+		{
+			T* const nn = Next -> Next;
+			Next -> Next = R8B_NULL;
+			delete Next;
+			Next = nn;
+		}
+	}
 };
 
 #if __cplusplus >= 201103L

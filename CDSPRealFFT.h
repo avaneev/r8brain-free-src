@@ -103,10 +103,6 @@ private:
 		CFixedBuffer< double > wd; ///< Coefficients buffer (doubles).
 	#endif // R8B_PFFFT_DOUBLE
 
-	CDSPRealFFTSetup()
-	{
-	}
-
 	/**
 	 * @brief Initializes *this* FFT setup object.
 	 *
@@ -174,8 +170,13 @@ private:
  * functions. The object of this class can only be obtained via the
  * CDSPRealFFTKeeper class.
  *
- * Uses functions from the FFT package by: Copyright(C) 1996-2001 Takuya OOURA
+ * As a general pre-condition, the buffers passed to the functions of this
+ * class should be aligned to 32 bytes.
+ *
+ * Uses functions from the FFT package:
  * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
+ *
+ * Also uses functions from the PFFFT and PFFFT DOUBLE packages.
  *
  * Also uses Intel IPP library functions if available (if the R8B_IPP=1 macro
  * was defined). Note that IPP library's FFT functions are 2-3 times more
@@ -183,13 +184,15 @@ private:
  * functions. It may be worthwhile investing in IPP. Note, that FFT functions
  * take less than 20% of the overall sample rate conversion time. However,
  * when the "power of 2" resampling is used the performance of FFT functions
- * becomes "everything".
+ * dominates.
  */
 
-class CDSPRealFFT : public R8B_BASECLASS
+class CDSPRealFFT : public R8B_BASECLASS,
+	private CSinglyLinkedListItem< CDSPRealFFT >
 {
 	R8BNOCTOR( CDSPRealFFT )
 
+	friend class CSinglyLinkedListItem< CDSPRealFFT >;
 	friend class CPtrKeeper< CDSPRealFFT >;
 	friend class CDSPRealFFTKeeper;
 
@@ -253,15 +256,15 @@ public:
 			tp[ i ] = (float) p[ i ];
 		}
 
-		float* const op = constructptr< float >( (void*) p, (size_t) Len );
+		float* const op = construct_ptr< float >( (void*) p, (size_t) Len );
 
-		pffft_transform_ordered( s -> setup, tp, op, work, PFFFT_FORWARD );
+		pffft_transform( s -> setup, tp, op, work, PFFFT_FORWARD );
 
 		return( op );
 
 	#elif R8B_PFFFT_DOUBLE
 
-		pffftd_transform_ordered( s -> setup, p, p, work, PFFFT_FORWARD );
+		pffftd_transform( s -> setup, p, p, work, PFFFT_FORWARD );
 
 		return( p );
 
@@ -294,9 +297,9 @@ public:
 
 		float* const tp = &work[ Len ];
 
-		pffft_transform_ordered( s -> setup, p, tp, work, PFFFT_BACKWARD );
+		pffft_transform( s -> setup, p, tp, work, PFFFT_BACKWARD );
 
-		double* const op = constructptr< double >( (void*) p, (size_t) Len );
+		double* const op = construct_ptr< double >( (void*) p, (size_t) Len );
 		int i;
 
 		for( i = 0; i < Len; i++ )
@@ -306,13 +309,129 @@ public:
 
 	#elif R8B_PFFFT_DOUBLE
 
-		pffftd_transform_ordered( s -> setup, p, p, work, PFFFT_BACKWARD );
+		pffftd_transform( s -> setup, p, p, work, PFFFT_BACKWARD );
 
 	#else // R8B_PFFFT_DOUBLE
 
 		ooura_fft :: rdft( Len, -1, p, s -> wi, s -> wd );
 
 	#endif // R8B_PFFFT_DOUBLE
+	}
+
+	/**
+	 * @brief Returns pointer to the internal work buffer.
+	 *
+	 * This buffer can be used for FFT bin reordering.
+	 *
+	 * @return The work buffer pointer, or `nullptr` if FFT produces
+	 * sequential-ordered FFT bins. This pointer should not be used beyond the
+	 * calling context.
+	 */
+
+	realfft_t* getWorkBuf() const
+	{
+	#if R8B_PFFFT || R8B_PFFFT_DOUBLE
+
+		return( work );
+
+	#else // R8B_PFFFT || R8B_PFFFT_DOUBLE
+
+		return( R8B_NULL );
+
+	#endif // R8B_PFFFT || R8B_PFFFT_DOUBLE
+	}
+
+	/**
+	 * @brief Reorders FFT bins from native ordering (after the forward
+	 * transform) to sequential ordering.
+	 *
+	 * @param p Input FFT block.
+	 * @param op Output FFT block.
+	 * @return The pointer to the reordered FFT block. May return `p` if the
+	 * transform has sequential ordering already.
+	 */
+
+	realfft_t* reorderForward( realfft_t* const p, realfft_t* const op ) const
+	{
+	#if R8B_PFFFT
+
+		pffft_zreorder( s -> setup, p, op, PFFFT_FORWARD );
+
+		return( op );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_zreorder( s -> setup, p, op, PFFFT_FORWARD );
+
+		return( op );
+
+	#else // R8B_PFFFT_DOUBLE
+
+		(void) op;
+
+		return( p );
+
+	#endif // R8B_PFFFT_DOUBLE
+	}
+
+	/**
+	 * @brief Reorders FFT bins from sequential ordering (before the inverse
+	 * transform) to native ordering.
+	 *
+	 * @param ip Pointer to FFT block (previously returned by the
+	 * reorderForward() function).
+	 * @param op Output FFT block (may equal `ip`).
+	 * @return The pointer to the reordered FFT block (`op` casted to the
+	 * `realfft_t` type).
+	 */
+
+	realfft_t* reorderInverse( const realfft_t* const ip,
+		double* const op ) const
+	{
+	#if R8B_PFFFT
+
+		float* const op2 = construct_ptr< float >( (void*) op, Len );
+
+		pffft_zreorder( s -> setup, ip, op2, PFFFT_BACKWARD );
+
+		return( op2 );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_zreorder( s -> setup, ip, op, PFFFT_BACKWARD );
+
+		return( op );
+
+	#else // R8B_PFFFT_DOUBLE
+
+		if( ip != op )
+		{
+			memcpy( op, ip, (size_t) Len * sizeof( double ));
+		}
+
+		return( op );
+
+	#endif // R8B_PFFFT_DOUBLE
+	}
+
+	/**
+	 * @brief Replaces the Nyquist FFT bin in the specified block.
+	 *
+	 * @param p Pointer to FFT block.
+	 * @param v New Nyquist bin value.
+	 */
+
+	static void setBinNyquist( realfft_t* const p, const realfft_t v )
+	{
+	#if R8B_PFFFT || R8B_PFFFT_DOUBLE
+
+		p[ 4 ] = v;
+
+	#else // R8B_PFFFT || R8B_PFFFT_DOUBLE
+
+		p[ 1 ] = v;
+
+	#endif // R8B_PFFFT || R8B_PFFFT_DOUBLE
 	}
 
 	/**
@@ -323,10 +442,10 @@ public:
 	 * length. Input blocks should have been produced with the forward()
 	 * function of *this* object.
 	 *
-	 * @param ip1 Input data block 1.
-	 * @param ip2 Input data block 2.
-	 * @param[out] op Output data block, should not be equal to aip1 nor
-	 * aip2.
+	 * @param ip1 Input FFT block 1.
+	 * @param ip2 Input FFT block 2.
+	 * @param[out] op Output FFT block, should not be equal to `ip1` nor
+	 * `ip2`.
 	 */
 
 	void multiplyBlocks( const realfft_t* const ip1,
@@ -336,7 +455,15 @@ public:
 
 		ippsMulPerm_64f( (Ipp64f*) ip1, (Ipp64f*) ip2, (Ipp64f*) op, Len );
 
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+
+		pffft_zconvolve( s -> setup, ip1, ip2, op );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_zconvolve( s -> setup, ip1, ip2, op );
+
+	#else // R8B_PFFFT_DOUBLE
 
 		op[ 0 ] = ip1[ 0 ] * ip2[ 0 ];
 		op[ 1 ] = ip1[ 1 ] * ip2[ 1 ];
@@ -350,18 +477,18 @@ public:
 			i += 2;
 		}
 
-	#endif // R8B_IPP
+	#endif // R8B_PFFFT_DOUBLE
 	}
 
 	/**
-	 * @brief Multiplies two complex-valued data blocks in-place.
+	 * @brief Multiplies two complex-valued FFT blocks in-place.
 	 *
-	 * Length of both data blocks should be equal to *this* object's block
-	 * length. Blocks should have been produced with the forward() function of
-	 * *this* object.
+	 * Length of both blocks should be equal to *this* object's block length.
+	 * Blocks should have been produced with the forward() function of *this*
+	 * object.
 	 *
-	 * @param ip Input data block 1.
-	 * @param[in,out] op Output/input data block 2.
+	 * @param ip Input FFT block 1.
+	 * @param[in,out] op Output/input FFT block 2.
 	 */
 
 	void multiplyBlocks( const realfft_t* const ip, realfft_t* const op ) const
@@ -370,7 +497,15 @@ public:
 
 		ippsMulPerm_64f( (Ipp64f*) op, (Ipp64f*) ip, (Ipp64f*) op, Len );
 
-	#else // R8B_IPP
+	#elif R8B_PFFFT
+
+		pffft_zconvolve( s -> setup, ip, op, op );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_zconvolve( s -> setup, ip, op, op );
+
+	#else // R8B_PFFFT_DOUBLE
 
 		op[ 0 ] *= ip[ 0 ];
 		op[ 1 ] *= ip[ 1 ];
@@ -386,27 +521,101 @@ public:
 			i += 2;
 		}
 
-	#endif // R8B_IPP
+	#endif // R8B_PFFFT_DOUBLE
 	}
 
 	/**
-	 * @brief Multiplies two complex-valued data blocks in-place, considering
-	 * that the `aip` block contains "zero-phase" response.
+	 * @brief Multiplies two complex-valued FFT blocks in-place, considering
+	 * that the `ip` block contains "zero-phase" response.
 	 *
-	 * Length of both data blocks should be equal to *this* object's block
-	 * length. Blocks should have been produced with the forward() function of
-	 * *this* object.
+	 * Length of both blocks should be equal to *this* object's block length.
+	 * Blocks should have been produced with the forward() function of *this*
+	 * object.
 	 *
-	 * @param ip Input data block 1, "zero-phase" response. This block should
+	 * @param ip Input FFT block 1, "zero-phase" response. This block should
 	 * be first transformed via the convertToZP() function.
-	 * @param[in,out] op Output/input data block 2.
+	 * @param[in,out] op Output/input FFT block 2.
 	 */
 
 	void multiplyBlocksZP( const realfft_t* ip, realfft_t* op ) const
 	{
 	// SIMD implementations assume that pointers are address-aligned.
 
-	#if !R8B_PFFFT && defined( R8B_SSE2 )
+	#if R8B_PFFFT_DOUBLE
+
+		pffftd_zconvolve_zp( s -> setup, op, ip, op );
+
+	#elif R8B_PFFFT && defined( R8B_SSE2 )
+
+		int c16 = Len >> 4;
+
+		while( c16 != 0 )
+		{
+			const __m128 iv1 = _mm_load_ps( ip );
+			const __m128 iv2 = _mm_load_ps( ip + 4 );
+			const __m128 ov1 = _mm_load_ps( op );
+			const __m128 ov2 = _mm_load_ps( op + 4 );
+			_mm_store_ps( op, _mm_mul_ps( iv1, ov1 ));
+			_mm_store_ps( op + 4, _mm_mul_ps( iv2, ov2 ));
+
+			const __m128 iv3 = _mm_load_ps( ip + 8 );
+			const __m128 iv4 = _mm_load_ps( ip + 12 );
+			const __m128 ov3 = _mm_load_ps( op + 8 );
+			const __m128 ov4 = _mm_load_ps( op + 12 );
+			_mm_store_ps( op + 8, _mm_mul_ps( iv3, ov3 ));
+			_mm_store_ps( op + 12, _mm_mul_ps( iv4, ov4 ));
+
+			ip += 16;
+			op += 16;
+			c16--;
+		}
+
+		int c = Len & 15;
+
+		while( c != 0 )
+		{
+			*op *= *ip;
+			ip++;
+			op++;
+			c--;
+		}
+
+	#elif R8B_PFFFT && defined( R8B_NEON )
+
+		int c16 = Len >> 4;
+
+		while( c16 != 0 )
+		{
+			const float32x4_t iv1 = vld1q_f32( ip );
+			const float32x4_t iv2 = vld1q_f32( ip + 4 );
+			const float32x4_t ov1 = vld1q_f32( op );
+			const float32x4_t ov2 = vld1q_f32( op + 4 );
+			vst1q_f32( op, vmulq_f32( iv1, ov1 ));
+			vst1q_f32( op + 4, vmulq_f32( iv2, ov2 ));
+
+			const float32x4_t iv3 = vld1q_f32( ip + 8 );
+			const float32x4_t iv4 = vld1q_f32( ip + 12 );
+			const float32x4_t ov3 = vld1q_f32( op + 8 );
+			const float32x4_t ov4 = vld1q_f32( op + 12 );
+			vst1q_f32( op + 8, vmulq_f32( iv3, ov3 ));
+			vst1q_f32( op + 12, vmulq_f32( iv4, ov4 ));
+
+			ip += 16;
+			op += 16;
+			c16--;
+		}
+
+		int c = Len & 15;
+
+		while( c != 0 )
+		{
+			*op *= *ip;
+			ip++;
+			op++;
+			c--;
+		}
+
+	#elif !R8B_PFFFT && defined( R8B_SSE2 )
 
 		int c8 = Len >> 3;
 
@@ -420,8 +629,8 @@ public:
 			_mm_store_pd( op + 2, _mm_mul_pd( iv2, ov2 ));
 
 			const __m128d iv3 = _mm_load_pd( ip + 4 );
-			const __m128d ov3 = _mm_load_pd( op + 4 );
 			const __m128d iv4 = _mm_load_pd( ip + 6 );
+			const __m128d ov3 = _mm_load_pd( op + 4 );
 			const __m128d ov4 = _mm_load_pd( op + 6 );
 			_mm_store_pd( op + 4, _mm_mul_pd( iv3, ov3 ));
 			_mm_store_pd( op + 6, _mm_mul_pd( iv4, ov4 ));
@@ -489,7 +698,7 @@ public:
 	}
 
 	/**
-	 * @brief Converts the specified forward-transformed block into
+	 * @brief Converts the specified forward-transformed FFT block into
 	 * "zero-phase" form, suitable for use with the multiplyBlocksZP()
 	 * function.
 	 *
@@ -498,6 +707,26 @@ public:
 
 	void convertToZP( realfft_t* const p ) const
 	{
+	#if R8B_PFFFT
+
+		pffft_zreorder( s -> setup, p, work, PFFFT_FORWARD );
+
+		int i = 2;
+
+		while( i < Len )
+		{
+			work[ i + 1 ] = work[ i ];
+			i += 2;
+		}
+
+		pffft_zreorder( s -> setup, work, p, PFFFT_BACKWARD );
+
+	#elif R8B_PFFFT_DOUBLE
+
+		pffftd_zconvert_zp( s -> setup, p, p, (double) Len );
+
+	#else // R8B_PFFFT_DOUBLE
+
 		int i = 2;
 
 		while( i < Len )
@@ -505,12 +734,14 @@ public:
 			p[ i + 1 ] = p[ i ];
 			i += 2;
 		}
+
+	#endif // R8B_PFFFT_DOUBLE
 	}
 
 private:
-	CDSPRealFFTSetup* s; ///< Pointer to static FFT transform setup object.
+	const CDSPRealFFTSetup* s; ///< Pointer to static FFT transform setup
+		///< object.
 	int Len; ///< Length of FFT block (number of real values).
-	CDSPRealFFT* Next; ///< Next object in a singly-linked list.
 
 	#if R8B_IPP
 		CFixedBuffer< unsigned char > WorkBuffer; ///< Working buffer.
@@ -527,10 +758,9 @@ private:
 	 * @param s0 Pointer to FFT setup object.
 	 */
 
-	CDSPRealFFT( CDSPRealFFTSetup* const s0 )
+	CDSPRealFFT( const CDSPRealFFTSetup* const s0 )
 		: s( s0 )
 		, Len( s -> Len )
-		, Next( R8B_NULL )
 	{
 	#if R8B_IPP
 
@@ -545,17 +775,6 @@ private:
 		work.alloc( Len );
 
 	#endif // R8B_PFFFT_DOUBLE
-	}
-
-	~CDSPRealFFT()
-	{
-		while( Next != R8B_NULL )
-		{
-			CDSPRealFFT* const nn = Next -> Next;
-			Next -> Next = R8B_NULL;
-			delete Next;
-			Next = nn;
-		}
 	}
 };
 
@@ -792,7 +1011,9 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	CDSPRealFFTKeeper ffto( LenBits );
 
-	realfft_t* aip = ffto -> forward( ip );
+	realfft_t* aip = ffto -> reorderForward( ffto -> forward( ip ),
+		ffto -> getWorkBuf() );
+
 	realfft_t* const aip2 = &ip2[ 0 ];
 
 	const realfft_t nzbias = ( sizeof( realfft_t ) < sizeof( double ) ?
@@ -817,7 +1038,7 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 
 	// Convert to cepstrum and apply discrete Hilbert transform.
 
-	ffto -> inverse( aip );
+	ffto -> inverse( ffto -> reorderInverse( aip, ip ));
 
 	const double m1 = ffto -> getInvMulConst();
 	const double m2 = -m1;
@@ -840,7 +1061,8 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 	// perform its exponentiation, multiplied by the power spectrum previously
 	// saved in the "ip2" buffer.
 
-	aip = ffto -> forward( ip );
+	aip = ffto -> reorderForward( ffto -> forward( ip ),
+		ffto -> getWorkBuf() );
 
 	aip[ 0 ] = aip2[ 0 ];
 	aip[ 1 ] = aip2[ Len2 ];
@@ -851,7 +1073,7 @@ inline void calcMinPhaseTransform( double* const Kernel, const int KernelLen,
 		aip[ i * 2 + 1 ] = sin( aip[ i * 2 + 1 ]) * aip2[ i ];
 	}
 
-	ffto -> inverse( aip );
+	ffto -> inverse( ffto -> reorderInverse( aip, ip ));
 
 	if( DoFinalMul )
 	{

@@ -38,6 +38,10 @@
   fallback mode(s) for situations where SSE/AVX/NEON/Altivec are not available, use scalar mode instead
 */
 
+#ifndef PFFFT_SCALVEC_ENABLED
+#define PFFFT_SCALVEC_ENABLED
+#endif
+
 #if !defined(SIMD_SZ) && defined(PFFFT_SCALVEC_ENABLED)
 #pragma message( __FILE__ ": double SCALAR4 macros are defined" )
 
