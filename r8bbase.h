@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.5
+ * @version 7.6
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.5" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.6" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -134,6 +134,19 @@
 #endif // SSE2
 
 /**
+ * @def R8B_ARCH64
+ * @brief Macro that denotes the availability of 64-bit instructions.
+ */
+
+#if defined( __LP64__ ) || defined( _LP64 ) || \
+	defined( __x86_64__ ) || defined( __aarch64__ ) || \
+	defined( _M_AMD64 ) || defined( _M_ARM64 )
+
+	#define R8B_ARCH64
+
+#endif // 64-bit availability check
+
+/**
  * @def R8B_EXITDTOR
  * @brief Macro that defines the attribute specifying that the exit-time
  * destructor should be called for a static variable (suppresses a compiler
@@ -177,6 +190,10 @@ using std :: cosh;
 using std :: size_t;
 
 #if __cplusplus >= 201103L
+
+	#if defined( R8B_ARCH64 )
+		using std :: int64_t;
+	#endif // defined( R8B_ARCH64 )
 
 	using std :: uintptr_t;
 
@@ -1320,6 +1337,199 @@ inline double sqr( const double x )
 	return( x * x );
 }
 
+#if defined( R8B_ARCH64 )
+
+/**
+ * @brief Table of mantissa bits of 2^(j/32), for exp_fast() and log_fast()
+ * functions.
+ */
+
+R8B_CONST int64_t LOGEXP_TAB32[ 32 + 1 ] = { // Mantissa bits of 2^(j/32).
+	0x0000000000000, 0x059B0D3158574, 0x0B5586CF9890F, 0x11301D0125B51,
+	0x172B83C7D517B, 0x1D4873168B9AA, 0x2387A6E756238, 0x29E9DF51FDEE1,
+	0x306FE0A31B715, 0x371A7373AA9CB, 0x3DEA64C123422, 0x44E086061892D,
+	0x4BFDAD5362A27, 0x5342B569D4F82, 0x5AB07DD485429, 0x6247EB03A5585,
+	0x6A09E667F3BCD, 0x71F75E8EC5F74, 0x7A11473EB0187, 0x82589994CCE13,
+	0x8ACE5422AA0DB, 0x93737B0CDC5E5, 0x9C49182A3F090, 0xA5503B23E255D,
+	0xAE89F995AD3AD, 0xB7F76F2FB5E47, 0xC199BDD85529C, 0xCB720DCEF9069,
+	0xD5818DCFBA487, 0xDFC97337B9B5F, 0xEA4AFA2A490DA, 0xF50765B6E4540,
+	0x10000000000000 };
+
+/**
+ * @brief Computes an approximate exp(x) value quickly.
+ *
+ * Peak relative error ~8.824e-14 over the whole range. exp(0) == 1, monotone,
+ * NaN -> NaN (not under -ffast-math), below the normal range -> 0 (no
+ * denormals), overflow -> HUGE_VAL.
+ * P(1)/2^(1/32) - 1 = -8.781864124784988e-14
+ *
+ * @param x Input value.
+ */
+
+inline double exp_fast( const double x )
+{
+	const double LOG2E_32 = 46.166241308446828; // 32*log2(e)
+	const double y = x * LOG2E_32 + 32736.0; // 32*log2(e)*x + 32*1023
+
+	if( !( y >= 32.0 ) )
+		return( y != y ? x : 0.0 );
+	if( y >= 65504.0 )
+		return( HUGE_VAL );
+
+	int64_t n = (int) y;
+	const double f = y - n;
+
+	const int64_t m = LOGEXP_TAB32[ n & 31 ];
+	n = ( n >> 5 ) << 52;
+	n |= m;
+
+	double s;
+	memcpy( &s, &n, sizeof( s ));
+
+	const double p = 1.0 + f * ( 2.1660849389716318e-02
+				+ f * ( 2.3459622527899164e-04
+				+ f * ( 1.6937691434532236e-06
+				+ f * 9.2698881870148910e-09 ) ) );
+
+	return( p * s );
+}
+
+/**
+ * @brief Computes an approximate log(x) value quickly.
+ *
+ * Maximum direct relative log error for `x` != 1 ~ 1.7e-10.
+ * Relative error when reconstructing `x` via `exp(log_fast(x))` ~ 2e-12.
+ * At `x` == 1, direct relative log error is formally undefined.
+ *
+ *   x = 0       -> -Inf
+ *   x < 0       -> NaN
+ *   NaN         -> NaN
+ *   +Inf        -> +Inf
+ *   subnormals  -> handled
+ *
+ * @param x Input value.
+ */
+
+inline double log_fast( double x )
+{
+	int64_t ix;
+	memcpy( &ix, &x, sizeof( ix ));
+
+	if( !( x > 0.0 ) )
+	{
+		if( x != x )
+			return x; // NaN
+
+		int64_t bits;
+
+		if( x == 0.0 )
+		{
+			// -Inf without an out-of-range signed literal.
+			bits = -0x0010000000000000;
+		}
+		else
+		{
+			bits = 0x7ff8000000000000; // NaN
+		}
+
+		double r;
+		memcpy( &r, &bits, sizeof( r ));
+
+		return( r );
+	}
+
+	int e = (int) ( ix >> 52 );
+
+	// Normalize subnormals exactly.
+	if( e == 0 )
+	{
+		x *= 9007199254740992.0; // 2^53
+		memcpy( &ix, &x, sizeof( ix ));
+		e = (int) (( ix >> 52 ) - 1076 );
+	}
+	else
+	{
+		if( e == 0x7ff )
+			return x; // +Inf
+
+		e -= 1023;
+	}
+
+	// Mantissa bits of y = x/2^e.  The constant 2^52 implicit significand
+	// component cancels from both sides of every midpoint comparison.
+	const int64_t sy = ix & 0x000fffffffffffff;
+
+	// For each equal-width significand bucket j, this is the nearest
+	// LOG_TAB32 node at the bucket's center:
+	//
+	//     round(32*log2(1 + (j + 0.5)/32))
+	//
+	// The last value is clamped to 31; index 32 is represented specially
+	// by incrementing the exponent.
+	static const unsigned char LOG_CENTER32[ 32 ] = {
+		 1,  2,  3,  5,  6,  7,  9, 10,
+		11, 12, 13, 14, 15, 16, 17, 18,
+		19, 20, 21, 22, 23, 24, 25, 25,
+		26, 27, 28, 29, 29, 30, 31, 31
+	};
+
+	int k = LOG_CENTER32[ sy >> 47 ]; // Always 1..31.
+	const int64_t sy2 = sy << 1;
+	int64_t km = LOGEXP_TAB32[ k ];
+
+	// Bit pattern is prepared now, but `y` is not materialized yet.
+	int64_t ybits = 0x3ff0000000000000 | sy;
+	const int64_t kl = LOGEXP_TAB32[ k - 1 ];
+
+	if( sy2 < kl + km )
+	{
+		--k;
+		km = kl;
+	}
+	else
+	{
+		const int64_t kr = LOGEXP_TAB32[ k + 1 ];
+
+		if( sy2 >= km + kr )
+		{
+			++k;
+			km = kr;
+
+			// Normalize node 2.
+
+			if( k == 32 )
+			{
+				++e;
+
+				// Decrement the biased exponent: this halves y exactly.
+				ybits ^= 0x10000000000000;
+				km = 0;
+				k = 0;
+			}
+		}
+	}
+
+	// `km` is the final mantissa field: LOG_TAB32[ k ], or zero for 1.0.
+	const int64_t tbits = 0x3ff0000000000000 | km;
+
+	// Materialize `y` and `t` only after all selections are complete.
+	double y, t;
+	memcpy( &y, &ybits, sizeof( y ));
+	memcpy( &t, &tbits, sizeof( t ));
+
+	// Cubic atanh approximation: ln(y/t) = 2*z + 2/3*z^3 + O(z^5).
+	const double z = ( y - t ) / ( y + t );
+	const double z2 = z * z;
+
+	const double correction =
+		z * ( 2.0 + z2 * ( 2.0 / 3.0 ));
+
+	return(( e + k * 0.03125 ) * 0.69314718055994531
+		+ correction );
+}
+
+#endif // defined( R8B_ARCH64 )
+
 /**
  * @brief Power of an absolute value.
  *
@@ -1331,19 +1541,11 @@ inline double sqr( const double x )
 
 inline double pow_a( const double v, const double p )
 {
+#if defined( R8B_ARCH64 )
+	return( exp_fast( p * log_fast( fabs( v ) + 1e-300 )));
+#else // defined( R8B_ARCH64 )
 	return( exp( p * log( fabs( v ) + 1e-300 )));
-}
-
-/**
- * @brief Single-argument Gaussian function of a value.
- *
- * @param v Input value.
- * @return Calculated single-argument Gaussian function of the input value.
- */
-
-inline double gauss( const double v )
-{
-	return( exp( -( v * v )));
+#endif // defined( R8B_ARCH64 )
 }
 
 /**
@@ -1363,30 +1565,42 @@ inline double asinh( const double v )
  *
  * @param x Input value.
  * @return Calculated zero-th order modified Bessel function of the first kind
- * of the input value. Approximate value. Coefficients by Abramowitz and
- * Stegun.
+ * of the input value. Approximate value.
  */
 
 inline double besselI0( const double x )
 {
 	const double ax = fabs( x );
-	double y;
+	double y, z;
 
 	if( ax < 3.75 )
 	{
-		y = x / 3.75;
-		y *= y;
+		y = x * 2.6666666666666667e-1; // 1/3.75
+		z = y * y; // z = (x/3.75)^2
+		y = z * z; // y = z^2
 
-		return( 1.0 + y * ( 3.5156229 + y * ( 3.0899424 + y * ( 1.2067492 +
-			y * ( 0.2659732 + y * ( 0.360768e-1 + y * 0.45813e-2 ))))));
+		// Estrin: (c0 + c1 z) + y (c2 + c3 z) + y^2 (c4 + c5 z) + y^3 c6
+		return( ( 1.0000000116e+00 + z * 3.5156234257e+00 ) +
+			y * ( ( 3.0899368029e+00 + z * 1.2067640177e+00 ) +
+			y * ( ( 2.6596186713e-01 + z * 3.6073913744e-02 ) +
+			y * 4.5857130152e-03 ) ) );
 	}
 
 	y = 3.75 / ax;
+	z = y * y;
 
-	return( exp( ax ) / sqrt( ax ) * ( 0.39894228 + y * ( 0.1328592e-1 +
-		y * ( 0.225319e-2 + y * ( -0.157565e-2 + y * ( 0.916281e-2 +
-		y * ( -0.2057706e-1 + y * ( 0.2635537e-1 + y * ( -0.1647633e-1 +
-		y * 0.392377e-2 )))))))));
+	// Estrin: (b0 + b1 y) + z (b2 + b3 y) + ... + z^4 b8
+
+#if defined( R8B_ARCH64 )
+	return( exp_fast( ax ) / sqrt( ax ) *
+#else // defined( R8B_ARCH64 )
+	return( exp( ax ) / sqrt( ax ) *
+#endif // defined( R8B_ARCH64 )
+		( ( 3.9894232649e-01 + y * 1.3293145671e-02 ) +
+		z * ( ( 2.1133548948e-03 + y * -5.8935267150e-04 ) +
+		z * ( ( 5.6653456233e-03 + y * -1.3682399954e-02 ) +
+		z * ( ( 1.8689111903e-02 + y * -1.1978264040e-02 ) +
+		z * 2.8410020052e-03 ) ) ) ) );
 }
 
 } // namespace r8b

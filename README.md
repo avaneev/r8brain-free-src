@@ -220,8 +220,15 @@ This library is used by:
 * [Curvessor](https://github.com/unevens/Curvessor)
 * [Hang Loose Convolver](https://accuratesound.ca/hang-loose-convolver-hlc/)
 * [Wave Breaker](https://pressplay-music.com/wave-breaker/)
+* [E-PeakClipper500](https://windowsg.gumroad.com/l/peakclipper500vst3)
 
 ## Change Log
+
+Version 7.6:
+
+* Improved speed of filter calculations on 64-bit platforms by a factor 1.5 to
+3, depending on compiler, using author's newest highly-precise `log(x)` and
+`exp(x)` approximations, and a reoptimized `bessel0I()` function.
 
 Version 7.5:
 
