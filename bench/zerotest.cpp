@@ -5,7 +5,7 @@
  * upsampling and downsampling a reference signal, mainly using whole-stepping
  * interpolation.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -114,7 +114,7 @@ VOXMAIN
 
 		const int inlen1a = Resamp1 -> getInLenBeforeOutStart( rlen1-1 )+1;
 		const int inlen1b = Resamp1 -> getInputRequiredForOutput( rlen1 );
-		avglatency += inlen1a;
+		avglatency += inlen1b;
 		minld1 = min( minld1, inlen1b - inlen1a );
 		maxld1 = max( maxld1, inlen1b - inlen1a );
 

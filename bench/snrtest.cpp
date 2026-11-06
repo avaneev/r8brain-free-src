@@ -5,7 +5,7 @@
  * precision at the ReqAtten levels. At some ReqAtten settings resampler
  * delivers a lower SNR, thus setting ReqAtten+9 is advisable.
  *
- * r8brain-free-src Copyright (c) 2013-2025 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
  *
  * See the "LICENSE" file for license.
  */
@@ -50,14 +50,14 @@ VOXMAIN
 	{
 		const int MaxInLen = 521;
 		const double tb = 2.0;
-		const int Ref0Size = (int) ( InBufSize * 9.0 / 10.0 );
+		const int Ref0Size = (int) ( InBufSize * 5.0 / 10.0 );
 		r8b :: CFixedBuffer< double > Ref0( Ref0Size );
 
 		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp1;
-		Resamp1 = new r8b :: CDSPResampler24( 10.0, 9.0, MaxInLen, tb );
+		Resamp1 = new r8b :: CDSPResampler24( 10.0, 5.0, MaxInLen, tb );
 
 		r8b :: CPtrKeeper< r8b :: CDSPResampler24 > Resamp2;
-		Resamp2 = new r8b :: CDSPResampler24( 9.0, 10.0, MaxInLen, tb );
+		Resamp2 = new r8b :: CDSPResampler24( 5.0, 10.0, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBuf[ 0 ], InBufSize, &Ref0[ 0 ], Ref0Size );
 		Resamp2 -> oneshot( &Ref0[ 0 ], Ref0Size, &Ref[ 0 ], InBufSize );

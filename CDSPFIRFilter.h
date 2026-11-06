@@ -233,241 +233,157 @@ private:
 	}
 
 	/**
-	 * @brief Builds filter kernel based on the "Req" parameters.
+	 * @brief Computes fixed-degree polynomial via Horner evaluation
+	 * (ascending powers).
 	 *
-	 * @param ExtAttenCorrs External attentuation correction table, for
-	 * internal use.
+	 * @param c Polynomial coefficient.
+	 * @param n Number of coefficient.
+	 * @param x Argument [-1; 1].
 	 */
 
-	void buildLPFilter( const double* const ExtAttenCorrs )
+	static double hpoly( const double* const c, const int n, const double x )
 	{
-		const double tb = ReqTransBand * 0.01;
-		double pwr;
-		double fo1;
-		double hl;
-		double atten = -ReqAtten;
+		double r = c[ n - 1 ];
+		int i;
 
-		if( tb >= 0.25 )
+		for( i = n - 2; i >= 0; i-- )
 		{
-			if( ReqAtten >= 117.0 )
-			{
-				atten -= 1.60;
-			}
-			else
-			if( ReqAtten >= 60.0 )
-			{
-				atten -= 1.91;
-			}
-			else
-			{
-				atten -= 2.25;
-			}
-		}
-		else
-		if( tb >= 0.10 )
-		{
-			if( ReqAtten >= 117.0 )
-			{
-				atten -= 0.69;
-			}
-			else
-			if( ReqAtten >= 60.0 )
-			{
-				atten -= 0.73;
-			}
-			else
-			{
-				atten -= 1.13;
-			}
-		}
-		else
-		{
-			if( ReqAtten >= 117.0 )
-			{
-				atten -= 0.21;
-			}
-			else
-			if( ReqAtten >= 60.0 )
-			{
-				atten -= 0.25;
-			}
-			else
-			{
-				atten -= 0.36;
-			}
+			r = r * x + c[ i ];
 		}
 
-		static const int AttenCorrCount = 264;
-		static const double AttenCorrMin = 49.0;
-		static const double AttenCorrDiff = 176.25;
-		int AttenCorr = (int) floor(( -atten - AttenCorrMin ) *
-			AttenCorrCount / AttenCorrDiff + 0.5 );
+		return( r );
+	}
 
-		AttenCorr = min( AttenCorrCount, max( 0, AttenCorr ));
+	/**
+	 * @brief Computes `pwr`, `hl`, `fo1` for CDSPFIRFilter::buildLPFilter().
+	 *
+	 * ## The formulas
+	 *
+	 * a = (A - 133.5)/84.5                                   in [-1, 1]
+	 * b = P9(a) + 0.0523 + 4.07*T^2                          in [4.49, 24.72]
+	 * u = (ln b - 2.3555)/0.8585                             in [-1, 1]
+	 * s = (T/0.45)^2                                         in (0, 1]
+	 * delta = exp(D0(u) + s^2*D2(u) + s^3*D3(u) + s^4*D4(u)) in [0.16, 0.72]
+	 * Y = exp(Y0(u) + s^2*Y2(u) + s^3*Y3(u))                 in [1.59, 3.48]
+	 * X = (4/pi)*(sqrt(b^2 + pi^2) - delta)                  in [6.19, 31.5]
+	 *
+	 * hl  = (X + Y)/T          fo1 = X*T/(X + Y)          pwr = b/125
+	 *
+	 * `P9` and the `D/Y` pieces are fixed-degree polynomials (Horner), all
+	 * coefficients in the header. Beta stays 125.0; `pwr` lands in
+	 * [0.036, 0.198] so the window's `pow_a` sees an effective beta
+	 * `125*pwr = b`.
+	 *
+	 * ## Why this shape
+	 *
+	 * The three outputs decouple into three 1-D physical roles:
+	 *
+	 * - `X = fo1*hl` positions the transition-band main-lobe descent so it
+	 *   lands at Nyquist at exactly -A dB. The landing sits just *before* the
+	 *   Kaiser window's first null at OmegaL = sqrt(b^2+pi^2); in lobe units
+	 *   X = (4/pi)(sqrt(b^2+pi^2) - delta), where delta in (0, 1] is the gap
+	 *   to the null. The `delta(A,T)` polynomial surface is the fit of the
+	 *   exact solve.
+	 *
+	 * - `Y = (T-fo1)*hl` sets the -3 dB point at the transition start;
+	 *   its dependence is gentle (~=3 dB/ln-unit), so a small surface
+	 *   suffices.
+	 *
+	 * - `b = 125*pwr` sets every sidelobe level via the measured
+	 *   first-sidelobe law of the power-raised Kaiser-125 family;
+	 *   the `0.0523 + 4.07*T^2` bump is the smooth margin that keeps all
+	 *   sidelobe peaks below the landing at wide T, where tap-count
+	 *   quantization (`fl2 = floor(L)`, L as small as ~9) makes the exact
+	 *   locus ripple by +/-4 dB -- a non-smooth effect no closed form can
+	 *   track, so it's covered by margin instead.
+	 *
+	 * ## Singularity-freeness
+	 *
+	 * Every operation is provably safe on the closed domain T in
+	 * [0.005, 0.45], A in [49, 218]: `log` of b >= 4.49 > 0; `exp` of bounded
+	 * polynomials (finite values, strictly positive results);
+	 * `sqrt(b^2+pi^2)` >= 5.48 > delta >= 0.16 so X >= 6.19 > 0; divisions
+	 * only by T >= 0.005 and X+Y >= 7.78. All polynomial arguments are
+	 * affinely normalized to [-1, 1]. Consequently hl in [21.2, 6581]
+	 * (so `Len2 = 0.25*hl/Nf >= 5.3 >= 2` for any Nf <= 1), fo1 in (0, T)
+	 * subset (0, 0.45), pwr in [0.036, 0.198]. No table lookups, no branches,
+	 * no extrapolation regimes.
+	 *
+	 * @param T Required transition band, normalized [0.005, 0.45].
+	 * @param ReqAtten Required attenuation in decibel [49.0, 218.0].
+	 */
 
-		if( ExtAttenCorrs != R8B_NULL )
-		{
-			atten -= ExtAttenCorrs[ AttenCorr ];
-		}
-		else
-		if( tb >= 0.25 )
-		{
-			static const double AttenCorrScale = 101.0;
-			static const signed char AttenCorrs[] = {
-				-127, -127, -125, -125, -122, -119, -115, -110, -104, -97,
-				-91, -82, -75, -24, -16, -6, 4, 14, 24, 29, 30, 32, 37, 44,
-				51, 57, 63, 67, 65, 50, 53, 56, 58, 60, 63, 64, 66, 68, 74,
-				77, 78, 78, 78, 79, 79, 60, 60, 60, 61, 59, 52, 47, 41, 36,
-				30, 24, 17, 9, 0, -8, -10, -11, -14, -13, -18, -25, -31, -38,
-				-44, -50, -57, -63, -68, -74, -81, -89, -96, -101, -104, -107,
-				-109, -110, -86, -84, -85, -82, -80, -77, -73, -67, -62, -55,
-				-48, -42, -35, -30, -20, -11, -2, 5, 6, 6, 7, 11, 16, 21, 26,
-				34, 41, 46, 49, 52, 55, 56, 48, 49, 51, 51, 52, 52, 52, 52,
-				52, 51, 51, 50, 47, 47, 50, 48, 46, 42, 38, 35, 31, 27, 24,
-				20, 16, 12, 11, 12, 10, 8, 4, -1, -6, -11, -16, -19, -17, -21,
-				-24, -27, -32, -34, -37, -38, -40, -41, -40, -40, -42, -41,
-				-44, -45, -43, -41, -34, -31, -28, -24, -21, -18, -14, -10,
-				-5, -1, 2, 5, 8, 7, 4, 3, 2, 2, 4, 6, 8, 9, 9, 10, 10, 10, 10,
-				9, 8, 9, 11, 14, 13, 12, 11, 10, 8, 7, 6, 5, 3, 2, 2, -1, -1,
-				-3, -3, -4, -4, -5, -4, -6, -7, -9, -5, -1, -1, 0, 1, 0, -2,
-				-3, -4, -5, -5, -8, -13, -13, -13, -12, -13, -12, -11, -11,
-				-9, -8, -7, -5, -3, -1, 2, 4, 6, 9, 10, 11, 14, 18, 21, 24,
-				27, 30, 34, 37, 37, 39, 40 };
+	static void calcDesignParams( const double T, const double ReqAtten,
+		double& pwr, double& hl, double& fo1 )
+	{
+		// b0(a): effective Kaiser beta vs attenuation, deg-9 in
+		// a = (A-133.5)/84.5
+		static const double LPF_CB[ 10 ] = {
+			14.409935832973984, 9.6626843693138884, -0.17435120318333536,
+			0.47264599329014079, 0.4940426137302133, -1.5662364718692721,
+			-0.71006021971136335, 2.0294051576357957, 0.22363464796569277,
+			-0.78254591651630068 };
 
-			atten -= AttenCorrs[ AttenCorr ] / AttenCorrScale;
-		}
-		else
-		if( tb >= 0.10 )
-		{
-			static const double AttenCorrScale = 210.0;
-			static const signed char AttenCorrs[] = {
-				-113, -118, -122, -125, -126, -97, -95, -92, -92, -89, -82,
-				-75, -69, -48, -42, -36, -30, -22, -14, -5, -2, 1, 6, 13, 22,
-				28, 35, 41, 48, 55, 56, 56, 61, 65, 71, 77, 81, 83, 85, 85,
-				74, 74, 73, 72, 71, 70, 68, 64, 59, 56, 49, 52, 46, 42, 36,
-				32, 26, 20, 13, 7, -2, -6, -10, -15, -20, -27, -33, -38, -44,
-				-43, -48, -53, -57, -63, -69, -73, -75, -79, -81, -74, -76,
-				-77, -77, -78, -81, -80, -80, -78, -76, -65, -62, -59, -56,
-				-51, -48, -44, -38, -33, -25, -19, -13, -5, -1, 2, 7, 13, 17,
-				21, 25, 30, 35, 40, 45, 50, 53, 56, 57, 55, 58, 59, 62, 64,
-				67, 67, 68, 68, 62, 61, 61, 59, 59, 57, 57, 55, 52, 48, 42,
-				38, 35, 31, 26, 20, 15, 13, 10, 7, 3, -2, -8, -13, -17, -23,
-				-28, -34, -37, -40, -41, -45, -48, -50, -53, -57, -59, -62,
-				-63, -63, -57, -57, -56, -56, -54, -54, -53, -49, -48, -41,
-				-38, -33, -31, -26, -23, -18, -12, -9, -7, -7, -3, 0, 5, 9,
-				14, 16, 20, 22, 21, 23, 25, 27, 28, 29, 34, 33, 35, 33, 31,
-				30, 29, 29, 26, 26, 25, 24, 20, 19, 15, 10, 8, 4, 1, -2, -6,
-				-10, -16, -19, -23, -26, -27, -30, -34, -39, -43, -47, -51,
-				-52, -54, -56, -58, -59, -62, -63, -66, -65, -65, -64, -59,
-				-57, -54, -52, -48, -44, -42, -37, -32, -22, -17, -10, -3, 5,
-				13, 22, 30, 40, 50, 60, 72 };
+		// log(delta) = D0(u) + s^2*D2(u) + s^3*D3(u) + s^4*D4(u),
+		// s = (T/0.45)^2
+		static const double LPF_D0[ 7 ] = {
+			-1.0753246533566314, -0.75662395688736628, -0.0047894065672392377,
+			0.08577566962378394, -0.17001888073403126, -0.013628259555023822,
+			0.093950306915379783 };
+		static const double LPF_D2[ 3 ] = {
+			1.1482209047708865, -0.052152189285352819, -0.020187508756994623 };
+		static const double LPF_D3[ 3 ] = {
+			-1.4201039645189557, 0.1242900889796041, -0.028854770456694875 };
+		static const double LPF_D4[ 3 ] = {
+			0.55500996383110457, -0.062635292370927881, 0.023661985245151548 };
 
-			atten -= AttenCorrs[ AttenCorr ] / AttenCorrScale;
-		}
-		else
-		{
-			static const double AttenCorrScale = 196.0;
-			static const signed char AttenCorrs[] = {
-				-15, -17, -20, -20, -20, -21, -20, -16, -17, -18, -17, -13,
-				-12, -11, -9, -7, -5, -4, -1, 1, 3, 4, 5, 6, 7, 9, 9, 10, 10,
-				10, 11, 11, 11, 12, 12, 12, 10, 11, 10, 10, 8, 10, 11, 10, 11,
-				11, 13, 14, 15, 19, 27, 26, 23, 18, 14, 8, 4, -2, -6, -12,
-				-17, -23, -28, -33, -37, -42, -46, -49, -53, -57, -60, -61,
-				-64, -65, -67, -66, -66, -66, -65, -64, -61, -59, -56, -52,
-				-48, -42, -38, -31, -27, -19, -13, -7, -1, 8, 14, 22, 29, 37,
-				45, 52, 59, 66, 73, 80, 86, 91, 96, 100, 104, 108, 111, 114,
-				115, 117, 118, 120, 120, 118, 117, 114, 113, 111, 107, 103,
-				99, 95, 89, 84, 78, 72, 66, 60, 52, 44, 37, 30, 21, 14, 6, -3,
-				-11, -18, -26, -34, -43, -51, -58, -65, -73, -78, -85, -90,
-				-97, -102, -107, -113, -115, -118, -121, -125, -125, -126,
-				-126, -126, -125, -124, -121, -119, -115, -111, -109, -101,
-				-102, -95, -88, -81, -73, -67, -63, -54, -47, -40, -33, -26,
-				-18, -11, -5, 2, 8, 14, 19, 25, 31, 36, 37, 43, 47, 49, 51,
-				52, 57, 57, 56, 57, 58, 58, 58, 57, 56, 52, 52, 50, 48, 44,
-				41, 39, 37, 33, 31, 26, 24, 21, 18, 14, 11, 8, 4, 2, -2, -5,
-				-7, -9, -11, -13, -15, -16, -18, -19, -20, -23, -24, -24, -25,
-				-27, -26, -27, -29, -30, -31, -32, -35, -36, -39, -40, -44,
-				-46, -51, -54, -59, -63, -69, -76, -83, -91, -98 };
+		// log(Y) = Y0(u) + s^2*Y2(u) + s^3*Y3(u)
+		static const double LPF_Y0[ 5 ] = {
+			0.8399122624879678, 0.39839640583388353, 0.015028625919905413,
+			-0.005569192458538463, 0.001494097359614131 };
+		static const double LPF_Y2[ 3 ] = {
+			0.00069542490312080887, -0.00062890127106954123,
+			-0.00071460219184551251 };
+		static const double LPF_Y3[ 2 ] = {
+			-0.00065713366734133005, 0.0011106064299533634 };
 
-			atten -= AttenCorrs[ AttenCorr ] / AttenCorrScale;
-		}
+		const double a = ( ReqAtten - 133.5 ) / 84.5;
+		const double b = hpoly( LPF_CB, 10, a ) +
+			0.0523 + 4.07 * T * T;
 
-		pwr = 7.43932822146293e-8 * sqr( atten ) + 0.000102747434588003 *
-			cos( 0.00785021930010397 * atten ) * cos( 0.633854318781239 +
-			0.103208573657699 * atten ) - 0.00798132247867036 -
-			0.000903555213543865 * atten - 0.0969365532127236 * exp(
-			0.0779275237937911 * atten ) - 1.37304948662012e-5 * atten * cos(
-			0.00785021930010397 * atten );
+		const double u = ( log( b ) - 2.3555 ) / 0.8585;
 
-		if( pwr <= 0.067665322581 )
-		{
-			if( tb >= 0.25 )
-			{
-				hl = 2.6778150875894 / tb + 300.547590563091 * atan( atan(
-					2.68959772209918 * pwr )) / ( 5.5099277187035 * tb - tb *
-					tanh( cos( asinh( atten ))));
+		const double s = ( T / 0.45 ) * ( T / 0.45 );
+		const double s2 = s * s;
+		const double s3 = s2 * s;
+		const double s4 = s2 * s2;
 
-				fo1 = 0.987205355829873 * tb + 1.00011788929851 * atan2(
-					-0.321432067051302 - 6.19131357321578 * sqrt( pwr ),
-					hl + -1.14861472207245 / ( hl - 14.1821147585957 ) + pow(
-					0.9521145021664, pow( atan2( 1.12018764830637, tb ),
-					2.10988901686912 * hl - 20.9691278378345 )));
-			}
-			else
-			if( tb >= 0.10 )
-			{
-				hl = ( 1.56688617018066 + 142.064321294568 * pwr +
-					0.00419441117131136 * cos( 243.633511747297 * pwr ) -
-					0.022953443903576 * atten - 0.026629568860284 * cos(
-					127.715550622571 * pwr )) / tb;
+		const double D = exp( hpoly( LPF_D0, 7, u ) +
+			s2 * hpoly( LPF_D2, 3, u ) +
+			s3 * hpoly( LPF_D3, 3, u ) +
+			s4 * hpoly( LPF_D4, 3, u ));
 
-				fo1 = 0.982299356642411 * tb + 0.999441744774215 * asinh((
-					-0.361783054039583 - 5.80540593623676 * sqrt( pwr )) /
-					hl );
-			}
-			else
-			{
-				hl = ( 2.45739657014937 + 269.183679500541 * pwr * cos(
-					5.73225668178813 + atan2( cosh( 0.988861169868941 -
-					17.2201556280744 * pwr ), 1.08340138240431 * pwr ))) / tb;
+		const double Y = exp( hpoly( LPF_Y0, 5, u ) +
+			s2 * hpoly( LPF_Y2, 3, u ) +
+			s3 * hpoly( LPF_Y3, 2, u ));
 
-				fo1 = 2.291956939 * tb + 0.01942450693 * sqr( tb ) * hl -
-					4.67538973161837 * pwr * tb - 1.668433124 * tb *
-					pow( pwr, pwr );
-			}
-		}
-		else
-		{
-			if( tb >= 0.25 )
-			{
-				hl = ( 1.50258368698213 + 158.556968859477 * asinh( pwr ) *
-					tanh( 57.9466246871383 * tanh( pwr )) -
-					0.0105440479814834 * atten ) / tb;
+		const double X = ( 4.0 / R8B_PI ) *
+			( sqrt( b * b + R8B_PI * R8B_PI ) - D );
 
-				fo1 = 0.994024401639321 * tb + ( -0.236282717577215 -
-					6.8724924545387 * sqrt( sin( pwr ))) / hl;
-			}
-			else
-			if( tb >= 0.10 )
-			{
-				hl = ( 1.50277377248945 + 158.222625721046 * asinh( pwr ) *
-					tanh( 1.02875299001715 + 42.072277322604 * pwr ) -
-					0.0108380943845632 * atten ) / tb;
+		hl = ( X + Y ) / T;
+		fo1 = X * T / ( X + Y );
+		pwr = b / 125.0;
+	}
 
-				fo1 = 0.992539376734551 * tb + ( -0.251747813037178 -
-					6.74159892452584 * sqrt( tanh( tanh( tan( pwr ))))) / hl;
-			}
-			else
-			{
-				hl = ( 1.15990238966306 * pwr - 5.02124037125213 * sqr(
-					pwr ) - 0.158676856669827 * atten * cos( 1.1609073390614 *
-					pwr - 6.33932586197475 * pwr * sqr( pwr ))) / tb;
+	/**
+	 * @brief Builds filter kernel based on the "Req" parameters.
+	 */
 
-				fo1 = 0.867344453126885 * tb + 0.052693817907757 * tb * log(
-					pwr ) + 0.0895511178735932 * tb * atan( 59.7538527741309 *
-					pwr ) - 0.0745653568081453 * pwr * tb;
-			}
-		}
+	void buildLPFilter()
+	{
+		double pwr, fo1, hl;
+
+		calcDesignParams( ReqTransBand * 0.01, ReqAtten, pwr, hl, fo1 );
 
 		double WinParams[ 2 ];
 		WinParams[ 0 ] = 125.0;
@@ -667,7 +583,7 @@ public:
 	static CDSPFIRFilter& getLPFilter( const double ReqNormFreq,
 		const double ReqTransBand, const double ReqAtten,
 		const EDSPFilterPhaseResponse ReqPhase, const double ReqGain,
-		const int ReqDownFactor, const double* const AttenCorrs = R8B_NULL )
+		const int ReqDownFactor )
 	{
 		R8BASSERT( ReqNormFreq > 0.0 && ReqNormFreq <= 1.0 );
 		R8BASSERT( ReqTransBand >= CDSPFIRFilter :: getLPMinTransBand() );
@@ -761,7 +677,7 @@ public:
 			f -> ReqGain = ReqGain;
 			f -> ReqDownShift = ReqDownShift;
 
-			f -> buildLPFilter( AttenCorrs );
+			f -> buildLPFilter();
 
 			CurObj = f.unkeep();
 			ObjCount++;

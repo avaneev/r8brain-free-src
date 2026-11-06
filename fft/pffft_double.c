@@ -75,10 +75,6 @@
 #    define _USE_MATH_DEFINES
 #  endif
 #  include <malloc.h>
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-#  include <malloc.h>
-#else
-#  include <alloca.h>
 #endif
 
 #include <stdlib.h>

@@ -1,13 +1,14 @@
 // Half-band filter coefficient optimizer. Finds coefficients for the list of
 // fractions using the BiteOptDeep derivative-free optimization method.
 //
-// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
 // See the "LICENSE" file for license.
 
 #include <stdio.h>
 #include <math.h>
 #include "../../biteopt/biteopt.h"
 #include "../CDSPSincFilterGen.h"
+using namespace r8b;
 
 const double Fractions[] = { 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, -1.0 };
 //const double Fractions[] = { 6.0, 12.0, 24.0, 48.0, 96.0, 192.0, 384.0, -1.0 };

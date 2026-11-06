@@ -3,7 +3,7 @@
 /**
  * @file r8bbase.h
  *
- * @version 7.6
+ * @version 7.7
  *
  * @brief The "base" header file with basic classes and functions.
  *
@@ -61,7 +61,7 @@
 #ifndef R8BBASE_INCLUDED
 #define R8BBASE_INCLUDED
 
-#define R8B_VERSION "7.6" ///< Macro defines r8brain-free-src version string.
+#define R8B_VERSION "7.7" ///< Macro defines r8brain-free-src version string.
 
 /**
  * @def R8B_CONST
@@ -182,11 +182,6 @@ using std :: exp;
 using std :: pow;
 using std :: sin;
 using std :: cos;
-using std :: tan;
-using std :: atan;
-using std :: atan2;
-using std :: tanh;
-using std :: cosh;
 using std :: size_t;
 
 #if __cplusplus >= 201103L
@@ -1546,18 +1541,6 @@ inline double pow_a( const double v, const double p )
 #else // defined( R8B_ARCH64 )
 	return( exp( p * log( fabs( v ) + 1e-300 )));
 #endif // defined( R8B_ARCH64 )
-}
-
-/**
- * @brief Hyperbolic sine of a value.
- *
- * @param v Input value.
- * @return Calculated inverse hyperbolic sine of the input value.
- */
-
-inline double asinh( const double v )
-{
-	return( log( v + sqrt( v * v + 1.0 )));
 }
 
 /**

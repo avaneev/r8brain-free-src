@@ -38,10 +38,6 @@
   fallback mode(s) for situations where SSE/AVX/NEON/Altivec are not available, use scalar mode instead
 */
 
-#ifndef PFFFT_SCALVEC_ENABLED
-#define PFFFT_SCALVEC_ENABLED
-#endif
-
 #if !defined(SIMD_SZ) && defined(PFFFT_SCALVEC_ENABLED)
 #pragma message( __FILE__ ": double SCALAR4 macros are defined" )
 
@@ -79,6 +75,11 @@ typedef union v4sf_union {
 
   static ALWAYS_INLINE(v4sf) VMADD(v4sf A, v4sf B, v4sf C) {
     v4sf r = { A.a * B.a + C.a, A.b * B.b + C.b, A.c * B.c + C.c, A.d * B.d + C.d };
+    return r;
+  }
+
+  static ALWAYS_INLINE(v4sf) VMSUB(v4sf A, v4sf B, v4sf C) {
+    v4sf r = { C.a - A.a * B.a, C.b - A.b * B.b, C.c - A.c * B.c, C.d - A.d * B.d };
     return r;
   }
 
@@ -174,6 +175,7 @@ typedef union v4sf_union {
 #  define VMUL(a,b) ((a)*(b))
 #  define VADD(a,b) ((a)+(b))
 #  define VMADD(a,b,c) ((a)*(b)+(c))
+#  define VMSUB(a,b,c) ((c)-(a)*(b))
 #  define VSUB(a,b) ((a)-(b))
 #  define LD_PS1(p) (p)
 #  define VLOAD_UNALIGNED(ptr)  (*(ptr))

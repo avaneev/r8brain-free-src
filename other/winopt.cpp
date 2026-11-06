@@ -2,13 +2,14 @@
 // filter bandwidth for Kaiser window functions using the BiteOptDeep
 // derivative-free optimization method.
 //
-// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
 // See the "LICENSE" file for license.
 
 #include <stdio.h>
 #include <math.h>
 #include "../../biteopt/biteopt.h"
 #include "../CDSPSincFilterGen.h"
+using namespace r8b;
 
 const int Bandwidth = 2; // Filter's bandwidth (2 or 3).
 const double LinFraction = 1.25 / Bandwidth; // Linear part of the spectrum.

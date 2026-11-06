@@ -8,7 +8,6 @@
 #include "../CDSPHBUpsampler.h"
 #include "../CDSPRealFFT.h"
 #include "../CDSPSincFilterGen.h"
-#include "../r8butil.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -991,7 +990,7 @@ static void testFracInterpolatorDirect()
 
 static void testR8bUtil()
 {
-	// Build a LP sinc and scan its response with r8butil helpers.
+	// Build a LP sinc.
 	r8b :: CDSPSincFilterGen fg;
 	fg.Len2 = 200.0;
 	fg.Freq1 = 0.0;
@@ -1001,33 +1000,6 @@ static void testR8bUtil()
 	std :: vector< double > k( fg.KernelLen );
 	fg.generateBand( &k[ 0 ], &r8b :: CDSPSincFilterGen :: calcWindowKaiser );
 	r8b :: normalizeFIRFilter( &k[ 0 ], fg.KernelLen, 1.0 );
-
-	// r8butil scan helpers work on squared gains with in/out ref params.
-	double re0, im0;
-	r8b :: calcFIRFilterResponse( &k[ 0 ], fg.KernelLen, 0.0, re0, im0 );
-	double maxg = re0 * re0 + im0 * im0;
-	double maxth = 0.0;
-	r8b :: findFIRFilterResponseMaxLtoR( &k[ 0 ], fg.KernelLen, maxg, maxth,
-		0.5 );
-	check( maxth >= 0.0 && maxth <= 0.5,
-		"r8butil max freq %g out of range", maxth );
-	check( isFiniteD( maxg ), "r8butil max gain non-finite" );
-
-	r8b :: calcFIRFilterResponse( &k[ 0 ], fg.KernelLen,
-		0.45 * 3.14159265358979324, re0, im0 );
-	double ming = re0 * re0 + im0 * im0;
-	double minth = 0.45; // start in stopband (passband edge is 0.4)
-	r8b :: findFIRFilterResponseMinLtoR( &k[ 0 ], fg.KernelLen, ming, minth,
-		1.0 );
-	check( minth >= 0.45 && minth <= 1.0,
-		"r8butil min freq %g out of range", minth );
-	const double mindb = 10.0 * log10( ming + 1e-100 );
-	check( mindb < -50.0, "r8butil stopband min %.1f dB too high", mindb );
-
-	double th3 = 0.5;
-	r8b :: findFIRFilterResponseLevelRtoL( &k[ 0 ], fg.KernelLen,
-		0.50118723362727224 /* -3 dB squared */, th3, 0.0 );
-	check( th3 >= 0.0 && th3 <= 0.5, "r8butil -3dB level %g", th3 );
 
 	// Group delay / response helpers from r8bbase.
 	double re, im;

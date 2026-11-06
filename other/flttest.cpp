@@ -1,11 +1,15 @@
 // Fractional-delay interpolation test. Tests FilterFracs and interpolation
 // at different target SNRs.
 //
-// r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+// r8brain-free-src Copyright (c) 2013-2026 Aleksey Vaneev
 // See the "LICENSE" file for license.
 
 #include "../../../../libvox/Sources/Core/CWorkerThreadPool.h"
 using namespace vox;
+
+namespace r8b {
+	int InterpFilterFracs;
+} // namespace r8b
 
 #include <stdio.h>
 #include "../CDSPResampler.h"
@@ -15,7 +19,7 @@ const double MaxTargetSNR = -r8b :: CDSPFIRFilter :: getLPMaxAtten();
 const int TargetCount = 20;
 
 const double InSampleRate = 44100.0;
-const double SineFreq = 16000.0;
+const double SineFreq = 10000.0;
 const int InBufSize = 70000;
 r8b :: CFixedBuffer< double > InBuf( InBufSize );
 
@@ -49,7 +53,7 @@ public:
 	CResamp( const double SrcSampleRate, const double DstSampleRate,
 		const int aMaxInLen, const double ReqTransBand = 2.0 )
 		: CDSPResampler( SrcSampleRate, DstSampleRate, aMaxInLen,
-			ReqTransBand, 220.0, r8b :: fprLinearPhase )
+			ReqTransBand, 218.0, r8b :: fprLinearPhase )
 	{
 	}
 };
@@ -62,8 +66,8 @@ inline double calcSineRMS( const double* const p1, const int l, const int o,
 
 	for( i = 0; i < l - o; i++ )
 	{
-		const double v = sin( i * R8B_2PI * SineFreq * SrcSampleRate /
-			( InSampleRate * DstSampleRate ));
+		const double v = sin( i * r8b::R8B_2PI * SineFreq *
+			SrcSampleRate / ( InSampleRate * DstSampleRate ));
 
 		if( i >= o )
 		{
@@ -87,13 +91,13 @@ protected:
 	virtual ecode performWork()
 	{
 		const int MaxInLen = 521;
-		const double tb = 5.0;
+		const double tb = 2.5;
 
 		const int ol1 = (int) ( InBufSize * DstSampleRate / SrcSampleRate );
 
 		r8b :: CFixedBuffer< double > OutBuf1( ol1 );
 
-		r8b :: CPtrKeeper< CResamp* > Resamp1;
+		r8b :: CPtrKeeper< CResamp > Resamp1;
 		Resamp1 = new CResamp( SrcSampleRate, DstSampleRate, MaxInLen, tb );
 
 		Resamp1 -> oneshot( &InBuf[ 0 ], InBufSize, &OutBuf1[ 0 ], ol1 );
@@ -124,7 +128,7 @@ int main()
 	{
 		for( i = 0; i < InBufSize; i++ )
 		{
-			InBuf[ i ] = sin( i * R8B_2PI * SineFreq / InSampleRate );
+			InBuf[ i ] = sin( i * r8b::R8B_2PI * SineFreq / InSampleRate );
 		}
 	}
 

@@ -224,6 +224,12 @@ This library is used by:
 
 ## Change Log
 
+Version 7.7:
+
+* Changed LPF design function to a cleaner closed-form formulation, now
+provably singularity-free.
+* Updated PFFFT and PFFFT DOUBLE to the latest versions.
+
 Version 7.6:
 
 * Improved speed of filter calculations on 64-bit platforms by a factor 1.5 to
